@@ -1,14 +1,17 @@
 
 function init()
-  self.gettingSpecies = nil
-  self.gettingSeedValue = nil
-  self.gettingType = nil
-  self.gettingPosition = nil
+  --self.gettingSpecies = nil
+  --self.gettingSeedValue = nil
+  --self.gettingType = nil
+  --self.gettingPosition = nil
+  self.gettingNpcData = nil
 	--these variables store the results of the messages we send to the parent panel obj
-  sb.logInfo("CAFSpawner: init")
+  sb.logInfo("CAFPanekMenu: init")
 	self.sendingSpecies = nil
 	self.sendingSeedValue = nil
   self.sendingType = nil
+
+  self.npcDataInit = false
 
   self.sendingData = nil
 
@@ -28,9 +31,19 @@ function init()
   self.seedInput = 0
 
   --LIST VARS--
-  self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
+  
+  
+
   self.techList = "techScrollArea.techList"
 
+  self.tabData = nil
+  self.tabSelectedOption = -1
+  self.tabRadioGroup = "rgTabs"
+  self.npcTypeConfigList = "npcTypeList"
+  
+  self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
+  self.typeList = config.getParameter(self.npcTypeConfigList)
+    dLogJson(self.typeList, "typeList: ")
 
   --CATEGORY VARS--
   --`int` widget.getSelectedOption(`String` widgetName)
@@ -47,7 +60,7 @@ function init()
 
   self.currentSize = 0
   self.targetSize = 0
-  self.minTargetSize = -1000
+  self.minTargetSize = 0
   self.targetSizeIncrement = 1
   self.manualInput = false
   self.maxStepSize = self.worldSize
@@ -66,140 +79,99 @@ function init()
   widget.setProgress("prgCurrentProgress", currentRatio)
   
   widget.setProgress("prgAvailable", 0.0)
- -- setList({list = self.speciesList,  listType = "species"})
+
+
+  --testFunction()
+   -- setList({list = self.speciesList,  listType = "species"})
 end
 
 
--------LIST FUNCTIONS-----------
-
---args:
-  --list
-  --listType
-function setList(args)
-  widget.clearListItems(self.techList)
-  dLogJson(args,"setList - ARGS")
-  for _,listName in pairs(args.list) do
-
-    local listItem = widget.addListItem(self.techList)
-
-    if args.listType == "species" then
-      widget.setText(string.format("%s.%s.techName", self.techList, listItem), listName)
-      widget.setData(string.format("%s.%s", self.techList, listItem), {name = listName, listType = args.listType})
-    end
-  end
+function finalizeOverride()
+  dLog("FInalizingOverride")
 end
 
---listArgs:
-    --name
-    --listType
-function listItemSelected()
-  local listItem = widget.getListSelected(self.techList)
-  local listArgs = widget.getData(string.format("%s.%s", self.techList, listItem))
-  dLog(listArgs.name, "listArgs.name:  ")
-  dLogJson(listArgs.listType, "listArgs.listType:  ")
-
-  if listArgs.listType == "species" then
-    self.currentSpecies = listArgs.name
-  end
-  self.portraitNeedsUpdate = true
+function cancelOverride()
+  dLog("cancellingOverride")
 end
-
--------END LIST FUNCTIONS---------
-
-
--------CATEGORY FUNCTIONS--------
-
---callback when category button is selected--
---args:
-  --button : ? (widget.getSelectedOption?)
-  --indx buttonlabel.data (widget.getSelectedData)
-function selectGenCategory(button, data)
-  local  dataList = config.getParameter("rgNPCModOptions")
-  local selectedOption = "NONE"
-  dLog("selectGenCategory")
-  dLogJson(button, "")
-  for _,v in ipairs(dataList) do
-    if v == data then
-      selectedOption = data
-      break
-    end
-  end
-  dLog(selectedOption, "selectGenCategory - selectedOption:  ")
-end
-
-function updateCategoryIcons(category)
-
-end
-
--------END CATEGORY FUNCTIONS---------
 
 function update(dt)
   --Cannot send entity messages during init, so will do it here
   if self.firstRun then
+    dLog("Update :  FirstRun")
     self.firstRun = false
-    self.gettingPosition = world.sendEntityMessage(pane.sourceEntity(), "getPosition")
-    self.gettingSpecies = world.sendEntityMessage(pane.sourceEntity(), "getSpecies")
-    self.gettingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "getSeedValue")
-    self.gettingType = world.sendEntityMessage(pane.sourceEntity(), "getType")
-    setList({list = self.speciesList,  listType = "species"})
+    --self.gettingPosition = world.sendEntityMessage(pane.sourceEntity(), "getPosition")
+    --self.gettingSpecies = world.sendEntityMessage(pane.sourceEntity(), "getSpecies")
+    --self.gettingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "getSeedValue")
+    --self.gettingType = world.sendEntityMessage(pane.sourceEntity(), "getType")
+    self.gettingNpcData = world.sendEntityMessage(pane.sourceEntity(), "getNpcData")
+    
   end
 
   --initializing the species from the panel object
-  if not self.positionInitialized and self.gettingPosition:finished() and self.gettingPosition:result() then
-    local result = self.gettingPosition:result()
-    self.currentPosition = result
-    self.positionInitialized = true
-  end
+  --if not self.positionInitialized and self.gettingPosition:finished() and self.gettingPosition:result() then
+  --  local result = self.gettingPosition:result()
+  --  self.currentPosition = result
+  --  self.positionInitialized = true
+  --end
 
-  if not self.speciesInitialized and self.gettingSpecies:finished() and self.gettingSpecies:result() then
-  	local result = self.gettingSpecies:result()
-    sb.logInfo("speciesInitInUpdate")
-    sb.logInfo(sb.print(result))
-  	--world.logInfo("UI: the species index has been initialized from panel object. Changed to: " .. tostring(result))
-  	--self.raceButtons[result]:select();
-    self.currentSpecies = tostring(result)
-  	self.speciesInitialized = true
-  end
+ --if not self.speciesInitialized and self.gettingSpecies:finished() and self.gettingSpecies:result() then
+ --	local result = self.gettingSpecies:result()
+ --  sb.logInfo("speciesInitInUpdate")
+ --  sb.logInfo(sb.print(result))
+ --	--world.logInfo("UI: the species index has been initialized from panel object. Changed to: " .. tostring(result))
+ --	--self.raceButtons[result]:select();
+ --  self.currentSpecies = tostring(result)
+ --	self.speciesInitialized = true
+ --end
 
   --initializing the seed value from the panel object
-  if not self.seedValueInitialized and self.gettingSeedValue:finished() and self.gettingSeedValue:result() then
-  	local result = self.gettingSeedValue:result()
+  if not self.npcDataInit and self.gettingNpcData:finished() and self.gettingNpcData:result() then
+  	local result = self.gettingNpcData:result()
   	--world.logInfo("UI: the seed value has been initialized from panel object. Changed to: " .. tostring(result))
   	--self.slider.value = result
-   
-    if type(result) == "string" then 
+    self.npcDataInit = true
+
+    if result.npcSpecies then
+      self.currentSpecies = tostring(result.npcSpecies)
+    end
+
+    if result.npcType then
+      self.currentType = tostring(result.npcType)
+    end
+
+    if type(result.seedValue) == "string" then 
       self.manualInput = true
-      self.seedInput = result
+      self.seedInput = result.seedValue
       self.targetSize = 0
-      if tonumber(result) then
-        if tonumber(result) <= self.worldSize then
-          self.targetSize = tonumber(result)
+      if tonumber(result.seedValue) then
+        if tonumber(result.seedValue) <= self.worldSize then
+          self.targetSize = tonumber(result.seedValue)
           widget.setSliderValue("sldTargetSize", self.targetSize)
         end
       end 
       widget.setText("seedValue", self.seedInput)
     else
       self.manualInput = false
-      self.seedInput = result
-      self.targetSize = result
+      self.seedInput = result.seedValue
+      self.targetSize = result.seedValue
       widget.setSliderValue("sldTargetSize", self.targetSize)
     end
-  	self.seedValueInitialized = true
+    widget.setSelectedOption(self.tabRadioGroup, self.tabSelectedOption)
   end
 
   --initializing the type from the panel object
-  if not self.typeInitialized and self.gettingType:finished() and self.gettingType:result() then
-    local result = self.gettingType:result()
-    self.currentType = tostring(result)
-    --  --world.logInfo("UI: the type has been initialized from panel object. Changed to: " .. tostring(result))
-    --  self.typeButtons[result]:select();
-    self.typeInitialized = true
-  end
+ --if not self.typeInitialized and self.gettingType:finished() and self.gettingType:result() then
+ --  local result = self.gettingType:result()
+ --  self.currentType = tostring(result)
+ --  --  --world.logInfo("UI: the type has been initialized from panel object. Changed to: " .. tostring(result))
+ --  --  self.typeButtons[result]:select();
+ --  self.typeInitialized = true
+ --end
 
   --main loop after everyting has been loaded in
-  if self.typeInitialized and self.speciesInitialized and self.seedValueInitialized then
+  if self.npcDataInit then
      --updateGUI()
-     if self.portraitNeedsUpdate then
+    if self.portraitNeedsUpdate then
       self.portraitNeedsUpdate = false
       local arg = {
         level = 10.0,
@@ -209,20 +181,14 @@ function update(dt)
         curPosition = self.currentPosition
       }
         
-        if self.manualInput then
-          arg.curSeed = self.seedInput
-        else
-          arg.curSeed = self.targetSize
-        end
+      if self.manualInput then
+        arg.curSeed = self.seedInput
+      else
+        arg.curSeed = self.targetSize
+      end
       setPortrait(arg)
-     end
+    end
   end
-end
-
-function updateGUI() 
-  local targetRatio = self.targetSize / self.worldSize
-  widget.setProgress("prgPreviewProgress", targetRatio)
-  widget.setSliderValue("sldTargetSize", self.targetSize)
 end
 
 function seedValue() 
@@ -249,31 +215,12 @@ function updateTargetSize()
   self.portraitNeedsUpdate = true
 end
 
-function increaseTargetSize()
- --self.targetSize = self.targetSize + 1
-  --widget.setText("seedValue", tostring(self.targetSize + 1))
-  self.manualInput = false
-  world.sendEntityMessage(pane.sourceEntity(),"createLife",self.targetSize)
-  self.portraitNeedsUpdate = true
-end
-
-function decreaseTargetSize()
-  self.targetSize = self.targetSize - 1
-  self.manualInput = false
-  widget.setText("lblSliderAmount", tostring(self.targetSize - 1))
-  self.portraitNeedsUpdate = true
-  --self.sendingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "setSeedValuePanel", self.targetSize)
-  
-end
-
-
-
 function acceptBtn()
   local args = {
   npcSpecies = self.currentSpecies,
   npcType = self.currentType,
   npcSeed = nil,
-  npcParams = replaceItemOverrides(nil)
+  npcParams = nil
 }
   
   if self.manualInput then
@@ -303,15 +250,15 @@ end
 function setPortrait(args)
 
 --widget.setVisible(`String` widgetName, `bool` visible)
-  dLogJson(args)
+  --dLogJson(args)
   --local parameters = root.getConfiguration("myNakedParameters")
-  local params = replaceItemOverrides(args)
-  dLogJson(params,"setPortraitParams")
-  local variant = root.npcVariant(args.curSpecies,args.curType, args.level,args.curSeed)
+  --local params = replaceItemOverrides(args)
+  --dLogJson(params,"setPortraitParams")
+  --local variant = root.npcVariant(args.curSpecies,args.curType, args.level,args.curSeed)
  -- dLogJson(variant, "Variant:")
 
  -- dLogJson(newparams, "newparams")
-
+ local params = {}
   local npcPort = root.npcPortrait("full", args.curSpecies,args.curType, args.level, args.curSeed, params)
   --local spawn = world.spawnNpc(args.curPosition,args.curSpecies, "nakedvillager", args.level, args.curSeed, newparams)
   -- dLogJson(npcPort,"npcPort:")
@@ -329,11 +276,13 @@ function setPortrait(args)
     "portraitSlot09",
     "portraitSlot10",
     "portraitSlot11",
-    "portraitSlot12"
+    "portraitSlot12",
+    "portraitSlot13",
+    "portraitSlot14",
+    "portraitSlot15"
   }
 
 
-  local justpics = {}
   local num = 0
   local imgDirective = ""
 
@@ -355,6 +304,116 @@ function setPortrait(args)
  --widget.setVisible("charPreview", true)
 end
 
+-------TEST FUNCTIONS-----------
+--not useful in any way, used to test things
+
+function testFunction()
+    local config = root.npcConfig("villager")
+    dLogJson(config, "config:")
+end
+
+-------LIST FUNCTIONS-----------
+
+
+--callback when tab is selected--
+--args:
+  --button : ? (widget.getSelectedOption?)
+  --indx buttonlabel.data (widget.getSelectedData)
+function selectTab(button, data)
+  dLog("selectTab :")
+  local listOption = widget.getSelectedOption(self.tabRadioGroup)
+  dLog(listOption, "listOption: ")
+  local args = {}
+  if data == "tab1" then
+    args.list = copy(self.speciesList)
+    args.listType = "species"
+    args.currentSelection = self.currentSpecies
+    return setList(args)
+  end
+  if data == "tab2" then
+    args.list = copy(self.typeList)
+    args.listType = "npcType"
+    args.currentSelection = self.currentType
+    return setList(args)
+  end
+  dLog(args, "selectTab Failed - > args: ")
+end
+
+--args:
+  --list
+  --listType
+function setList(args)
+  widget.clearListItems(self.techList)
+  dLogJson(args,"setList - ARGS")
+  --table.sort(args.list)
+
+  for _,v in pairs(args.list) do
+
+      local listItem = widget.addListItem(self.techList)
+      local newArgs = {}
+
+      newArgs.name = v
+      newArgs.listType = args.listType
+
+      widget.setText(string.format("%s.%s.techName", self.techList, listItem), v)
+
+      widget.setData(string.format("%s.%s", self.techList, listItem), newArgs)
+
+      if v == args.currentSelection then 
+        sb.logInfo("setList:  entered setListSelected")
+        widget.setListSelected(self.techList, listItem)
+      end
+
+  end
+end
+
+--args:
+    --name
+    --listType
+function listItemSelected()
+  local listItem = widget.getListSelected(self.techList)
+  if not listItem then return end
+  sb.logInfo(string.format("%s.%s", self.techList, listItem))
+  local listArgs = widget.getData(string.format("%s.%s", self.techList, listItem))
+  dLog(listArgs.name, "listArgs.name:  ")
+  dLog(listArgs.listType, "listArgs.listType:  ")
+
+  if listArgs.listType == "species" then
+    self.currentSpecies = tostring(listArgs.name)
+  end
+  if listArgs.listType == "npcType" then
+    self.currentType = tostring(listArgs.name)
+  end
+  self.portraitNeedsUpdate = true
+end
+
+-------END LIST FUNCTIONS---------
+
+
+-------CATEGORY FUNCTIONS--------
+
+--callback when category button is selected--
+--args:
+  --button : ? (widget.getSelectedOption?)
+  --indx buttonlabel.data (widget.getSelectedData)
+function selectGenCategory(button, data)
+  local  dataList = config.getParameter("rgNPCModOptions")
+  local selectedOption = "NONE"
+  dLog("selectGenCategory")
+  dLogJson(button, "")
+  for _,v in ipairs(dataList) do
+    if v == data then
+      selectedOption = data
+      break
+    end
+  end
+  dLog(selectedOption, "selectGenCategory - selectedOption:  ")
+end
+
+-------END CATEGORY FUNCTIONS---------
+
+
+
 function copy(v)
   if type(v) ~= "table" then
     return v
@@ -370,7 +429,7 @@ end
 
 function dLog(item, prefix)
   local p = prefix or ""
-  sb.logInfo(p.."  %s",item)
+  sb.logInfo("%s %s",prefix, dOut(item))
 end
 
 function dOut(input)
@@ -378,11 +437,10 @@ function dOut(input)
 end
 
 function dLogJson(input, prefix)
-  local p = prefix or ""
-  if p ~= "" then
+  if prefix ~= nil then
     sb.logInfo(prefix)
   end
-  sb.logInfo("%s", sb.printJson(input))
+   sb.logInfo("%s", sb.printJson(input))
 end
 
 function valuesToKeys(list)
@@ -394,7 +452,15 @@ function valuesToKeys(list)
   end
 end
 
-
+function keysToList(keyList)
+  local newList = {}
+  local count = 0
+  for k,_ in pairs(keyList) do
+    count = count + 1
+    table.insert(newList,tostring(k))
+  end
+  return newList
+  end
 
 --function spawnNpcModified(args, output)
 --  args = parseArgs(args, {
