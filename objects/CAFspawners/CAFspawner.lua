@@ -29,28 +29,13 @@ function init(virtual)
   self.checkGearTimer = self.maxGearTime    --gear timer var that actively gets decremented
   self.weapon = nil   --we keep a seperate var for the weapon so that we can handle switching between ranged and melee npc behavior
 
-  self.speciesOptions = root.assetJson("/player.config").species
+  self.speciesOptions = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
   self.typeOptions = config.getParameter("typeOptions")
 
   self.absPosition = nil
   --self.npcParameter = util.randomFromList(config.getParameter("spawner.npcParameterOptions"))
 
   --handler (listener) for messsages from the panel object sending this spawner the species of the NPC to be spawned
-  message.setHandler("setSpecies", function(_, _, params)
-    setSpecies(params)
-  end)
-  --handler (listener) for messsages from the panel object sending this spawner the seed value of the NPC to be spawned
-  message.setHandler("setSeedValueSpawner", function(_, _, params)
-    setSeedValueSpawner(params)
-  end)
-  --handler (listener) for messsages from the panel object sending this spawner the type of the NPC to be spawned
-  message.setHandler("setType", function(_, _, params)
-    setType(params)
-  end)
-
-  message.setHandler("createLife", function(_, _, params)
-    createLife(params)
-    end)
 
   message.setHandler("setNpcData", function(_, _, args)
     setNpcData(args)
@@ -79,7 +64,7 @@ function setNpcData(args)
     storage.npcParams = args.npcParams
   end
   if okCheck == 3 then
-    killNpc()
+     killNpc()
   else
     sb.logInfo(string.format("CAFSpawner: setNpcData: one or more args was nil - okCheck: %s", okCheck))
   end
@@ -129,7 +114,7 @@ function update(dt)
       --   end
       -- end
       --assign our new NPC a special unique id
-      storage.spawnedID = sb.makeUuid();
+      storage.spawnedID = sb.makeUuid()
       world.setUniqueId(npcId, storage.spawnedID)
       storage.spawned = true 
       self.spawnTimer = self.maxSpawnTime
@@ -140,7 +125,7 @@ function update(dt)
     self.checkGearTimer = self.checkGearTimer - dt
 
     --if our spawned NPC has died or disappeared since last tick, set spawned to false. otherwise check to see if it's time to update gear
-    if storage.spawnedID and not world.findUniqueEntity(storage.spawnedID) then
+    if storage.spawnedID and world.loadUniqueEntity(storage.spawnedID) == 0 then
       storage.spawned = false
     elseif self.checkGearTimer < 0 then
       --setGear()
@@ -193,46 +178,14 @@ function die()
 end
 
 function killNpc()
-   if storage.spawned == true then
-    local spawnedID = world.loadUniqueEntity(storage.spawnedID)
-    world.callScriptedEntity(spawnedID, "suicide")
-    storage.spawned = false
+  sb.logInfo("killNPC: "..sb.print(storage.spawnedID))
+  local loadedEnitity = world.loadUniqueEntity(storage.spawnedID)
+  if loadedEnitity ~= 0 then
+    world.callScriptedEntity(loadedEnitity, "suicide")
   end
+  storage.spawned = false
 end
 
---updates the species of the npc. This species is gotten from the panel objects UI. If the species is different than the current species, kill the current NPC.
-function setSpecies(species)
-  if species then
-      --world.logInfo("The spawner recieved the message. Race is being changed to "..self.speciesOptions[species])
-      storage.npcSpecies = species
-      --killNpc()
-  else
-    sb.logInfo("the species recieved was null")
-  end
-end
-
---updates the seed value of the npc. See setSpecies()
-function setSeedValueSpawner(seedValue)
-  sb.logInfo("setSeedValueSpawner seedValue : "..seedValue)
-  if seedValue then
-      --world.logInfo("The spawner recieved the message. Seed value is being changed to "..seedValue)
-      storage.seedValue = seedValue
-      killNpc()
-  else
-    sb.logInfo("the seedValue recieved was null")
-  end
-end
-
---updates the type of the npc. See setSpecies()
-function setType(type)
-  if type then
-      --world.logInfo("The spawner recieved the message. Type is being changed to "..self.typeOptions[type])
-      storage.type = type
-      --killNpc()
-  else
-    sb.logInfo("the type recieved was null")
-  end
-end
 
 function createLife(seed)
   local level = 10

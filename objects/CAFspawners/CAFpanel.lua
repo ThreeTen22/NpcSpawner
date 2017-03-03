@@ -56,10 +56,18 @@ function getNpcData()
 end
 
 function setNpcData(args)
+
   storage.npcSpecies = args.npcSpecies
   storage.seedValue = args.npcSeed
   storage.type = args.npcType
-  world.sendEntityMessage(storage.parentSpawner, "setNpcData", args)
+
+  local newArgs = {
+    npcSpecies = args.npcSpecies,
+    npcSeed = args.npcSeed,
+    npcType = args.npcType
+  }
+
+  world.sendEntityMessage(storage.parentSpawner, "setNpcData", newArgs)
 end
 
 function getSpeciesParams()

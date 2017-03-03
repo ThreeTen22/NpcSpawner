@@ -207,25 +207,6 @@ function updateTargetSize()
   self.portraitNeedsUpdate = true
 end
 
-function increaseTargetSize()
- --self.targetSize = self.targetSize + 1
-  --widget.setText("seedValue", tostring(self.targetSize + 1))
-  self.manualInput = false
-  world.sendEntityMessage(pane.sourceEntity(),"createLife",self.targetSize)
-  self.portraitNeedsUpdate = true
-end
-
-function decreaseTargetSize()
-  self.targetSize = self.targetSize - 1
-  self.manualInput = false
-  widget.setText("lblSliderAmount", tostring(self.targetSize - 1))
-  self.portraitNeedsUpdate = true
-  --self.sendingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "setSeedValuePanel", self.targetSize)
-  
-end
-
-
-
 function acceptBtn()
   local args = {
   npcSpecies = self.currentSpecies,
