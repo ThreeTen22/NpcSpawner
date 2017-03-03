@@ -86,6 +86,14 @@ function init()
 end
 
 
+function finalizeOverride()
+  dLog("FInalizingOverride")
+end
+
+function cancelOverride()
+  dLog("cancellingOverride")
+end
+
 function update(dt)
   --Cannot send entity messages during init, so will do it here
   if self.firstRun then
