@@ -1,0 +1,107 @@
+{
+  "type" : "CAFguard",
+  "baseType" : "follower",
+
+  "damageTeamType" : "friendly",
+
+  "scripts" : [
+    "/npcs/bmain.lua",
+    "/npcs/CAFmain.lua"
+  ],
+
+  "dropPools" : [],
+
+  "scriptConfig" : {
+
+    "questGenerator" : {
+      "pools" : ["normal", "guard"],
+      "enableParticipation" : true
+    },
+    
+    "dialog" : {
+      "follower" : {
+        "attack" : {
+          "default" : {
+            "default" : [
+              "I'll take on these monsters!",
+              "Sneak attack!",
+              "Enemies! Time to strike!",
+              "Attack!",
+              "Quick, we're under attack!",
+              "Be careful!",
+              "Look out!",
+              "No time for chit-chat, we've been spotted!",
+              "Uh-oh!",
+              "We've been spotted!",
+              "Enemy sighted!",
+              "Are we attacking? We're attacking!",
+              "Let's teach these guys a lesson!",
+              "They want a fight? I'll give them a fight!",
+              "I'll fight them off or die trying!"
+            ]
+          }
+        },
+        "join" : {
+          "default" : {
+            "default" : [
+              "Are we ready to head out? ",
+              "I'm geared up and good to go!",
+              "Put a sword in my hand and point me in the direction of the enemy!"
+            ]
+          }
+        },
+        "returnFromCombat" : {
+          "default" : {
+            "default" : [
+              "Let's move on.",
+              "I'm impressed.",
+              "This weapon you gave me is quite effective.",
+              "We're a team worth fearing!",
+              "I'll never let them stop me.",
+              "Take that.",
+              "Phew.",
+              "Stay alert, there could be more.",
+              "Ugh, those things had TERRIBLE breath. Good riddance.",
+              "That's what you get for messing with US!",
+              "Hopefully there won't be more to fight.",
+              "Let's go.",
+              "This armor you gave me is doing the trick! I hardly felt a thing!",
+              "I wonder how many more like us are on this planet.",
+              "I'm hoping to make many more enemies hurt.",
+              "Phew, you handle yourself quite well."
+            ]
+          }
+        },
+        "wait" : {
+          "default" : {
+            "default" : [
+              "I'll just wait here.",
+              "I'll stay here and keep watch!",
+              "Do you need a moment?"
+            ]
+          }
+        },
+        "returnFromWait" : {
+          "default" : {
+            "default" : [
+              "Hello again.",
+              "Are we ready to head out? ",
+              "I'm geared up and good to go!",
+              "Put a sword in my hand and point me in the direction of the enemy!"
+            ]
+          }
+        }
+      }
+    }
+  },
+
+  "items" : {
+    "override" : [
+      [0, [
+          {
+            
+          }
+        ] ]
+    ]
+  }
+}

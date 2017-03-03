@@ -1,0 +1,70 @@
+{
+  "objectName" : "CAFspawnerBase",
+  "colonyTags" : ["storage"],
+  "rarity" : "Common",
+  "description" : "This glowing pad holds the equipment for your new friend!",
+  "shortdescription" : "^yellow;CAF Spawner Base^#aee1ee;",
+  "subtitle" : "^#aee1ee;Spawn your own friend!",
+  "race" : "generic",
+  "price" : 200,
+  "category" : "storage",
+  "objectType" : "container",
+  "tooltipKind" : "container",
+
+  "apexDescription" : "Entire Apex colonies have been spawned from these.",
+  "avianDescription" : "Kluex would probably consider this device an abomination.",
+  "floranDescription" : "Floran LOVES new friendssss! Letssss make LOTSSS!",
+  "glitchDescription" : "Inquiry. Is this where glitch babies come from?",
+  "humanDescription" : "This thing creates clones? It gives me the willies.",
+  "hylotlDescription" : "Hylotl genetics are far to advanced to be replicated with trinkets like this.",
+
+  "openSounds" : [ "/sfx/objects/miningchest_open.ogg" ],
+  "slotCount" : 6,
+  "uiConfig" : "/interface/CAFmenu/CAFinventory.config",
+  "frameCooldown" : 5,
+  "autoCloseCooldown" : 3600,
+
+  "scripts" : [ "/objects/CAFspawners/CAFspawner.lua" ],
+
+  "inventoryIcon" : "/objects/ship/humanteleporter/teleportericon.png",
+  "orientations" : [
+    {
+      "image" : "CAFspawnerBase.png",
+      "imagePosition" : [-8, 0],
+      "frames" : 1,
+      "animationCycle" : 0.5,
+      
+      "direction" : "left",
+      "flipImages" : true,
+      "animationPosition" : [-8, 0],
+      "lightPosition" : [0, 3],
+
+      "spaceScan" : 0.1,
+      "anchors" : [ "bottom" ]
+    },
+    {
+      "image" : "CAFspawnerBase.png",
+      "imagePosition" : [-8, 0],
+      "frames" : 1,
+      "animationCycle" : 0.5,
+      
+      "direction" : "right",
+      "animationPosition" : [-8, 0],
+      "lightPosition" : [0, 3],
+
+      "spaceScan" : 0.1,
+      "anchors" : [ "bottom" ]
+    }
+  ],
+
+  "typeOptions" : [ "CAFguard", "CAFvillager" ],
+
+  "spawner" : {
+    "searchRadius" : 32.0,
+    "npcParameterOptions" : [
+      {
+        "dropPools" : [ ]
+      }
+    ]
+  }
+}
