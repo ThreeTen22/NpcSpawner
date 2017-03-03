@@ -5,7 +5,7 @@ function init()
   self.gettingType = nil
   self.gettingPosition = nil
 	--these variables store the results of the messages we send to the parent panel obj
-  sb.logInfo("CAFSpawner: init")
+  sb.logInfo("CAFPanekMenu: init")
 	self.sendingSpecies = nil
 	self.sendingSeedValue = nil
   self.sendingType = nil
@@ -30,6 +30,7 @@ function init()
   --LIST VARS--
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
   self.techList = "techScrollArea.techList"
+  
 
 
   --CATEGORY VARS--
@@ -66,9 +67,18 @@ function init()
   widget.setProgress("prgCurrentProgress", currentRatio)
   
   widget.setProgress("prgAvailable", 0.0)
- -- setList({list = self.speciesList,  listType = "species"})
+
+  --testFunction()
+   -- setList({list = self.speciesList,  listType = "species"})
 end
 
+-------TEST FUNCTIONS-----------
+--not useful in any way, used to test things
+
+function testFunction()
+    local config = root.npcConfig("villager")
+    dLogJson(config, "config:")
+end
 
 -------LIST FUNCTIONS-----------
 
@@ -380,9 +390,9 @@ end
 function dLogJson(input, prefix)
   local p = prefix or ""
   if p ~= "" then
-    sb.logInfo(prefix)
+    p = (p.." ")
   end
-  sb.logInfo("%s", sb.printJson(input))
+  sb.logInfo(p.."%s", sb.printJson(input))
 end
 
 function valuesToKeys(list)
