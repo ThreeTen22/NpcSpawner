@@ -10,32 +10,7 @@ function init(virtual)
   	storage.parentSpawner = storage.parentSpawner or nil
 
     local pos  = entity.position()
-
-    --handler for messages coming from the UI sending us the chosen species index 
-  	message.setHandler("setSpecies", function(_, _, params)
-      setSpecies(params)
-    end)
-    --handler for messages coming from the UI sending us the chosen seed value 
-    message.setHandler("setSeedValuePanel", function(_, _, params)
-      setSeedValuePanel(params)
-    end)
-    --handler for messages coming from the UI sending us the chosen NPC type 
-    message.setHandler("setType", function(_, _, params)
-      setType(params)
-    end)
-
-    --handler for messages coming from the UI to retrieve the current species index
-    message.setHandler("getSpecies", function(_, _)
-      return getSpecies()
-    end)
-    --handler for messages coming from the UI to retrieve the current seed value
-    message.setHandler("getSeedValue", function(_, _)
-      return getSeedValue()
-    end)
-    --handler for messages coming from the UI to retrieve the current NPC type
-    message.setHandler("getType", function(_, _)
-      return getType()
-    end)    
+  
     --handler for messages coming from the spawner with the spawner's unique id
     --called from spawner object after panel is created. stores the id of the parent spawner
  	  message.setHandler("setParentSpawner", function(_, _, params)
@@ -47,8 +22,8 @@ function init(virtual)
       createLife(param)
     end)
 
-    message.setHandler("getPosition", function(_,_)
-      return entity.position()
+    message.setHandler("getNpcData",function(_, _)
+      return getNpcData()
     end)
     
     message.setHandler("setNpcData", function(_,_, args)
@@ -71,7 +46,14 @@ end
 
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
-
+function getNpcData()
+ local args = {
+      npcSpecies = storage.npcSpecies,
+      seedValue = storage.seedValue,
+      npcType = storage.type
+    }
+  return args
+end
 
 function setNpcData(args)
   storage.npcSpecies = args.npcSpecies
@@ -182,8 +164,6 @@ function logENV()
   end
 end
 
------------------------------------------------------------------------------------
------------------------------------------------------------------------------------
 
 function setParentSpawner(spawnerId)
   storage.parentSpawner = spawnerId
