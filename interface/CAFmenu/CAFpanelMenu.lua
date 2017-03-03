@@ -95,7 +95,6 @@ function update(dt)
     --self.gettingSpecies = world.sendEntityMessage(pane.sourceEntity(), "getSpecies")
     --self.gettingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "getSeedValue")
     --self.gettingType = world.sendEntityMessage(pane.sourceEntity(), "getType")
-    widget.setSelectedOption(self.tabRadioGroup, self.tabSelectedOption)
     self.gettingNpcData = world.sendEntityMessage(pane.sourceEntity(), "getNpcData")
     
   end
@@ -129,7 +128,7 @@ function update(dt)
     end
 
     if result.npcType then
-      self.npcType = tostring(result.npcType)
+      self.currentType = tostring(result.npcType)
     end
 
     if type(result.seedValue) == "string" then 
@@ -149,6 +148,7 @@ function update(dt)
       self.targetSize = result.seedValue
       widget.setSliderValue("sldTargetSize", self.targetSize)
     end
+    widget.setSelectedOption(self.tabRadioGroup, self.tabSelectedOption)
   end
 
   --initializing the type from the panel object
@@ -336,14 +336,15 @@ function selectTab(button, data)
   dLog(listOption, "listOption: ")
   local args = {}
   if data == "tab1" then
-    widget.clearListItems(self.techList)
     args.list = copy(self.speciesList)
     args.listType = "species"
+    args.currentSelection = self.currentSpecies
     return setList(args)
   end
   if data == "tab2" then
     args.list = copy(self.typeList)
     args.listType = "npcType"
+    args.currentSelection = self.currentType
     return setList(args)
   end
   dLog(args, "selectTab Failed - > args: ")
@@ -359,13 +360,21 @@ function setList(args)
 
   for _,v in pairs(args.list) do
 
-    local listItem = widget.addListItem(self.techList)
+      local listItem = widget.addListItem(self.techList)
       local newArgs = {}
-      widget.setText(string.format("%s.%s.techName", self.techList, listItem), v)
+
       newArgs.name = v
       newArgs.listType = args.listType
+
+      widget.setText(string.format("%s.%s.techName", self.techList, listItem), v)
+
       widget.setData(string.format("%s.%s", self.techList, listItem), newArgs)
-      sb.logInfo(string.format("%s.%s", self.techList, listItem))
+
+      if v == args.currentSelection then 
+        sb.logInfo("setList:  entered setListSelected")
+        widget.setListSelected(self.techList, listItem)
+      end
+
   end
 end
 
