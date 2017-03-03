@@ -146,6 +146,7 @@ function setGear()
   local legsID = world.containerItemAt(id, 5)
 
   --function calls to the NPC character. Updates all the NPC's gear.
+  if spawnedID == 0 then return end
   world.callScriptedEntity(spawnedID, "getWeapon", weaponID)
   world.callScriptedEntity(spawnedID, "getAlt", altID)
   world.callScriptedEntity(spawnedID, "getBack", backID)
