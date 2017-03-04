@@ -106,19 +106,15 @@ function finalizeOverride()
     self.currentType = parsedStrings[2]
   end
   if parsedStrings[3] ~= "nil"
-    self.currentType = parsedStrings[2]
+    self.currentType = parsedStrings[3]
   end
   if parsedStrings[4] ~= "nil"
-    self.currentType = parsedStrings[2]
+    self.currentType = parsedStrings[4]
   end
 
-
+  self.manualInput = true
 
   return
-end
-
-function testNPCParam(paramType, param)
-  if paramType == "species"
 end
 
 function parseOverride(txt, char)
@@ -132,10 +128,6 @@ function parseOverride(txt, char)
 
   return parsedStrings
 
-end
-
-function cancelOverride()
-  dLog("cancellingOverride")
 end
 
 function update(dt)
