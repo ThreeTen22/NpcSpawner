@@ -19,6 +19,8 @@ function init()
   self.currentSeedValue = 0
   self.currentType = "CAFguard"
   self.currentPosition = nil
+
+  self.currentLevel = 10
 	--self.sliderVal = 0
 
 	self.speciesInitialized = false;
@@ -31,9 +33,6 @@ function init()
   self.seedInput = 0
 
   --LIST VARS--
-  
-  
-
   self.techList = "techScrollArea.techList"
 
   self.tabData = nil
@@ -53,8 +52,15 @@ function init()
   ----Returns the data of the selected option in a ButtonGroupWidget. Nil if no option is selected.
 
   self.categoryWidget = "sgSelectCategory"
+
+  --OVERI
   --self.buttonDataOptions = config.getParameter("rgNPCModOptions")
   ------------
+  ---OVERRIDE VARS----
+  self.manualInput = false
+  self.overrideTextBox = "tbOverrideBox"
+  self.overrideText = ""
+
 
   self.worldSize = 2000
 
@@ -62,7 +68,7 @@ function init()
   self.targetSize = 0
   self.minTargetSize = 0
   self.targetSizeIncrement = 1
-  self.manualInput = false
+
   self.maxStepSize = self.worldSize
   -- updateGUI()
   self.portraitNeedsUpdate = false
@@ -87,7 +93,45 @@ end
 
 
 function finalizeOverride()
-  dLog("FInalizingOverride")
+  dLog("FinalizingOverride")
+  self.overrideText = widget.getText(self.overrideTextBox)
+
+  local parsedStrings = parseOverride(self.overrideText, "")
+  dLogJson(parsedStrings, "ParsedStrings:  ")
+
+  if parsedStrings[1] ~= "nil" then
+    self.currentSpecies = parsedStrings[1]
+  end
+  if parsedStrings[2] ~= "nil"
+    self.currentType = parsedStrings[2]
+  end
+  if parsedStrings[3] ~= "nil"
+    self.currentType = parsedStrings[2]
+  end
+  if parsedStrings[4] ~= "nil"
+    self.currentType = parsedStrings[2]
+  end
+
+
+
+  return
+end
+
+function testNPCParam(paramType, param)
+  if paramType == "species"
+end
+
+function parseOverride(txt, char)
+  local parsedStrings = {}
+
+  for str in string.gmatch(txt, "%w") do
+    if str ~= "" then
+      table.insert(parsedStrings, str)
+    end
+  end
+
+  return parsedStrings
+
 end
 
 function cancelOverride()
@@ -99,30 +143,9 @@ function update(dt)
   if self.firstRun then
     dLog("Update :  FirstRun")
     self.firstRun = false
-    --self.gettingPosition = world.sendEntityMessage(pane.sourceEntity(), "getPosition")
-    --self.gettingSpecies = world.sendEntityMessage(pane.sourceEntity(), "getSpecies")
-    --self.gettingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "getSeedValue")
-    --self.gettingType = world.sendEntityMessage(pane.sourceEntity(), "getType")
     self.gettingNpcData = world.sendEntityMessage(pane.sourceEntity(), "getNpcData")
     
   end
-
-  --initializing the species from the panel object
-  --if not self.positionInitialized and self.gettingPosition:finished() and self.gettingPosition:result() then
-  --  local result = self.gettingPosition:result()
-  --  self.currentPosition = result
-  --  self.positionInitialized = true
-  --end
-
- --if not self.speciesInitialized and self.gettingSpecies:finished() and self.gettingSpecies:result() then
- --	local result = self.gettingSpecies:result()
- --  sb.logInfo("speciesInitInUpdate")
- --  sb.logInfo(sb.print(result))
- --	--world.logInfo("UI: the species index has been initialized from panel object. Changed to: " .. tostring(result))
- --	--self.raceButtons[result]:select();
- --  self.currentSpecies = tostring(result)
- --	self.speciesInitialized = true
- --end
 
   --initializing the seed value from the panel object
   if not self.npcDataInit and self.gettingNpcData:finished() and self.gettingNpcData:result() then
@@ -159,22 +182,13 @@ function update(dt)
     widget.setSelectedOption(self.tabRadioGroup, self.tabSelectedOption)
   end
 
-  --initializing the type from the panel object
- --if not self.typeInitialized and self.gettingType:finished() and self.gettingType:result() then
- --  local result = self.gettingType:result()
- --  self.currentType = tostring(result)
- --  --  --world.logInfo("UI: the type has been initialized from panel object. Changed to: " .. tostring(result))
- --  --  self.typeButtons[result]:select();
- --  self.typeInitialized = true
- --end
-
   --main loop after everyting has been loaded in
   if self.npcDataInit then
      --updateGUI()
     if self.portraitNeedsUpdate then
       self.portraitNeedsUpdate = false
       local arg = {
-        level = 10.0,
+        level = self.currentLevel,
         curSpecies = self.currentSpecies,
         curType = self.currentType,
         curSeed = 0,
@@ -249,20 +263,8 @@ end
 
 function setPortrait(args)
 
---widget.setVisible(`String` widgetName, `bool` visible)
-  --dLogJson(args)
-  --local parameters = root.getConfiguration("myNakedParameters")
-  --local params = replaceItemOverrides(args)
-  --dLogJson(params,"setPortraitParams")
-  --local variant = root.npcVariant(args.curSpecies,args.curType, args.level,args.curSeed)
- -- dLogJson(variant, "Variant:")
-
- -- dLogJson(newparams, "newparams")
- local params = {}
   local npcPort = root.npcPortrait("full", args.curSpecies,args.curType, args.level, args.curSeed, params)
-  --local spawn = world.spawnNpc(args.curPosition,args.curSpecies, "nakedvillager", args.level, args.curSeed, newparams)
-  -- dLogJson(npcPort,"npcPort:")
-   
+
 
    local names = {
     "portraitSlot01",
@@ -297,11 +299,6 @@ function setPortrait(args)
     widget.setVisible(names[num], true)
   end
 
-
- -- widget.setVisible("charPreview", false)
-
- -- widget.setData("charPreview", arg)
- --widget.setVisible("charPreview", true)
 end
 
 -------TEST FUNCTIONS-----------
@@ -461,36 +458,3 @@ function keysToList(keyList)
   end
   return newList
   end
-
---function spawnNpcModified(args, output)
---  args = parseArgs(args, {
---    position = "self",
---    species = npc and npc.species() or "human",
---    type = npc and npc.npcType() or "villager",
---    level = entityLevel(),
---    damageTeamType = entity.damageTeam().type,
---    damageTeam = entity.damageTeam().team,
---    seed = nil,
---    parameters = {}
---  })
---
---  local position = BData:getPosition(args.position)
---  local species = args.species
---  local npcType = args.type
---  local level = BData:getNumber(args.level)
---  local damageTeamType = args.damageTeamType
---  local damageTeam = args.damageTeam
---  local seed = BData:getNumber(args.seed)
---
---  local parameters = copy(BData:getTable(args.parameters))
---  parameters.damageTeam = damageTeam
---  parameters.damageTeamType = damageTeamType
---
---  if not position or not species or not npcType or not level then
---    return false
---  end
---
---  local entityId = world.spawnNpc(position, species, npcType, level, seed, parameters)
---  world.callScriptedEntity(entityId, "status.addEphemeralEffect", "beamin")
---  return true
---end
