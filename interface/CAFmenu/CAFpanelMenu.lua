@@ -109,7 +109,7 @@ function finalizeOverride()
     self.currentLevel = parsedStrings[3]
   end
   if parsedStrings[4] ~= "nil" then
-    self.currentSeed = parsedStrings[4]
+    self.seedInput = parsedStrings[4]
   end
 
   self.manualInput = true
@@ -128,6 +128,10 @@ function parseOverride(txt, char)
 
   return parsedStrings
 
+end
+
+function setNpcName()
+  dLog("setNpcName")
 end
 
 function update(dt)
@@ -254,6 +258,10 @@ function replaceItemOverrides(args)
 end
 
 function setPortrait(args)
+
+  local variant = root.npcVariant(args.curSpecies,args.curType, args.level, args.curSeed)
+
+  widget.setText("tbNameBox", variant.humanoidIdentity.name)
 
   local npcPort = root.npcPortrait("full", args.curSpecies,args.curType, args.level, args.curSeed, params)
 
@@ -398,7 +406,6 @@ function selectGenCategory(button, data)
       break
     end
   end
-  self.manualInput = false
   dLog(selectedOption, "selectGenCategory - selectedOption:  ")
 end
 
@@ -421,7 +428,7 @@ end
 
 function dLog(item, prefix)
   local p = prefix or ""
-  sb.logInfo("%s %s",prefix, dOut(item))
+  sb.logInfo("%s %s",p, dOut(item))
 end
 
 function dOut(input)
