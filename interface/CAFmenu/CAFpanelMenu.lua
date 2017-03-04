@@ -16,7 +16,7 @@ function init()
   self.sendingData = nil
 
   self.currentSpecies = "human"
-  self.currentSeedValue = 0
+  self.currentSeed = 0
   self.currentType = "CAFguard"
   self.currentPosition = nil
 
@@ -102,25 +102,25 @@ function finalizeOverride()
   if parsedStrings[1] ~= "nil" then
     self.currentSpecies = parsedStrings[1]
   end
-  if parsedStrings[2] ~= "nil"
+  if parsedStrings[2] ~= "nil" then
     self.currentType = parsedStrings[2]
   end
-  if parsedStrings[3] ~= "nil"
-    self.currentType = parsedStrings[3]
+  if parsedStrings[3] ~= "nil" then
+    self.currentLevel = parsedStrings[3]
   end
-  if parsedStrings[4] ~= "nil"
-    self.currentType = parsedStrings[4]
+  if parsedStrings[4] ~= "nil" then
+    self.currentSeed = parsedStrings[4]
   end
 
   self.manualInput = true
-
+  self.portraitNeedsUpdate = true
   return
 end
 
 function parseOverride(txt, char)
   local parsedStrings = {}
 
-  for str in string.gmatch(txt, "%w") do
+  for str in string.gmatch(txt, "%w*") do
     if str ~= "" then
       table.insert(parsedStrings, str)
     end
@@ -326,6 +326,7 @@ function selectTab(button, data)
     return setList(args)
   end
   dLog(args, "selectTab Failed - > args: ")
+  self.manualInput = false
 end
 
 --args:
@@ -373,6 +374,7 @@ function listItemSelected()
   if listArgs.listType == "npcType" then
     self.currentType = tostring(listArgs.name)
   end
+  self.manualInput = false
   self.portraitNeedsUpdate = true
 end
 
@@ -396,6 +398,7 @@ function selectGenCategory(button, data)
       break
     end
   end
+  self.manualInput = false
   dLog(selectedOption, "selectGenCategory - selectedOption:  ")
 end
 
