@@ -53,6 +53,8 @@ function init()
 
   self.categoryWidget = "sgSelectCategory"
 
+  self.categoryWidgetData = "Generate"
+
   --OVERI
   --self.buttonDataOptions = config.getParameter("rgNPCModOptions")
   ------------
@@ -322,16 +324,20 @@ function selectTab(button, data)
   dLog(listOption, "listOption: ")
   local args = {}
   if data == "tab1" then
-    args.list = copy(self.speciesList)
-    args.listType = "species"
-    args.currentSelection = self.currentSpecies
-    return setList(args)
+    if self.categoryWidgetData == "Generate" then
+      args.list = copy(self.speciesList)
+      args.listType = "species"
+      args.currentSelection = self.currentSpecies
+      return setList(args)
+    end
   end
   if data == "tab2" then
-    args.list = copy(self.typeList)
-    args.listType = "npcType"
-    args.currentSelection = self.currentType
-    return setList(args)
+    if self.categoryWidgetData == "Generate" then
+      args.list = copy(self.typeList)
+      args.listType = "npcType"
+      args.currentSelection = self.currentType
+      return setList(args)
+    end
   end
   dLog(args, "selectTab Failed - > args: ")
   self.manualInput = false
@@ -406,6 +412,14 @@ function selectGenCategory(button, data)
       break
     end
   end
+  self.categoryWidgetData = data
+  if data == "Generate" then
+    widget.setVisible(self.techList, true)
+    widget.setSelectedOption(self.tabRadioGroup, -1)
+  else
+    widget.setVisible(self.techList, false)
+  end
+
   dLog(selectedOption, "selectGenCategory - selectedOption:  ")
 end
 
