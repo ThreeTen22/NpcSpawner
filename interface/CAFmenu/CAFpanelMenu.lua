@@ -19,6 +19,8 @@ function init()
   self.currentSeed = 0
   self.currentType = "CAFguard"
   self.currentPosition = nil
+  self.currentIdentity = nil
+  self.currentIdentityOverrides = nil
 
   self.currentLevel = 10
 	--self.sliderVal = 0
@@ -33,6 +35,7 @@ function init()
   self.seedInput = 0
 
   --LIST VARS--
+  self.scrollArea = "techScrollArea"
   self.techList = "techScrollArea.techList"
 
   self.tabData = nil
@@ -41,8 +44,9 @@ function init()
   self.npcTypeConfigList = "npcTypeList"
   
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
+
+
   self.typeList = config.getParameter(self.npcTypeConfigList)
-    dLogJson(self.typeList, "typeList: ")
 
   --CATEGORY VARS--
   --`int` widget.getSelectedOption(`String` widgetName)
@@ -268,6 +272,7 @@ end
 function setPortrait(args)
 
   local variant = root.npcVariant(args.curSpecies,args.curType, args.level, args.curSeed)
+  self.currentIdentity = copy(variant.humanoidIdentity)
 
   widget.setText("tbNameBox", variant.humanoidIdentity.name)
 
@@ -294,7 +299,6 @@ function setPortrait(args)
 
 
   local num = 0
-  local imgDirective = ""
 
   for _,v in pairs(names) do
     widget.setVisible(v, false)
@@ -317,6 +321,59 @@ function testFunction()
     dLogJson(config, "config:")
 end
 
+
+function getSpeciesOptions(species, option)
+  local speciesJson = getAsset("/species/"..species..".species") or nil
+
+  if not speciesJson then dLog("getSpeciesOptions:  nil AssetFile") end
+
+    --dLogJson(speciesJson, "speciesJSON: ")
+
+  local genderPath = speciesJson.genders
+
+    dLogJson(genderPath, "genderPath: ")
+
+  local gender = self.currentIdentity.gender
+
+    dLog(gender,  "gender: ")
+
+  local genderIndx = 1
+  local returnInfo = {}
+
+  local title = {}
+  local imgPath = {}
+
+  if not gender then dLog("getSpeciesOptions:  nil gender") end
+
+  dLogJson(genderPath[1]["name"], "genderPath[1]['name']: ")
+
+  if genderPath[1]["name"] == gender then
+    genderIndx = 1
+  else
+    genderIndx = 2
+  end
+
+  if option == "hair" then
+    local hairInfo = {}
+    
+    hairInfo.hairGroup = genderPath[genderIndx].hairGroup or "hair"
+    hairInfo.hair = genderPath[genderIndx].hair
+
+    for _,v in ipairs(hairInfo.hair) do
+      table.insert(title, v)
+      table.insert(imgPath, string.format("/humanoid/%s/%s/%s.png",species,hairInfo.hairGroup,v))
+    end
+    returnInfo.title = title
+    returnInfo.imgPath = imgPath
+    returnInfo.hairGroup = hairInfo.hairGroup
+    return returnInfo
+  end 
+end
+
+function getAsset(assetPath)
+  local asset = root.assetJson(assetPath)
+  return asset
+end
 -------LIST FUNCTIONS-----------
 
 
@@ -334,8 +391,12 @@ function selectTab(button, data)
       args.list = copy(self.speciesList)
       args.listType = "species"
       args.currentSelection = self.currentSpecies
-      return setList(args)
+    elseif self.categoryWidgetData == "Refine" then
+      local data = getSpeciesOptions(self.currentSpecies, "hair")
+      args = {list = data.title, imgPath = data.imgPath, hairGroup = data.hairGroup, listType = "hair"}
     end
+
+    return setList(args)
   end
   if data == "tab2" then
     if self.categoryWidgetData == "Generate" then
@@ -345,34 +406,30 @@ function selectTab(button, data)
       return setList(args)
     end
   end
+  if data == "tab3" then
+    if self.categoryWidgetData == "Generate" then
+      return setList(nil)
+    end
+  end
+
+  if data == "tab4" then
+    if self.categoryWidgetData == "Generate" then
+      return setList(nil)
+    end
+  end
   dLog(args, "selectTab Failed - > args: ")
 end
 
-function changeTabLabels(tabs, option)
-  tabs = tabs or "nil"
-  option = option or "nil"
-
-  local tabOptions = config.getParameter("tabOptions")[option]
-  local indx = 1
-  dLog(tabs, "changeTabLabels:  option - "..option.." tabs: ")
-  dLog(tabOptions, "changeTabLabels:  tabOptions:  ")
-  if tabOptions then
-    for _,v in ipairs(tabs) do
-      dLog(tabs, "tabs: ")
-      dLog(option, "option: ")
-      widget.setText(v, tabOptions[indx])
-      indx = indx+1
-    end
-  end
-end
 
 --args:
   --list
   --listType
 function setList(args)
-  widget.clearListItems(self.techList)
   dLogJson(args,"setList - ARGS")
   --table.sort(args.list)
+  widget.clearListItems(self.techList)
+
+  if not args then return end
 
   for _,v in pairs(args.list) do
 
@@ -381,9 +438,9 @@ function setList(args)
 
       newArgs.name = v
       newArgs.listType = args.listType
+      newArgs.hairGroup = args.hairGroup
 
       widget.setText(string.format("%s.%s.techName", self.techList, listItem), v)
-
       widget.setData(string.format("%s.%s", self.techList, listItem), newArgs)
 
       if v == args.currentSelection then 
@@ -420,6 +477,21 @@ end
 
 -------CATEGORY FUNCTIONS--------
 
+function changeTabLabels(tabs, option)
+  tabs = tabs or "nil"
+  option = option or "nil"
+
+  local tabOptions = config.getParameter("tabOptions")[option]
+  local indx = 1
+  
+  if tabOptions then
+    for _,v in ipairs(tabs) do
+      widget.setText(v, tabOptions[indx])
+      indx = indx+1
+    end
+  end
+end
+
 --callback when category button is selected--
 --args:
   --button : ? (widget.getSelectedOption?)
@@ -427,7 +499,7 @@ end
 function selectGenCategory(button, data)
   local  dataList = config.getParameter("rgNPCModOptions")
   local selectedOption = "NONE"
-  local tabNames = {"lblTab01","lblTab02"}
+  local tabNames = {"lblTab01","lblTab02","lblTab03","lblTab04"}
 
   dLog("selectGenCategory")
   dLog(button, "button:  ")
@@ -443,12 +515,14 @@ function selectGenCategory(button, data)
 
   if data == "Generate" then
     changeTabLabels(tabNames, "Generate")
-    widget.setVisible(self.techList, true)
+    widget.setVisible(self.scrollArea, true)
     widget.setSelectedOption(self.tabRadioGroup, -1)
+    widget.setSliderEnabled("sldTargetSize", true)
     return
   elseif data == "Refine" then
     changeTabLabels(tabNames, "Refine")
-    widget.setVisible(self.techList, false)
+    --widget.setVisible(self.scrollArea, false)
+    widget.setSliderEnabled("sldTargetSize", false)
   end
 
   dLog(selectedOption, "selectGenCategory - selectedOption:  ")
