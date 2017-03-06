@@ -1,4 +1,4 @@
-
+require "/scripts/util.lua"
 function init()
   --self.gettingSpecies = nil
   --self.gettingSeedValue = nil
@@ -246,15 +246,21 @@ end
 
 
 function replaceItemOverrides(args)
+  args = parseArgs(args, {
+    head = nil,
+    chest = "hikerchest",
+    legs = "hikerlegs",
+    back = nil
+  })
   local params = config.getParameter("itemOverrideTemplate")
   local item = config.getParameter("itemTemplate").item[1]
   dLogJson(params, "Params: ")
   local insertPosition = params.items.override[1][2][1]
   --debug--
   insertPosition.chest = config.getParameter("itemTemplate").item
-  insertPosition.chest[1].name = "hikerchest"
+  insertPosition.chest[1].name = args.chest
   insertPosition.legs = config.getParameter("itemTemplate").item
-  insertPosition.legs[1].name = "hikerlegs"
+  insertPosition.legs[1].name = args.legs
   dLogJson(params, "replaceItemOverrides: Params: ")
   return params
 end
@@ -340,7 +346,24 @@ function selectTab(button, data)
     end
   end
   dLog(args, "selectTab Failed - > args: ")
-  self.manualInput = false
+end
+
+function changeTabLabels(tabs, option)
+  tabs = tabs or "nil"
+  option = option or "nil"
+
+  local tabOptions = config.getParameter("tabOptions")[option]
+  local indx = 1
+  dLog(tabs, "changeTabLabels:  option - "..option.." tabs: ")
+  dLog(tabOptions, "changeTabLabels:  tabOptions:  ")
+  if tabOptions then
+    for _,v in ipairs(tabs) do
+      dLog(tabs, "tabs: ")
+      dLog(option, "option: ")
+      widget.setText(v, tabOptions[indx])
+      indx = indx+1
+    end
+  end
 end
 
 --args:
@@ -404,19 +427,27 @@ end
 function selectGenCategory(button, data)
   local  dataList = config.getParameter("rgNPCModOptions")
   local selectedOption = "NONE"
+  local tabNames = {"lblTab01","lblTab02"}
+
   dLog("selectGenCategory")
-  dLogJson(button, "")
+  dLog(button, "button:  ")
+
   for _,v in ipairs(dataList) do
     if v == data then
       selectedOption = data
       break
     end
   end
+
   self.categoryWidgetData = data
+
   if data == "Generate" then
+    changeTabLabels(tabNames, "Generate")
     widget.setVisible(self.techList, true)
     widget.setSelectedOption(self.tabRadioGroup, -1)
-  else
+    return
+  elseif data == "Refine" then
+    changeTabLabels(tabNames, "Refine")
     widget.setVisible(self.techList, false)
   end
 
@@ -425,24 +456,13 @@ end
 
 -------END CATEGORY FUNCTIONS---------
 
-
-
-function copy(v)
-  if type(v) ~= "table" then
-    return v
-  else
-    local c = {}
-    for k,v in pairs(v) do
-      c[k] = copy(v)
-    end
-    setmetatable(c, getmetatable(v))
-    return c
-  end
-end
-
 function dLog(item, prefix)
   local p = prefix or ""
-  sb.logInfo("%s %s",p, dOut(item))
+  if type(item) ~= "string" then
+    sb.logInfo("%s %s",p, dOut(item))
+  else 
+    sb.logInfo("%s %s",p,item)
+  end
 end
 
 function dOut(input)
