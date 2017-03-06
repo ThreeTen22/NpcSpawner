@@ -19,9 +19,8 @@ function init()
   self.currentSeed = 0
   self.currentType = "CAFguard"
   self.currentPosition = nil
-  self.currentIdentity = nil
+  self.currentIdentity = {}
   self.currentIdentityOverrides = nil
-
   self.currentLevel = 10
 	--self.sliderVal = 0
 
@@ -164,6 +163,18 @@ function update(dt)
       self.currentType = tostring(result.npcType)
     end
 
+    if result.npcParams then
+      self.currentIdentityOverrides = copy(result.npcParams)
+      if not self.currentIdentityOverrides.identity then
+        self.currentIdentityOverrides.identity = {}
+      end
+      if not self.currentIdentityOverrides.items then
+        self.currentIdentityOverrides.items = {}
+      end
+    else
+      self.currentIdentityOverrides = {identity = {}, items = {}}
+    end
+
     if type(result.seedValue) == "string" then 
       self.manualInput = true
       self.seedInput = result.seedValue
@@ -236,7 +247,8 @@ function acceptBtn()
   npcSpecies = self.currentSpecies,
   npcType = self.currentType,
   npcSeed = nil,
-  npcParams = nil
+  npcLevel = self.currentLevel,
+  npcParams = self.currentIdentityOverrides
 }
   
   if self.manualInput then
@@ -276,7 +288,8 @@ function setPortrait(args)
 
   widget.setText("tbNameBox", variant.humanoidIdentity.name)
 
-  local npcPort = root.npcPortrait("full", args.curSpecies,args.curType, args.level, args.curSeed, params)
+
+  local npcPort = root.npcPortrait("full", args.curSpecies,args.curType, args.level, args.curSeed, self.currentIdentityOverrides)
 
 
    local names = {
@@ -395,7 +408,6 @@ function selectTab(button, data)
       local data = getSpeciesOptions(self.currentSpecies, "hair")
       args = {list = data.title, imgPath = data.imgPath, hairGroup = data.hairGroup, listType = "hair"}
     end
-
     return setList(args)
   end
   if data == "tab2" then
@@ -410,12 +422,20 @@ function selectTab(button, data)
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
     end
+    return setList(nil)
   end
 
   if data == "tab4" then
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
     end
+    return setList(nil)
+  end
+  if data == "tab5" then
+    if self.categoryWidgetData == "Generate" then
+      return setList(nil)
+    end
+    return setList(nil)
   end
   dLog(args, "selectTab Failed - > args: ")
 end
@@ -451,16 +471,13 @@ function setList(args)
   end
 end
 
---args:
-    --name
-    --listType
+
 function listItemSelected()
   local listItem = widget.getListSelected(self.techList)
   if not listItem then return end
   sb.logInfo(string.format("%s.%s", self.techList, listItem))
   local listArgs = widget.getData(string.format("%s.%s", self.techList, listItem))
-  dLog(listArgs.name, "listArgs.name:  ")
-  dLog(listArgs.listType, "listArgs.listType:  ")
+  dLogJson(listArgs, "listItemSelected : listArgs:")
 
   if listArgs.listType == "species" then
     self.currentSpecies = tostring(listArgs.name)
@@ -468,6 +485,13 @@ function listItemSelected()
   if listArgs.listType == "npcType" then
     self.currentType = tostring(listArgs.name)
   end
+  if listArgs.listType == "hair" then
+    local hairGroup = listArgs.hairGroup
+    local name = listArgs.name
+    self.currentIdentityOverrides.identity.hairGroup = hairGroup
+    self.currentIdentityOverrides.identity.hairType = name
+  end
+
   self.manualInput = false
   self.portraitNeedsUpdate = true
 end
@@ -483,7 +507,7 @@ function changeTabLabels(tabs, option)
 
   local tabOptions = config.getParameter("tabOptions")[option]
   local indx = 1
-  
+
   if tabOptions then
     for _,v in ipairs(tabs) do
       widget.setText(v, tabOptions[indx])
@@ -499,7 +523,7 @@ end
 function selectGenCategory(button, data)
   local  dataList = config.getParameter("rgNPCModOptions")
   local selectedOption = "NONE"
-  local tabNames = {"lblTab01","lblTab02","lblTab03","lblTab04"}
+  local tabNames = {"lblTab01","lblTab02","lblTab03","lblTab04","lblTab05"}
 
   dLog("selectGenCategory")
   dLog(button, "button:  ")

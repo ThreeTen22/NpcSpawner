@@ -21,7 +21,7 @@ function init(virtual)
   storage.npcSpecies = storage.npcSpecies or "human"
   storage.seedValue = storage.seedValue or 0
   storage.type = storage.type or "CAFguard"
-  storage.npcParams = storage.npcParams or nil
+  storage.npcParams = storage.npcParams or {}
 
   self.maxSpawnTime = 5   --time between checks to see if a new NPC should be spawned
   self.maxGearTime = 8    --time between NPC gear change refreshes
