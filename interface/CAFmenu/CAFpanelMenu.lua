@@ -39,7 +39,7 @@ function init()
 
   self.tabData = nil
   self.tabSelectedOption = -1
-  self.tabRadioGroup = "rgTabs"
+  self.tabGroupWidget = "rgTabs"
   self.npcTypeConfigList = "npcTypeList"
   
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
@@ -90,6 +90,7 @@ function init()
   widget.setProgress("prgCurrentProgress", currentRatio)
   
   widget.setProgress("prgAvailable", 0.0)
+
 
 
   --testFunction()
@@ -192,7 +193,11 @@ function update(dt)
       self.targetSize = result.seedValue
       widget.setSliderValue("sldTargetSize", self.targetSize)
     end
-    widget.setSelectedOption(self.tabRadioGroup, self.tabSelectedOption)
+    widget.setSelectedOption(self.categoryWidget, 1)
+    widget.setVisible(self.categoryWidget, true)
+    widget.setVisible(self.tabGroupWidget, true)
+    widget.setVisible(self.scrollArea, true)
+    --widget.setSelectedOption(self.tabGroupWidget, self.tabSelectedOption)
   end
 
   --main loop after everyting has been loaded in
@@ -371,7 +376,6 @@ function getSpeciesOptions(species, option)
     
     hairInfo.hairGroup = genderPath[genderIndx].hairGroup or "hair"
     hairInfo.hair = genderPath[genderIndx].hair
-
     for _,v in ipairs(hairInfo.hair) do
       table.insert(title, v)
       table.insert(imgPath, string.format("/humanoid/%s/%s/%s.png",species,hairInfo.hairGroup,v))
@@ -379,6 +383,21 @@ function getSpeciesOptions(species, option)
     returnInfo.title = title
     returnInfo.imgPath = imgPath
     returnInfo.hairGroup = hairInfo.hairGroup
+    return returnInfo
+
+  elseif option == "fhair" then
+    local hairInfo = {}
+    
+    hairInfo.facialHairGroup = genderPath[genderIndx].facialHairGroup or "facialHairGroup"
+    hairInfo.facialHair = genderPath[genderIndx].facialHair
+
+    for _,v in ipairs(hairInfo.facialHair) do
+      table.insert(title, v)
+      table.insert(imgPath, string.format("/humanoid/%s/%s/%s.png",species,hairInfo.facialHairGroup,v))
+    end
+    returnInfo.title = title
+    returnInfo.imgPath = imgPath
+    returnInfo.facialHairGroup = hairInfo.facialHairGroup
     return returnInfo
   end 
 end
@@ -396,7 +415,7 @@ end
   --indx buttonlabel.data (widget.getSelectedData)
 function selectTab(button, data)
   dLog("selectTab :")
-  local listOption = widget.getSelectedOption(self.tabRadioGroup)
+  local listOption = widget.getSelectedOption(self.tabGroupWidget)
   dLog(listOption, "listOption: ")
   local args = {}
   if data == "tab1" then
@@ -404,9 +423,18 @@ function selectTab(button, data)
       args.list = copy(self.speciesList)
       args.listType = "species"
       args.currentSelection = self.currentSpecies
+
     elseif self.categoryWidgetData == "Refine" then
+
       local data = getSpeciesOptions(self.currentSpecies, "hair")
-      args = {list = data.title, imgPath = data.imgPath, hairGroup = data.hairGroup, listType = "hair"}
+      args = {list = data.title, 
+              imgPath = data.imgPath, 
+              hairGroup = data.hairGroup, 
+              currentSelection = self.currentIdentityOverrides.identity.hairType,
+              listType = "hair"}
+
+    else
+      return setList(nil)
     end
     return setList(args)
   end
@@ -416,26 +444,39 @@ function selectTab(button, data)
       args.listType = "npcType"
       args.currentSelection = self.currentType
       return setList(args)
-    end
-  end
-  if data == "tab3" then
-    if self.categoryWidgetData == "Generate" then
+
+    elseif self.categoryWidgetData == "Refine" then
+
+      local data = getSpeciesOptions(self.currentSpecies, "fhair")
+      args = {list = data.title, 
+              imgPath = data.imgPath,
+              hairGroup = data.facialHairGroup,
+              currentSelection = self.currentIdentityOverrides.identity.facialHairType,
+              listType = "fhair"}
+
+    else
       return setList(nil)
     end
-    return setList(nil)
+    return setList(args)
+  end
+  if data == "tab3" then
+    if self.categoryWidgetData == "Generate" then 
+      return setList(nil)
+    end
+    setList(nil)
   end
 
   if data == "tab4" then
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
     end
-    return setList(nil)
+    setList(nil)
   end
   if data == "tab5" then
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
     end
-    return setList(nil)
+    setList(nil)
   end
   dLog(args, "selectTab Failed - > args: ")
 end
@@ -448,17 +489,36 @@ function setList(args)
   dLogJson(args,"setList - ARGS")
   --table.sort(args.list)
   widget.clearListItems(self.techList)
-
   if not args then return end
 
+  if (self.categoryWidgetData ~= "Generate") then
+    local defaultArgs = {
+    listType = args.listType,
+    clearConfig = true
+
+    }
+
+    local defaultListItem = widget.addListItem(self.techList)
+      widget.setText(string.format("%s.%s.techName", self.techList, defaultListItem), "No Override")
+      widget.setData(string.format("%s.%s", self.techList, defaultListItem), defaultArgs)
+  end
+
+  if #args.list < 1 then return end
   for _,v in pairs(args.list) do
 
       local listItem = widget.addListItem(self.techList)
-      local newArgs = {}
+      local newArgs = parseArgs(args, {
+          name = v,
+          listType = nil,
+          hairGroup = nil,
+          facialHairGroup = nil,
+          clearConfig = false
+        })
 
-      newArgs.name = v
-      newArgs.listType = args.listType
-      newArgs.hairGroup = args.hairGroup
+      --newArgs.name = v
+      --newArgs.listType = args.listType
+      --newArgs.hairGroup = args.hairGroup or nil
+      --newArgs.facialHairGroup = arg.facialHairGroup or nil
 
       widget.setText(string.format("%s.%s.techName", self.techList, listItem), v)
       widget.setData(string.format("%s.%s", self.techList, listItem), newArgs)
@@ -478,18 +538,34 @@ function listItemSelected()
   sb.logInfo(string.format("%s.%s", self.techList, listItem))
   local listArgs = widget.getData(string.format("%s.%s", self.techList, listItem))
   dLogJson(listArgs, "listItemSelected : listArgs:")
-
+  if not listArgs then return end
   if listArgs.listType == "species" then
     self.currentSpecies = tostring(listArgs.name)
   end
   if listArgs.listType == "npcType" then
     self.currentType = tostring(listArgs.name)
   end
+
   if listArgs.listType == "hair" then
-    local hairGroup = listArgs.hairGroup
-    local name = listArgs.name
-    self.currentIdentityOverrides.identity.hairGroup = hairGroup
-    self.currentIdentityOverrides.identity.hairType = name
+
+    if listArgs.clearConfig then 
+      self.currentIdentityOverrides.identity["hairGroup"] = nil
+      self.currentIdentityOverrides.identity["hairType"] = nil
+    else
+      self.currentIdentityOverrides.identity.hairGroup = listArgs.hairGroup
+      self.currentIdentityOverrides.identity.hairType = listArgs.name
+    end
+  end
+
+  if listArgs.listType == "fhair" then
+    if listArgs.clearConfig then 
+      dLog("listArgs.fhair : clearConfig:  entered ClearConfig")
+      self.currentIdentityOverrides.identity["facialHairGroup"] = nil
+      self.currentIdentityOverrides.identity["facialHairType"] = nil
+    else
+      self.currentIdentityOverrides.identity.facialHairGroup = listArgs.facialHairGroup
+      self.currentIdentityOverrides.identity.facialHairType = listArgs.name
+    end
   end
 
   self.manualInput = false
@@ -540,11 +616,17 @@ function selectGenCategory(button, data)
   if data == "Generate" then
     changeTabLabels(tabNames, "Generate")
     widget.setVisible(self.scrollArea, true)
-    widget.setSelectedOption(self.tabRadioGroup, -1)
+
+    local indx = widget.getSelectedOption(self.tabGroupWidget)
+    widget.setSelectedOption(self.tabGroupWidget, indx)
     widget.setSliderEnabled("sldTargetSize", true)
+    self.currentIdentityOverrides.identity = {}
     return
   elseif data == "Refine" then
     changeTabLabels(tabNames, "Refine")
+    widget.setVisible(self.scrollArea, true)
+    local indx = widget.getSelectedOption(self.tabGroupWidget)
+    widget.setSelectedOption(self.tabGroupWidget, indx)
     --widget.setVisible(self.scrollArea, false)
     widget.setSliderEnabled("sldTargetSize", false)
   end
@@ -591,4 +673,4 @@ function keysToList(keyList)
     table.insert(newList,tostring(k))
   end
   return newList
-  end
+end
