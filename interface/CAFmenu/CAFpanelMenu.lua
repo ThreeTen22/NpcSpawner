@@ -349,7 +349,6 @@ function getSpeciesOptions(species, option)
 
   local genderPath = speciesJson.genders
 
-    dLogJson(genderPath, "genderPath: ")
 
   local gender = self.currentIdentity.gender
 
@@ -362,8 +361,6 @@ function getSpeciesOptions(species, option)
   local imgPath = {}
 
   if not gender then dLog("getSpeciesOptions:  nil gender") end
-
-  dLogJson(genderPath[1]["name"], "genderPath[1]['name']: ")
 
   if genderPath[1]["name"] == gender then
     genderIndx = 1
@@ -423,6 +420,7 @@ function selectTab(button, data)
       args.list = copy(self.speciesList)
       args.listType = "species"
       args.currentSelection = self.currentSpecies
+      return setList(args)
 
     elseif self.categoryWidgetData == "Refine" then
 
@@ -432,11 +430,8 @@ function selectTab(button, data)
               hairGroup = data.hairGroup, 
               currentSelection = self.currentIdentityOverrides.identity.hairType,
               listType = "hair"}
-
-    else
-      return setList(nil)
+      return setList(args)
     end
-    return setList(args)
   end
   if data == "tab2" then
     if self.categoryWidgetData == "Generate" then
@@ -450,35 +445,36 @@ function selectTab(button, data)
       local data = getSpeciesOptions(self.currentSpecies, "fhair")
       args = {list = data.title, 
               imgPath = data.imgPath,
-              hairGroup = data.facialHairGroup,
+              facialHairGroup = data.facialHairGroup,
               currentSelection = self.currentIdentityOverrides.identity.facialHairType,
               listType = "fhair"}
-
-    else
-      return setList(nil)
+      return setList(args)
     end
-    return setList(args)
   end
   if data == "tab3" then
     if self.categoryWidgetData == "Generate" then 
       return setList(nil)
-    end
-    setList(nil)
-  end
+    elseif self.categoryWidgetData == "Refine" then
 
+      local data = getSpeciesOptions(self.currentSpecies, "hcolor")
+      args = {list = data.title, 
+              imgPath = data.imgPath,
+              currentSelection = self.currentIdentityOverrides.identity.hairDirectives,
+              listType = "hcolor"}
+    end
+  end
   if data == "tab4" then
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
     end
-    setList(nil)
   end
   if data == "tab5" then
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
     end
-    setList(nil)
   end
-  dLog(args, "selectTab Failed - > args: ")
+  return setList(nil)
+ -- dLog(args, "selectTab Failed - > args: ")
 end
 
 
@@ -552,7 +548,7 @@ function listItemSelected()
       self.currentIdentityOverrides.identity["hairGroup"] = nil
       self.currentIdentityOverrides.identity["hairType"] = nil
     else
-      self.currentIdentityOverrides.identity.hairGroup = listArgs.hairGroup
+      --self.currentIdentityOverrides.identity.hairGroup = listArgs.hairGroup
       self.currentIdentityOverrides.identity.hairType = listArgs.name
     end
   end
@@ -563,7 +559,7 @@ function listItemSelected()
       self.currentIdentityOverrides.identity["facialHairGroup"] = nil
       self.currentIdentityOverrides.identity["facialHairType"] = nil
     else
-      self.currentIdentityOverrides.identity.facialHairGroup = listArgs.facialHairGroup
+      --self.currentIdentityOverrides.identity.facialHairGroup = listArgs.facialHairGroup
       self.currentIdentityOverrides.identity.facialHairType = listArgs.name
     end
   end
@@ -598,39 +594,27 @@ end
   --indx buttonlabel.data (widget.getSelectedData)
 function selectGenCategory(button, data)
   local  dataList = config.getParameter("rgNPCModOptions")
-  local selectedOption = "NONE"
+
   local tabNames = {"lblTab01","lblTab02","lblTab03","lblTab04","lblTab05"}
-
-  dLog("selectGenCategory")
-  dLog(button, "button:  ")
-
-  for _,v in ipairs(dataList) do
-    if v == data then
-      selectedOption = data
-      break
-    end
-  end
 
   self.categoryWidgetData = data
 
   if data == "Generate" then
     changeTabLabels(tabNames, "Generate")
     widget.setVisible(self.scrollArea, true)
-
-    local indx = widget.getSelectedOption(self.tabGroupWidget)
-    widget.setSelectedOption(self.tabGroupWidget, indx)
     widget.setSliderEnabled("sldTargetSize", true)
     self.currentIdentityOverrides.identity = {}
-    return
   elseif data == "Refine" then
     changeTabLabels(tabNames, "Refine")
     widget.setVisible(self.scrollArea, true)
-    local indx = widget.getSelectedOption(self.tabGroupWidget)
     widget.setSelectedOption(self.tabGroupWidget, indx)
-    --widget.setVisible(self.scrollArea, false)
     widget.setSliderEnabled("sldTargetSize", false)
   end
-
+    local indx = widget.getSelectedOption(self.tabGroupWidget)
+    local tabData = widget.getSelectedData(self.tabGroupWidget)
+    if indx and tabData then
+      return selectTab(indx, tabData)
+    end
   dLog(selectedOption, "selectGenCategory - selectedOption:  ")
 end
 
