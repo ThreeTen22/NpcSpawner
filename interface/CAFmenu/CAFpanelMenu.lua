@@ -413,7 +413,23 @@ function getSpeciesOptions(species, option)
   local title = {}
   local imgPath = {}
   local colorGenParams = {}
+  if speciesJson["headOptionAsFacialhair"] then
+    if speciesJson["headOptionAsFacialhair"] == true then
+      returnInfo["headOptionAsFacialhair"] = speciesJson["headOptionAsFacialhair"]
+    end
+  end
 
+  if speciesJson["altColorAsFacialMaskSubColor"] then
+    if speciesJson["altColorAsFacialMaskSubColor"] == true then
+      returnInfo["altColorAsFacialMaskSubColor"] = speciesJson["altColorAsFacialMaskSubColor"]
+    end
+  end
+
+  if speciesJson["bodyColorAsFacialMaskSubColor"] then
+    if speciesJson["bodyColorAsFacialMaskSubColor"] == true then
+      returnInfo["bodyColorAsFacialMaskSubColor"] = speciesJson["bodyColorAsFacialMaskSubColor"]
+    end
+  end
 --
 --"headOptionAsFacialhair" : true,
 --"headOptionAsHairColor" : true,
@@ -421,9 +437,7 @@ function getSpeciesOptions(species, option)
 --"bodyColorAsFacialMaskSubColor" : true,
 --"altColorAsFacialMaskSubColor" : true,
 --"altOptionAsUndyColor" : true,
---"altOptionAsUndyColor" : true,
 --"altOptionAsHairColor" : true,
---"altOptionAsUndyColor" : true,
 
   if not gender then dLog("getSpeciesOptions:  nil gender") end
   if genderPath[1]["name"] == gender then
@@ -472,6 +486,15 @@ function getSpeciesOptions(species, option)
 
       return getColorInfo(returnInfo)
 
+  elseif option == "fhcolor" then
+
+
+      local curDirective = self.currentIdentityOverrides.identity.facialHairDirectives or self.currentIdentity.facialHairDirectives
+      returnInfo.colors = colors
+      returnInfo.curDirective = curDirective
+
+      return getColorInfo(returnInfo)
+
   elseif option == "bcolor" then
       local colors = copy(speciesJson.bodyColor)
       local curDirective = self.currentIdentityOverrides.identity.bodyDirectives or self.currentIdentity.bodyDirectives
@@ -500,31 +523,32 @@ function getColorInfo(args)
     curDirective = nil,
     hexDirectives = {}
     })
-    dLog(args.curDirective, "PARSED DIRECTIVE : ")
-    dLog(self.currentIdentity.bodyDirectives, "CURRENT BCOLOR DIRECTIVE : ")
+
     local returnInfo = {}
     local newDirective = ""
     local firstRun = true
     local title = {}
     local indx = 1
-    
-    for _,v in ipairs(args.colors) do
-      local nameString  = ""
-            if type(v) == "string" then
-                return nil 
-            end
-        nameString = string.format("%s",indx)
-        indx = indx + 1
-        newDirective = replaceDirectives(args.curDirective,v)
-          
-      --local hashString = util.hashString(completeDirective)
+    if args.colors then
+      for _,v in ipairs(args.colors) do
+        local nameString  = ""
+              if type(v) == "string" then
+                  return nil 
+              end
+          nameString = string.format("%s",indx)
+          indx = indx + 1
+          newDirective = replaceDirectives(args.curDirective,v)
+            
+        --local hashString = util.hashString(completeDirective)
 
-      args.hexDirectives[nameString] = newDirective
-      table.insert(title,nameString)
-      firstRun = true
+        args.hexDirectives[nameString] = newDirective
+        table.insert(title,nameString)
+        firstRun = true
+      end
+
+      returnInfo.title = title
+      returnInfo.hexDirectives = copy(args.hexDirectives)
     end
-    returnInfo.title = title
-    returnInfo.hexDirectives = copy(args.hexDirectives)
     returnInfo.curDirective = args.curDirective
     return returnInfo
 end
@@ -608,6 +632,28 @@ function selectTab(button, data)
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
     elseif self.categoryWidgetData == "Refine" then
+      local data = getSpeciesOptions(self.currentSpecies, "fhcolor")
+      if data then 
+        args = {list = data.title, 
+                hexDirectives = data.hexDirectives,
+                currentSelection = data.curDirective,
+                listType = "fhcolor"}
+        
+      else
+        args = {
+                list = {""},
+                listType = "fhcolor"}
+       
+      end
+       return setList(args)
+    end
+  end
+
+
+  if data == "tab5" then
+    if self.categoryWidgetData == "Generate" then
+      return setList(nil)
+    elseif self.categoryWidgetData == "Refine" then
 
       local data = getSpeciesOptions(self.currentSpecies, "bcolor")
       if data then 
@@ -620,27 +666,6 @@ function selectTab(button, data)
         args = {
                 list = {""},
                 listType = "bcolor"}
-       
-      end
-       return setList(args)
-    end
-  end
-
-  if data == "tab5" then
-    if self.categoryWidgetData == "Generate" then
-      return setList(nil)
-    elseif self.categoryWidgetData == "Refine" then
-      local data = getSpeciesOptions(self.currentSpecies, "fhcolor")
-      if data then 
-        args = {list = data.title, 
-                hexDirectives = data.hexDirectives,
-                currentSelection = data.curDirective,
-                listType = "fhcolor"}
-        
-      else
-        args = {
-                list = {""},
-                listType = "fhcolor"}
        
       end
        return setList(args)
@@ -692,6 +717,7 @@ function setList(args)
       widget.setText(string.format("%s.%s.techName", self.techList, defaultListItem), "No Override")
       widget.setData(string.format("%s.%s", self.techList, defaultListItem), defaultArgs)
   end
+  if not args.list then return end
   if #args.list < 2 then return end
   for _,v in pairs(args.list) do
 
@@ -780,6 +806,18 @@ function listItemSelected()
       self.currentIdentityOverrides.identity.hairDirectives = listArgs.directive
     end
   end
+
+  if listArgs.listType == "fhcolor" then
+    if listArgs.clearConfig then
+
+      self.currentIdentityOverrides.identity["facialHairDirectives"] = nil
+    else
+      if self.currentIdentity.facialHairDirectives ~= "" then
+        self.currentIdentityOverrides.identity.facialHairDirectives = listArgs.directive
+      end
+    end
+  end
+
 
   if listArgs.listType == "bcolor" then
     if listArgs.clearConfig then
