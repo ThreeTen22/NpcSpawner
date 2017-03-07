@@ -63,7 +63,7 @@ function setNpcData(args)
   if args.npcParams then
     storage.npcParams = args.npcParams
   end
-  if okCheck == 3 then
+  if storage.spawned then
      killNpc()
   else
     sb.logInfo(string.format("CAFSpawner: setNpcData: one or more args was nil - okCheck: %s", okCheck))
@@ -180,6 +180,7 @@ end
 
 function killNpc()
   sb.logInfo("killNPC: "..sb.print(storage.spawnedID))
+  if (not storage.spawnedID) then storage.spawned = false; return end
   local loadedEnitity = world.loadUniqueEntity(storage.spawnedID)
   if loadedEnitity ~= 0 then
     world.callScriptedEntity(loadedEnitity, "suicide")
