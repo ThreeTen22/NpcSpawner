@@ -414,24 +414,16 @@ function getSpeciesOptions(species, option)
   local imgPath = {}
   local colorGenParams = {}
 
-  colorGenParams
-  "headOptionAsFacialhair" : true,
-  "headOptionAsHairColor" : true,
-
-  "altOptionAsFacialMask" : true,
-
-  "bodyColorAsFacialMaskSubColor" : true,
-  
-  "altColorAsFacialMaskSubColor" : true,
-
-  "altOptionAsUndyColor" : true,
-  
-
-  "altOptionAsUndyColor" : true,
-  
-  "altOptionAsHairColor" : true,
-
-  "altOptionAsUndyColor" : true,
+--
+--"headOptionAsFacialhair" : true,
+--"headOptionAsHairColor" : true,
+--"altOptionAsFacialMask" : true,
+--"bodyColorAsFacialMaskSubColor" : true,
+--"altColorAsFacialMaskSubColor" : true,
+--"altOptionAsUndyColor" : true,
+--"altOptionAsUndyColor" : true,
+--"altOptionAsHairColor" : true,
+--"altOptionAsUndyColor" : true,
 
   if not gender then dLog("getSpeciesOptions:  nil gender") end
   if genderPath[1]["name"] == gender then
@@ -635,6 +627,27 @@ function selectTab(button, data)
   end
 
   if data == "tab5" then
+    if self.categoryWidgetData == "Generate" then
+      return setList(nil)
+    elseif self.categoryWidgetData == "Refine" then
+      local data = getSpeciesOptions(self.currentSpecies, "fhcolor")
+      if data then 
+        args = {list = data.title, 
+                hexDirectives = data.hexDirectives,
+                currentSelection = data.curDirective,
+                listType = "fhcolor"}
+        
+      else
+        args = {
+                list = {""},
+                listType = "fhcolor"}
+       
+      end
+       return setList(args)
+    end
+  end
+
+  if data == "tab6" then
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
     elseif self.categoryWidgetData == "Refine" then
@@ -876,7 +889,7 @@ end
 function selectGenCategory(button, data)
   local  dataList = config.getParameter("rgNPCModOptions")
 
-  local tabNames = {"lblTab01","lblTab02","lblTab03","lblTab04","lblTab05"}
+  local tabNames = {"lblTab01","lblTab02","lblTab03","lblTab04","lblTab05","lblTab06"}
 
   self.categoryWidgetData = data
 
