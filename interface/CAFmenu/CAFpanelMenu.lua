@@ -107,7 +107,14 @@ end
 
 function replaceDirectives(directive, directiveJson)
   local returnString = ""
+
+  if not directive then 
+    return createDirective(directiveJson)
+  end
+
+
   local splitDirectives = util.split(directive,"?replace")
+
   --dLogJson(splitDirectives, "replaceDirectives: split: ")
   dLogJson(directiveJson, "directiveJson")
   for _,v in ipairs(splitDirectives) do
@@ -117,7 +124,7 @@ function replaceDirectives(directive, directiveJson)
       --dLog(string.match(v, "(%w+)=(%w+)"), "string Match:  ")
       --test if its correct directiveGroup
         local k = string.match(v, "(%w+)=(%w+)")
-        if directiveJson[k] then
+        if directiveJson[k] or directiveJson[string.upper(k)] then
            -- dLogJson(directiveJson[k], "matchJsonValue:")
             returnString = returnString..createDirective(directiveJson)
         else
@@ -277,7 +284,7 @@ function clampSize(newSize)
 end
 
 function updateTargetSize()
-
+  self.currentIdentityOverrides.identity = {}
   self.manualInput = false
   self.targetSize = widget.getSliderValue("sldTargetSize")
   --self.targetSize = clampSize(widget.getSliderValue("sldTargetSize"))
@@ -285,6 +292,7 @@ function updateTargetSize()
   widget.setText("lblSliderAmount", tostring(self.targetSize))
   --sb.logWarn("updateTargetSize?")
   self.portraitNeedsUpdate = true
+
 end
 
 function acceptBtn()
@@ -333,13 +341,18 @@ function setPortrait(args)
 
   widget.setText("tbNameBox", variant.humanoidIdentity.name)
 
+  self.currentIdentity.underwear = getDirectiveAtEnd(variant.humanoidIdentity.bodyDirectives)
+
+  variant = root.npcVariant(args.curSpecies,args.curType, args.level, args.curSeed, self.currentIdentityOverrides)
+  dLogJson(variant, "variantCONFIG:  ")
   dLog(variant.humanoidIdentity.bodyDirectives, "bodyDirectives: ")
   dLog(self.currentIdentityOverrides.identity.bodyDirectives, "overrideBodyDirectives")
 
   dLog(variant.humanoidIdentity.hairDirectives, "hairDirectives: ")
-  dLog(self.currentIdentityOverrides.identity.hairDirectives, "overrideeHairDirectives")
-  dLog(variant.humanoidIdentity.emoteDirectives,"emoteDirectives: ")
+  dLog(self.currentIdentityOverrides.identity.hairDirectives, "overrideHairDirectives")
 
+  dLog(variant.humanoidIdentity.emoteDirectives,"emoteDirectives: ")
+  dLog(self.currentIdentityOverrides.identity.emoteDirectives, "overrideEmoteDirectives")
 
   local npcPort = root.npcPortrait("full", args.curSpecies,args.curType, args.level, args.curSeed, self.currentIdentityOverrides)
 
@@ -399,6 +412,27 @@ function getSpeciesOptions(species, option)
   local returnInfo = {}
   local title = {}
   local imgPath = {}
+  local colorGenParams = {}
+
+  colorGenParams
+  "headOptionAsFacialhair" : true,
+  "headOptionAsHairColor" : true,
+
+  "altOptionAsFacialMask" : true,
+
+  "bodyColorAsFacialMaskSubColor" : true,
+  
+  "altColorAsFacialMaskSubColor" : true,
+
+  "altOptionAsUndyColor" : true,
+  
+
+  "altOptionAsUndyColor" : true,
+  
+  "altOptionAsHairColor" : true,
+
+  "altOptionAsUndyColor" : true,
+
   if not gender then dLog("getSpeciesOptions:  nil gender") end
   if genderPath[1]["name"] == gender then
     genderIndx = 1
@@ -438,40 +472,25 @@ function getSpeciesOptions(species, option)
 
   elseif option == "hcolor" then
     dLog("getSpeciesOptions:  endered hcolor")
-    local hairColors = copy(speciesJson.hairColor)
-    local curHairDirective = self.currentIdentityOverrides.identity.hairDirectives or self.currentIdentity.hairDirectives
-    dLog(curHairDirective, "getSpeciesOptions:  curHairDirective ->")
-    local newDirective = nil
-    local hexDirectives = {}
-    local firstRun = true
-    
-    for _,v in ipairs(hairColors) do
-      local nameString  = ""
-      if type(v) == "string" then
-          return nil 
-      end
-      for _,vv in pairs(v) do
-        if firstRun then 
-          nameString = string.format("%s",vv)
-          firstRun = false
-        end
-        nameString = string.format("%s,%s",nameString,vv)
-      end
-      newDirective = replaceDirectives(curHairDirective,v)
-      --local hashString = util.hashString(completeDirective)
 
-      hexDirectives[nameString] = newDirective
-      table.insert(title,nameString)
-      firstRun = true
-    end
-    returnInfo.title = title
-    returnInfo.hexDirectives = hexDirectives
-    returnInfo.curHairDirective = curHairDirective
-    return returnInfo
+      local colors = copy(speciesJson.hairColor)
+      local curDirective = self.currentIdentityOverrides.identity.hairDirectives or self.currentIdentity.hairDirectives
+      returnInfo.colors = colors
+      returnInfo.curDirective = curDirective
+
+      return getColorInfo(returnInfo)
 
   elseif option == "bcolor" then
       local colors = copy(speciesJson.bodyColor)
       local curDirective = self.currentIdentityOverrides.identity.bodyDirectives or self.currentIdentity.bodyDirectives
+      
+      returnInfo.colors = colors
+      returnInfo.curDirective = curDirective
+      
+    return getColorInfo(returnInfo)
+  elseif option == "ucolor" then
+      local colors = copy(speciesJson.undyColor)
+      local curDirective = self.currentIdentityOverrides.underwear or self.currentIdentity.underwear
       
       returnInfo.colors = colors
       returnInfo.curDirective = curDirective
@@ -502,16 +521,8 @@ function getColorInfo(args)
             if type(v) == "string" then
                 return nil 
             end
-        for _,vv in pairs(v) do
-              if firstRun then 
-                nameString = string.format("%s",vv)
-                firstRun = false
-              end
-              nameString = string.format("%s,%s",nameString,vv)
+        nameString = string.format("%s",indx)
         indx = indx + 1
-        --if indx > 3 then break end
-        end
-          
         newDirective = replaceDirectives(args.curDirective,v)
           
       --local hashString = util.hashString(completeDirective)
@@ -612,16 +623,38 @@ function selectTab(button, data)
                 hexDirectives = data.hexDirectives,
                 currentSelection = data.curDirective,
                 listType = "bcolor"}
-        return setList(args)
+        
+      else
+        args = {
+                list = {""},
+                listType = "bcolor"}
+       
       end
+       return setList(args)
     end
   end
 
   if data == "tab5" then
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
+    elseif self.categoryWidgetData == "Refine" then
+      local data = getSpeciesOptions(self.currentSpecies, "ucolor")
+      if data then 
+        args = {list = data.title, 
+                hexDirectives = data.hexDirectives,
+                currentSelection = data.curDirective,
+                listType = "ucolor"}
+        
+      else
+        args = {
+                list = {""},
+                listType = "ucolor"}
+       
+      end
+       return setList(args)
     end
   end
+
   return setList(nil)
  -- dLog(args, "selectTab Failed - > args: ")
 end
@@ -661,6 +694,10 @@ function setList(args)
       if args.hexDirectives then
         newArgs.directive = args.hexDirectives[v]
         --args.hexDirectives = nil
+        local hexId = string.match(newArgs.directive, "=(%w+)")
+        if hexId then
+          v = "^#"..hexId..";"..v
+        end
       end
 
 
@@ -693,7 +730,7 @@ function listItemSelected()
   if not listItem then return end
   --sb.logInfo(string.format("%s.%s", self.techList, listItem))
   local listArgs = widget.getData(string.format("%s.%s", self.techList, listItem))
-  dLogJson(listArgs, "listItemSelected : listArgs:")
+  --dLogJson(listArgs, "listItemSelected : listArgs:")
   if not listArgs then return end
 
   if listArgs.listType == "species" then
@@ -749,12 +786,71 @@ function listItemSelected()
     end
   end
 
+  if listArgs.listType == "ucolor" then
+    
+    if listArgs.clearConfig then
+      self.currentIdentityOverrides.identity.bodyDirectives = replaceDirectiveAtEnd(self.currentIdentityOverrides.identity.bodyDirectives, self.currentIdentity.underwear)
+      self.currentIdentityOverrides.identity.hairDirectives = replaceDirectiveAtEnd(self.currentIdentityOverrides.identity.hairDirectives, self.currentIdentity.underwear)  
+      self.currentIdentityOverrides.identity.emoteDirectives = replaceDirectiveAtEnd(self.currentIdentityOverrides.identity.emoteDirectives, self.currentIdentity.underwear)
+      --self.currentIdentityOverrides.identity.hairDirectives = replaceDirectiveAtEnd(self.currentIdentityOverrides.identity.hairDirectives, self.currentIdentity.underwear)
+
+    else
+      if self.currentIdentityOverrides.identity.bodyDirectives then
+        self.currentIdentityOverrides.identity.bodyDirectives = replaceDirectiveAtEnd(self.currentIdentityOverrides.identity.bodyDirectives, listArgs.directive)
+      else
+        self.currentIdentityOverrides.identity.bodyDirectives = replaceDirectiveAtEnd(self.currentIdentity.bodyDirectives, listArgs.directive)
+      end
+      if self.currentIdentityOverrides.identity.hairDirectives then
+        self.currentIdentityOverrides.identity.hairDirectives = replaceDirectiveAtEnd(self.currentIdentityOverrides.identity.hairDirectives, listArgs.directive)
+      else
+        self.currentIdentityOverrides.identity.hairDirectives = replaceDirectiveAtEnd(self.currentIdentity.hairDirectives, listArgs.directive)  
+      end
+
+      if self.currentIdentityOverrides.identity.emoteDirectives then
+        self.currentIdentityOverrides.identity.emoteDirectives = replaceDirectiveAtEnd(self.currentIdentityOverrides.identity.emoteDirectives, listArgs.directive)
+      else
+        self.currentIdentityOverrides.identity.emoteDirectives = replaceDirectiveAtEnd(self.currentIdentity.emoteDirectives, listArgs.directive)  
+      end
+      --self.currentIdentityOverrides.identity.emoteDirectives = replaceDirectiveAtEnd(self.currentIdentity.emoteDirectives, listArgs.directive)
+      --self.currentIdentityOverrides.identity.hairDirectives = replaceDirectiveAtEnd(self.currentIdentity.hairDirectives, listArgs.directive)
+    end
+    dLog(listArgs.directive," directive:  ")
+    dLogJson(self.currentIdentity, "listArgs:  currentIdentity:")
+    dLogJson(self.currentIdentityOverrides.identity, "listArgs:  identityOverride:")
+
+  end
+
   self.manualInput = false
   self.portraitNeedsUpdate = true
 end
 
 -------END LIST FUNCTIONS---------
+function replaceDirectiveAtEnd(directiveBase, directiveReplace)
+  directiveBase = directiveBase or ""
+  directiveReplace = directiveReplace or ""
 
+  local split = util.split(directiveBase, "?replace")
+  if #split < 3 then return directiveBase end
+  if not string.match(directiveReplace, "?replace") then directiveReplace = "?replace"..directiveReplace end
+  return "?replace"..split[2]..directiveReplace
+
+end
+
+function getDirectiveAtEnd(directiveBase)
+  assert(directiveBase, "getDirectiveAtEnd:  givenDirective is null")
+  local returnValue = ""
+  local split = util.split(directiveBase, "?replace")
+  local indx = #split
+  if #split < 3 then return nil end
+  while indx > 2 do
+    if split[indx] ~= ""  and string.find(split[indx], "=") then
+      break
+    end
+    indx = indx - 1
+  end 
+
+  return split[indx]
+end
 
 -------CATEGORY FUNCTIONS--------
 
@@ -788,7 +884,6 @@ function selectGenCategory(button, data)
     changeTabLabels(tabNames, "Generate")
     widget.setVisible(self.scrollArea, true)
     widget.setSliderEnabled("sldTargetSize", true)
-    self.currentIdentityOverrides.identity = {}
   elseif data == "Refine" then
     changeTabLabels(tabNames, "Refine")
     widget.setVisible(self.scrollArea, true)
