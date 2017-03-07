@@ -7,6 +7,7 @@ function init(virtual)
     storage.npcSpecies = storage.npcSpecies or "human"
     storage.seedValue = storage.seedValue or 0
     storage.type = storage.type or "CAFguard"
+    storage.npcParams = storage.npcParams or {}
   	storage.parentSpawner = storage.parentSpawner or nil
 
     local pos  = entity.position()
@@ -50,7 +51,8 @@ function getNpcData()
  local args = {
       npcSpecies = storage.npcSpecies,
       seedValue = storage.seedValue,
-      npcType = storage.type
+      npcType = storage.type,
+      npcParams = storage.npcParams
     }
   return args
 end
@@ -60,11 +62,13 @@ function setNpcData(args)
   storage.npcSpecies = args.npcSpecies
   storage.seedValue = args.npcSeed
   storage.type = args.npcType
+  storage.npcParams = args.npcParams
 
   local newArgs = {
     npcSpecies = args.npcSpecies,
     npcSeed = args.npcSeed,
-    npcType = args.npcType
+    npcType = args.npcType,
+    npcParams = args.npcParams
   }
 
   world.sendEntityMessage(storage.parentSpawner, "setNpcData", newArgs)

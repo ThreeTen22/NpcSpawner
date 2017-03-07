@@ -21,7 +21,7 @@ function init(virtual)
   storage.npcSpecies = storage.npcSpecies or "human"
   storage.seedValue = storage.seedValue or 0
   storage.type = storage.type or "CAFguard"
-  storage.npcParams = storage.npcParams or nil
+  storage.npcParams = storage.npcParams or {}
 
   self.maxSpawnTime = 5   --time between checks to see if a new NPC should be spawned
   self.maxGearTime = 8    --time between NPC gear change refreshes
@@ -63,7 +63,7 @@ function setNpcData(args)
   if args.npcParams then
     storage.npcParams = args.npcParams
   end
-  if okCheck == 3 then
+  if storage.spawned then
      killNpc()
   else
     sb.logInfo(string.format("CAFSpawner: setNpcData: one or more args was nil - okCheck: %s", okCheck))
@@ -180,6 +180,7 @@ end
 
 function killNpc()
   sb.logInfo("killNPC: "..sb.print(storage.spawnedID))
+  if (not storage.spawnedID) then storage.spawned = false; return end
   local loadedEnitity = world.loadUniqueEntity(storage.spawnedID)
   if loadedEnitity ~= 0 then
     world.callScriptedEntity(loadedEnitity, "suicide")
