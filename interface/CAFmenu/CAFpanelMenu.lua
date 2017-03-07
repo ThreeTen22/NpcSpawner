@@ -6,7 +6,7 @@ function init()
   --self.gettingPosition = nil
   self.gettingNpcData = nil
 	--these variables store the results of the messages we send to the parent panel obj
-  sb.logInfo("CAFPanekMenu: init")
+  sb.logInfo("CAFPanelMenu: init")
 	self.sendingSpecies = nil
 	self.sendingSeedValue = nil
   self.sendingType = nil
@@ -81,20 +81,12 @@ function init()
 
   self.firstRun = true
 
+
   self.testDirective = "?replace;735e3a=2d1606;d9c189=7d3c1c;a38d59=4d240b?replace;951500=848008;be1b00=a8a614;dc1f00=e3e13a"
-  self.testSpeciesColor = {color = {}}
-  self.testSpeciesColor.color["d9c189"] = "E86D46"
-  self.testSpeciesColor.color["a38d59"] = "D1422E"
-  self.testSpeciesColor.color["735e3a"] = "96201B" 
-  local splittedDirective = splitDirective(self.testDirective)
-  dLog(splittedDirective, "splittedDirective: ")
+  self.testDirective2 = "?replace;735e3a=2d1606;d9c189=7d3c1c;a38d59=4d240b"
+  local result = string.find(self.testDirective, self.testDirective2, 1, true)
 
-  splittedDirective[1] = createDirective(self.testSpeciesColor.color)
-
-  local combinedDirective = splittedDirective[1]..splittedDirective[2]
-  dLog(combinedDirective, "combinedDirective:  ")
-
-
+  dLog(result, "string.find result - ")
 
   widget.setSliderRange("sldTargetSize",0, self.worldSize)
   widget.setSliderEnabled("sldTargetSize", true)
@@ -112,6 +104,32 @@ function init()
    -- setList({list = self.speciesList,  listType = "species"})
 end
 
+
+function replaceDirectives(directive, directiveJson)
+  local returnString = ""
+  local splitDirectives = util.split(directive,"?replace")
+  --dLogJson(splitDirectives, "replaceDirectives: split: ")
+  dLogJson(directiveJson, "directiveJson")
+  for _,v in ipairs(splitDirectives) do
+    --dLogJson(v, "replaceDirectives: v: ")
+    if not (v == "") then
+      --dLog("entered iPairLoop:  ")
+      --dLog(string.match(v, "(%w+)=(%w+)"), "string Match:  ")
+      --test if its correct directiveGroup
+        local k = string.match(v, "(%w+)=(%w+)")
+        if directiveJson[k] then
+           -- dLogJson(directiveJson[k], "matchJsonValue:")
+            returnString = returnString..createDirective(directiveJson)
+        else
+            returnString = returnString.."?replace"..v
+        end
+     -- dLog(returnString, "returnString:  ")
+    end
+  end
+  dLog(returnString, "returnString:  ")
+  return returnString
+end
+
 function createDirective(directiveJson)
   local prefix = "?replace"
   for k,v in pairs(directiveJson) do
@@ -119,19 +137,6 @@ function createDirective(directiveJson)
   end
   return prefix
 end
-
-function splitDirective(directive)
-  local directives = {skin = "", undy = ""}
-  local result = {}
-  local count = 1
-  for v in string.gmatch(directive,"?replace;%x+=%x+;%x+=%x+;%x+=%x+") do
-    if v ~= "" then
-      table.insert(result,v)
-    end
-  end
-  return result
-end
-
 
 function finalizeOverride()
   dLog("FinalizingOverride")
@@ -328,6 +333,13 @@ function setPortrait(args)
 
   widget.setText("tbNameBox", variant.humanoidIdentity.name)
 
+  dLog(variant.humanoidIdentity.bodyDirectives, "bodyDirectives: ")
+  dLog(self.currentIdentityOverrides.identity.bodyDirectives, "overrideBodyDirectives")
+
+  dLog(variant.humanoidIdentity.hairDirectives, "hairDirectives: ")
+  dLog(self.currentIdentityOverrides.identity.hairDirectives, "overrideeHairDirectives")
+  dLog(variant.humanoidIdentity.emoteDirectives,"emoteDirectives: ")
+
 
   local npcPort = root.npcPortrait("full", args.curSpecies,args.curType, args.level, args.curSeed, self.currentIdentityOverrides)
 
@@ -381,7 +393,6 @@ function getSpeciesOptions(species, option)
   if not speciesJson then dLog("getSpeciesOptions:  nil AssetFile") end
 
     --dLogJson(speciesJson, "speciesJSON: ")
-
   local genderPath = speciesJson.genders
   local gender = self.currentIdentity.gender
   local genderIndx = 1
@@ -426,9 +437,11 @@ function getSpeciesOptions(species, option)
     return returnInfo
 
   elseif option == "hcolor" then
+    dLog("getSpeciesOptions:  endered hcolor")
     local hairColors = copy(speciesJson.hairColor)
     local curHairDirective = self.currentIdentityOverrides.identity.hairDirectives or self.currentIdentity.hairDirectives
-    local newDirective = splitDirective(curHairDirective)
+    dLog(curHairDirective, "getSpeciesOptions:  curHairDirective ->")
+    local newDirective = nil
     local hexDirectives = {}
     local firstRun = true
     
@@ -444,23 +457,74 @@ function getSpeciesOptions(species, option)
         end
         nameString = string.format("%s,%s",nameString,vv)
       end
-      newDirective[1] = createDirective(v)
-      local completeDirective = string.format("%s%s",newDirective[1],newDirective[2])
+      newDirective = replaceDirectives(curHairDirective,v)
       --local hashString = util.hashString(completeDirective)
 
-      hexDirectives[nameString] = completeDirective
+      hexDirectives[nameString] = newDirective
       table.insert(title,nameString)
-    firstRun = true
+      firstRun = true
     end
     returnInfo.title = title
     returnInfo.hexDirectives = hexDirectives
     returnInfo.curHairDirective = curHairDirective
     return returnInfo
+
+  elseif option == "bcolor" then
+      local colors = copy(speciesJson.bodyColor)
+      local curDirective = self.currentIdentityOverrides.identity.bodyDirectives or self.currentIdentity.bodyDirectives
+      
+      returnInfo.colors = colors
+      returnInfo.curDirective = curDirective
+      
+    return getColorInfo(returnInfo)
   else
     dLog("")
   end
 end
 
+
+function getColorInfo(args)
+  args = parseArgs(args, {
+    colors = nil,
+    curDirective = nil,
+    hexDirectives = {}
+    })
+    dLog(args.curDirective, "PARSED DIRECTIVE : ")
+    dLog(self.currentIdentity.bodyDirectives, "CURRENT BCOLOR DIRECTIVE : ")
+    local returnInfo = {}
+    local newDirective = ""
+    local firstRun = true
+    local title = {}
+    local indx = 1
+    
+    for _,v in ipairs(args.colors) do
+      local nameString  = ""
+            if type(v) == "string" then
+                return nil 
+            end
+        for _,vv in pairs(v) do
+              if firstRun then 
+                nameString = string.format("%s",vv)
+                firstRun = false
+              end
+              nameString = string.format("%s,%s",nameString,vv)
+        indx = indx + 1
+        --if indx > 3 then break end
+        end
+          
+        newDirective = replaceDirectives(args.curDirective,v)
+          
+      --local hashString = util.hashString(completeDirective)
+
+      args.hexDirectives[nameString] = newDirective
+      table.insert(title,nameString)
+      firstRun = true
+    end
+    returnInfo.title = title
+    returnInfo.hexDirectives = copy(args.hexDirectives)
+    returnInfo.curDirective = args.curDirective
+    return returnInfo
+end
 
 function getAsset(assetPath)
   local asset = root.assetJson(assetPath)
@@ -526,14 +590,30 @@ function selectTab(button, data)
                 hexDirectives = data.hexDirectives,
                 currentSelection = data.curHairDirective,
                 listType = "hcolor"}
-        return setList(args)
+      else 
+        args = {
+                list = {""},
+                listType = "hcolor"
+        }
       end
+        return setList(args)
+    
     end
   end
 
   if data == "tab4" then
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
+    elseif self.categoryWidgetData == "Refine" then
+
+      local data = getSpeciesOptions(self.currentSpecies, "bcolor")
+      if data then 
+        args = {list = data.title, 
+                hexDirectives = data.hexDirectives,
+                currentSelection = data.curDirective,
+                listType = "bcolor"}
+        return setList(args)
+      end
     end
   end
 
@@ -551,7 +631,7 @@ end
   --list
   --listType
 function setList(args)
-  dLogJson(args,"setList - ARGS")
+  dLogJson("setList - ARGS")
   --table.sort(args.list)
   widget.clearListItems(self.techList)
   if not args then return end
@@ -566,8 +646,7 @@ function setList(args)
       widget.setText(string.format("%s.%s.techName", self.techList, defaultListItem), "No Override")
       widget.setData(string.format("%s.%s", self.techList, defaultListItem), defaultArgs)
   end
-
-  if #args.list < 1 then return end
+  if #args.list < 2 then return end
   for _,v in pairs(args.list) do
 
       local listItem = widget.addListItem(self.techList)
@@ -581,7 +660,9 @@ function setList(args)
         })
       if args.hexDirectives then
         newArgs.directive = args.hexDirectives[v]
+        --args.hexDirectives = nil
       end
+
 
       --newArgs.name = v
       --newArgs.listType = args.listType
@@ -590,13 +671,13 @@ function setList(args)
 
       widget.setText(string.format("%s.%s.techName", self.techList, listItem), v)
       widget.setData(string.format("%s.%s", self.techList, listItem), newArgs)
-      if args.hexDirectives then
-        indx = indx+1
-        if newArgs.directive == args.currentSelection then
-          widget.setListSelected(self.techList, listItem)
-          break
-        end
-      end
+      --if args.hexDirectives then
+      --  indx = indx+1
+      --  if newArgs.directive == args.currentSelection then
+      --    widget.setListSelected(self.techList, listItem)
+      --    break
+      --  end
+      --end
       if v == args.currentSelection then 
         indx = indx+1
         sb.logInfo("setList:  entered setListSelected")
@@ -610,7 +691,7 @@ end
 function listItemSelected()
   local listItem = widget.getListSelected(self.techList)
   if not listItem then return end
-  sb.logInfo(string.format("%s.%s", self.techList, listItem))
+  --sb.logInfo(string.format("%s.%s", self.techList, listItem))
   local listArgs = widget.getData(string.format("%s.%s", self.techList, listItem))
   dLogJson(listArgs, "listItemSelected : listArgs:")
   if not listArgs then return end
@@ -647,6 +728,24 @@ function listItemSelected()
       self.currentIdentityOverrides.identity["hairDirectives"] = nil
     else
       self.currentIdentityOverrides.identity.hairDirectives = listArgs.directive
+    end
+  end
+
+  if listArgs.listType == "bcolor" then
+    if listArgs.clearConfig then
+      self.currentIdentityOverrides.identity["bodyDirectives"] = nil
+      self.currentIdentityOverrides.identity["emoteDirectives"] = nil
+    else
+      self.currentIdentityOverrides.identity.bodyDirectives = listArgs.directive
+      self.currentIdentityOverrides.identity.emoteDirectives = listArgs.directive
+      dLog(listArgs.directive, "listArgDirective")
+      dLog(self.currentIdentity.hairDirectives, "listingCurrentHairDirective")
+      if listArgs.directive and (self.currentIdentity.hairDirectives ~= "") then
+      local substring = string.match(self.currentIdentity.hairDirectives, "(%w+)=")
+       if (string.find(listArgs.directive, substring, 1, true) ~= nil) then
+         self.currentIdentityOverrides.identity.hairDirectives = listArgs.directive
+       end
+      end
     end
   end
 
@@ -693,15 +792,15 @@ function selectGenCategory(button, data)
   elseif data == "Refine" then
     changeTabLabels(tabNames, "Refine")
     widget.setVisible(self.scrollArea, true)
-    widget.setSelectedOption(self.tabGroupWidget, indx)
     widget.setSliderEnabled("sldTargetSize", false)
   end
+  dLog(data, "selectGenCategory - selectedOption:  ")
     local indx = widget.getSelectedOption(self.tabGroupWidget)
     local tabData = widget.getSelectedData(self.tabGroupWidget)
     if indx and tabData then
       return selectTab(indx, tabData)
     end
-  dLog(selectedOption, "selectGenCategory - selectedOption:  ")
+  
 end
 
 -------END CATEGORY FUNCTIONS---------
