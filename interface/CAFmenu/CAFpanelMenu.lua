@@ -632,7 +632,7 @@ function selectTab(button, data)
     if self.categoryWidgetData == "Generate" then
       return setList(nil)
     elseif self.categoryWidgetData == "Refine" then
-      local data = getSpeciesOptions(self.currentSpecies, "fhcolor")
+      --local data = getSpeciesOptions(self.currentSpecies, "fhcolor")
       if data then 
         args = {list = data.title, 
                 hexDirectives = data.hexDirectives,
@@ -731,7 +731,7 @@ function setList(args)
           clearConfig = false
         })
       if args.hexDirectives then
-        newArgs.directive = args.hexDirectives[v]
+        newArgs.directive = args.hexDirectives[v] or " "
         --args.hexDirectives = nil
         local hexId = string.match(newArgs.directive, "=(%w+)")
         if hexId then
@@ -754,7 +754,7 @@ function setList(args)
       --    break
       --  end
       --end
-      if v == args.currentSelection then 
+      if newArgs.name == args.currentSelection then 
         indx = indx+1
         sb.logInfo("setList:  entered setListSelected")
         widget.setListSelected(self.techList, listItem)
@@ -833,6 +833,14 @@ function listItemSelected()
        if (string.find(listArgs.directive, substring, 1, true) ~= nil) then
          self.currentIdentityOverrides.identity.hairDirectives = listArgs.directive
        end
+      if self.currentIdentity.facialHairDirectives then
+          substring = string.match(self.currentIdentity.facialHairDirectives, "(%w+)=")
+          if listArgs.directive and substring then
+              if (string.find(listArgs.directive, substring, 1, true) ~= nil) then
+               self.currentIdentityOverrides.identity.facialHairDirectives = listArgs.directive
+             end
+          end
+        end
       end
     end
   end
