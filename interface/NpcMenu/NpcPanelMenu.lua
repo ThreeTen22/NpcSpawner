@@ -6,7 +6,7 @@ function init()
   --self.gettingPosition = nil
   self.gettingNpcData = nil
 	--these variables store the results of the messages we send to the parent panel obj
-  sb.logInfo("CAFPanelMenu: init")
+  sb.logInfo("NpcPanelMenu: init")
 	self.sendingSpecies = nil
 	self.sendingSeedValue = nil
   self.sendingType = nil

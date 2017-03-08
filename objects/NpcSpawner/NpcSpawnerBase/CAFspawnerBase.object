@@ -1,9 +1,8 @@
 {
-  "objectName" : "CAFspawnerBase",
+  "objectName" : "NpcSpawnerBase",
   "colonyTags" : ["storage"],
   "rarity" : "Common",
   "description" : "This glowing pad holds the equipment for your new friend!",
-  "shortdescription" : "^yellow;CAF Spawner Base^#aee1ee;",
   "subtitle" : "^#aee1ee;Spawn your own friend!",
   "race" : "generic",
   "price" : 200,
@@ -20,16 +19,14 @@
 
   "openSounds" : [ "/sfx/objects/miningchest_open.ogg" ],
   "slotCount" : 6,
-  "uiConfig" : "/interface/CAFmenu/CAFinventory.config",
   "frameCooldown" : 5,
   "autoCloseCooldown" : 3600,
 
-  "scripts" : [ "/objects/CAFspawners/CAFspawner.lua" ],
 
   "inventoryIcon" : "/objects/ship/humanteleporter/teleportericon.png",
   "orientations" : [
     {
-      "image" : "CAFspawnerBase.png",
+      "image" : "CAFSpawnerBase.png",
       "imagePosition" : [-8, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
@@ -43,7 +40,7 @@
       "anchors" : [ "bottom" ]
     },
     {
-      "image" : "CAFspawnerBase.png",
+      "image" : "CAFSpawnerBase.png",
       "imagePosition" : [-8, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
@@ -57,7 +54,6 @@
     }
   ],
 
-  "typeOptions" : [ "CAFguard", "CAFvillager" ],
 
   "spawner" : {
     "searchRadius" : 32.0,
