@@ -75,6 +75,7 @@ function findPanel()
   pos[2] = pos[2] + 2
   local objList = world.entityQuery(pos, 0)
   for i,j in ipairs(objList) do
+    if world.entityName(j) == "NpcSpawnerPanel" then return j end
   end
   return nil
 end

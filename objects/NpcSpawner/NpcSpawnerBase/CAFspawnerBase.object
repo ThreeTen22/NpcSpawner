@@ -3,6 +3,7 @@
   "colonyTags" : ["storage"],
   "rarity" : "Common",
   "description" : "This glowing pad holds the equipment for your new friend!",
+  "shortdescription" : "^yellow;NpcSpawner Base^#aee1ee;",
   "subtitle" : "^#aee1ee;Spawn your own friend!",
   "race" : "generic",
   "price" : 200,
@@ -19,9 +20,11 @@
 
   "openSounds" : [ "/sfx/objects/miningchest_open.ogg" ],
   "slotCount" : 6,
+  "uiConfig" : "/interface/NpcMenu/NpcInventory.config",
   "frameCooldown" : 5,
   "autoCloseCooldown" : 3600,
 
+  "scripts" : [ "/objects/NpcSpawner/NpcSpawner.lua" ],
 
   "inventoryIcon" : "/objects/ship/humanteleporter/teleportericon.png",
   "orientations" : [
@@ -54,6 +57,7 @@
     }
   ],
 
+  "typeOptions" : [ "NpcGuard", "NpcVillager" ],
 
   "spawner" : {
     "searchRadius" : 32.0,

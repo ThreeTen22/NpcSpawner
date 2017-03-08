@@ -1,4 +1,5 @@
 {
+  "objectName" : "NpcSpawnerPanel",
   "tags" : ["misc"],
   "rarity" : "Common",
   "description" : "Mold, spawn, and manage your custom npc",
@@ -15,6 +16,7 @@
   "humanDescription" : "This is the ultimate evolution of online classified ads.",
   "hylotlDescription" : "To help another being brings inner peace.",
 
+  "uiConfig" : "/interface/NpcMenu/NpcPanelMenu.config",
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
 
   "smashable" : true,
