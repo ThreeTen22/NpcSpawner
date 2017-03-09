@@ -74,18 +74,6 @@ function setNpcData(args)
   world.sendEntityMessage(storage.parentSpawner, "setNpcData", newArgs)
 end
 
-
-
-function colorOptionToDirectives(colorOption)
-  if not colorOption then return "" end
-  local dir = "?replace"
-  for k,v in pairs(colorOption) do
-    dir = dir .. ";" .. k .. "=" .. v
-  end
-  return dir
-end
-
-
 function logENV()
   for i,v in pairs(_ENV) do
     if type(v) == "function" then
