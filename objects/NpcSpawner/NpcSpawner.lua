@@ -2,7 +2,7 @@ function init(virtual)
   if not virtual then
     object.setInteractive(true)
   end
-  sb.logInfo("CAFSpawner: init")
+  sb.logInfo("NpcSpawner: init")
 
   --auto-place the config panel. if the panel cannot be placed, the update will catch that and destroy the spawner.
   local pos = entity.position()
@@ -13,8 +13,8 @@ function init(virtual)
   
   self.panelID = findPanel()
   if not self.panelID then 
-    world.placeObject("CAFspawnerPanel", pos) 
-    sb.logInfo("CAFSpawner: panelID Found")
+    world.placeObject("NpcSpawnerPanel", pos) 
+    sb.logInfo("NpcSpawner: panelID Found")
   end
 
   storage.uniqueId = storage.uniqueId or nil    --this object's unique id. used for giving to the spawned npc
@@ -66,7 +66,7 @@ function setNpcData(args)
   if storage.spawned then
      killNpc()
   else
-    sb.logInfo(string.format("CAFSpawner: setNpcData: one or more args was nil - okCheck: %s", okCheck))
+    sb.logInfo(string.format("NpcSpawner: setNpcData: one or more args was nil - okCheck: %s", okCheck))
   end
 end
 
@@ -75,7 +75,7 @@ function findPanel()
   pos[2] = pos[2] + 2
   local objList = world.entityQuery(pos, 0)
   for i,j in ipairs(objList) do
-    if world.entityName(j) == "CAFspawnerPanel" then return j end
+    if world.entityName(j) == "NpcSpawnerPanel" then return j end
   end
   return nil
 end

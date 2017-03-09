@@ -2,7 +2,7 @@ function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
   	end
-    sb.logInfo("CAFPanel: init")
+    sb.logInfo("NpcPanel: init")
 
     storage.npcSpecies = storage.npcSpecies or "human"
     storage.seedValue = storage.seedValue or 0
@@ -29,7 +29,7 @@ end
 
 function onInteraction(args)
   local interactionConfig = config.getParameter("uiConfig")
-  sb.logInfo("CAFPanel: onInteraction")
+  sb.logInfo("NpcPanel: onInteraction")
 
 
 
@@ -43,7 +43,7 @@ end
 -----------------------------------------------------------------------------------
 function setParentSpawner(spawnerId)
   storage.parentSpawner = spawnerId
-  sb.logInfo("CAFPanel: recieved the id of the parent spawner")
+  sb.logInfo("NpcPanel: recieved the id of the parent spawner")
 end
 
 
