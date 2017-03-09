@@ -495,7 +495,6 @@ function getSpeciesOptions(species, option)
     return returnInfo
 
   elseif option == "hcolor" then
-    dLog("getSpeciesOptions:  endered hcolor")
 
       local colors = copy(speciesJson.hairColor)
       local curDirective = self.currentIdentityOverrides.identity.hairDirectives or self.currentIdentity.hairDirectives
@@ -505,7 +504,6 @@ function getSpeciesOptions(species, option)
       return getColorInfo(returnInfo)
 
   elseif option == "fhcolor" then
-
 
       local curDirective = self.currentIdentityOverrides.identity.facialHairDirectives or self.currentIdentity.facialHairDirectives
       returnInfo.colors = colors
@@ -521,7 +519,9 @@ function getSpeciesOptions(species, option)
       returnInfo.curDirective = curDirective
       
     return getColorInfo(returnInfo)
+
   elseif option == "ucolor" then
+
       local colors = copy(speciesJson.undyColor)
       local curDirective = self.currentIdentityOverrides.underwear or self.currentIdentity.underwear
       
@@ -529,6 +529,7 @@ function getSpeciesOptions(species, option)
       returnInfo.curDirective = curDirective
       
     return getColorInfo(returnInfo)
+
   else
     dLog("")
   end
@@ -785,9 +786,9 @@ end
 function listItemSelected()
   local listItem = widget.getListSelected(self.techList)
   if not listItem then return end
-  --sb.logInfo(string.format("%s.%s", self.techList, listItem))
+
   local listArgs = widget.getData(string.format("%s.%s", self.techList, listItem))
-  --dLogJson(listArgs, "listItemSelected : listArgs:")
+
   if not listArgs then return end
 
   if listArgs.listType == "species" then
