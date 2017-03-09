@@ -184,7 +184,16 @@ function parseOverride(txt, char)
 end
 
 function setNpcName()
-  dLog("setNpcName")
+  local text = widget.getText("tbNameBox")
+  if text == "" then
+    --get seed name
+    newText = self.currentIdentity.name
+    if self.currentIdentityOverrides.identity.name then
+      self.currentIdentityOverrides.identity.name = nil
+    end
+  else
+    self.currentIdentityOverrides.identity.name = text
+  end
 end
 
 function update(dt)
@@ -244,6 +253,11 @@ function update(dt)
     widget.setVisible(self.categoryWidget, true)
     widget.setVisible(self.tabGroupWidget, true)
     widget.setVisible(self.scrollArea, true)
+
+    --setName
+    if self.currentIdentityOverrides.identity.name then
+      widget.setText("tbNameBox", self.currentIdentityOverrides.identity.name)
+    end
     --widget.setSelectedOption(self.tabGroupWidget, self.tabSelectedOption)
   end
 
@@ -339,7 +353,11 @@ function setPortrait(args)
   local variant = root.npcVariant(args.curSpecies,args.curType, args.level, args.curSeed)
   self.currentIdentity = copy(variant.humanoidIdentity)
 
-  widget.setText("tbNameBox", variant.humanoidIdentity.name)
+  if self.currentIdentityOverrides.identity.name then
+    widget.setText("tbNameBox", self.currentIdentityOverrides.identity.name)
+  else
+    widget.setText("tbNameBox", self.currentIdentity.name)
+  end
 
   self.currentIdentity.underwear = getDirectiveAtEnd(variant.humanoidIdentity.bodyDirectives)
 
@@ -870,8 +888,6 @@ function listItemSelected()
       else
         self.currentIdentityOverrides.identity.emoteDirectives = replaceDirectiveAtEnd(self.currentIdentity.emoteDirectives, listArgs.directive)  
       end
-      --self.currentIdentityOverrides.identity.emoteDirectives = replaceDirectiveAtEnd(self.currentIdentity.emoteDirectives, listArgs.directive)
-      --self.currentIdentityOverrides.identity.hairDirectives = replaceDirectiveAtEnd(self.currentIdentity.hairDirectives, listArgs.directive)
     end
     dLog(listArgs.directive," directive:  ")
     dLogJson(self.currentIdentity, "listArgs:  currentIdentity:")
@@ -943,10 +959,12 @@ function selectGenCategory(button, data)
     changeTabLabels(tabNames, "Generate")
     widget.setVisible(self.scrollArea, true)
     widget.setSliderEnabled("sldTargetSize", true)
+    widget.setVisible("lblBlockNameBox", true)
   elseif data == "Refine" then
     changeTabLabels(tabNames, "Refine")
     widget.setVisible(self.scrollArea, true)
     widget.setSliderEnabled("sldTargetSize", false)
+    widget.setVisible("lblBlockNameBox", false)
   end
   dLog(data, "selectGenCategory - selectedOption:  ")
     local indx = widget.getSelectedOption(self.tabGroupWidget)

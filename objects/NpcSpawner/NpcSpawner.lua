@@ -128,7 +128,7 @@ function update(dt)
     if storage.spawnedID and world.loadUniqueEntity(storage.spawnedID) == 0 then
       storage.spawned = false
     elseif self.checkGearTimer < 0 then
-      --setGear()
+      setGear()
       self.checkGearTimer = self.maxGearTime
     end
   end
@@ -221,22 +221,5 @@ function createLife(seed)
     sb.logInfo("  ---------- THREE ----------  ")
     --local npcJSON = world.spawnNpc(storage.npcSpecies, storage.type, level, parameters)
     local spawnNPC = world.spawnNpc(position, storage.npcSpecies, storage.type, level, nil, parameters);
-    --sb.logInfo("%s", sb.printJson(spawnNPC))
-  --local npcJSONTwo = world.spawnNpc(storage.npcSpecies, storage.type, level, nil, humanoidIdentity)
-
-  --local npcJSONThree = world.spawnNpc(storage.npcSpecies, storage.type, level, nil, humanoidIdentity)
-
-    --local npcChangedJSON = root.npcVariant(position, storage.npcSpecies, storage.type, level, nil, parameters);
-    --sb.logInfo("%s", sb.printJson(npcChangedJSON))
-    --local jsoned = sb.printJson(npcJSON)--
-    --sb.logInfo("%s", jsoned) 
-    --jsoned = sb.printJson(npcChangedJSON)--
-    --local humanIdentity = sb.jsonQuery(npcJSON, "humanoidIdentity", nil)
-    --sb.logInfo("humanIdentity Info:  ")
-    --sb.logInfo("%s", sb.printJson(humanIdentity)) --
-    --local curHairDirective = sb.jsonQuery(humanIdentity, "hairDirectives", nil)
-    --sb.logInfo("curHairDir Info:  ")
-    --sb.logInfo("%s", sb.printJson(curHairDirective)) --
-      --local newNPC = world.spawnNpc(position, storage.npcSpecies, storage.type, level, humanIdentity)
     return spawnNPC
 end
