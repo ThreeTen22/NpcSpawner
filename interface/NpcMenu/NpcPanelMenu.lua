@@ -1,4 +1,7 @@
 require "/scripts/util.lua"
+
+spnPersonality = {}
+
 function init()
   --self.gettingSpecies = nil
   --self.gettingSeedValue = nil
@@ -32,6 +35,8 @@ function init()
 	self.raceButtons = {}
 
   self.seedInput = 0
+
+  self.personalityIndex = 1
 
   --LIST VARS--
   self.scrollArea = "techScrollArea"
@@ -82,11 +87,6 @@ function init()
   self.firstRun = true
 
 
-  self.testDirective = "?replace;735e3a=2d1606;d9c189=7d3c1c;a38d59=4d240b?replace;951500=848008;be1b00=a8a614;dc1f00=e3e13a"
-  self.testDirective2 = "?replace;735e3a=2d1606;d9c189=7d3c1c;a38d59=4d240b"
-  local result = string.find(self.testDirective, self.testDirective2, 1, true)
-
-  dLog(result, "string.find result - ")
 
   widget.setSliderRange("sldTargetSize",0, self.worldSize)
   widget.setSliderEnabled("sldTargetSize", true)
@@ -98,10 +98,49 @@ function init()
   
   widget.setProgress("prgAvailable", 0.0)
 
-
-
   --testFunction()
    -- setList({list = self.speciesList,  listType = "species"})
+end
+
+
+function spnPersonality.up()
+  local personalities = root.assetJson("/humanoid.config:personalities")
+  dLog("spinner UP:  ")
+  self.personalityIndex = util.wrap(self.personalityIndex + 1, 1, #personalities)
+  setPersonality(self.personalityIndex)
+end
+
+function spnPersonality.down()
+  dLog("spinner DOWN:  ")
+  local personalities = root.assetJson("/humanoid.config:personalities")
+  self.personalityIndex = util.wrap(self.personalityIndex - 1, 1, #personalities)
+  setPersonality(self.personalityIndex)
+end
+
+
+function setPersonality(index)
+  local personalities = root.assetJson("/humanoid.config:personalities")
+  local personality = personalities[index]
+  assert(personality, string.format("cannot find personality, bad index?  :  %s", index))
+  local identity = self.currentIdentityOverrides.identity
+  identity.personalityIdle = personality[1]
+  identity.personalityHeadOffset = personality[3]
+  identity.personalityArmIdle = personality[2]
+  identity.personalityArmOffset = personality[4]
+  self.portraitNeedsUpdate = true
+end
+
+function clearPersonality()
+  
+  if self.currentIdentityOverrides.identity then
+    local identity = self.currentIdentityOverrides.identity
+    identity.personalityIdle = nil
+    identity.personalityHeadOffset = nil
+    identity.personalityArmIdle = nil
+    identity.personalityArmOffset = nil
+    self.portraitNeedsUpdate = true
+  end
+
 end
 
 
@@ -934,7 +973,7 @@ function changeTabLabels(tabs, option)
   tabs = tabs or "nil"
   option = option or "nil"
 
-  local tabOptions = config.getParameter("tabOptions")[option]
+  local tabOptions = config.getParameter("tabOptions:option")
   local indx = 1
 
   if tabOptions then
