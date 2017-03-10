@@ -1,17 +1,15 @@
-require "/scripts/npcspawnutil.lua"
-
-
 function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
   	end
     sb.logInfo("NpcPanel: init")
-
     storage.npcSpecies = storage.npcSpecies or "human"
     storage.seedValue = storage.seedValue or 0
     storage.type = storage.type or "CAFguard"
     storage.npcParams = storage.npcParams or {}
   	storage.parentSpawner = storage.parentSpawner or nil
+    storage.panelUniqueId = storage.panelUniqueId or entity.uniqueId() or sb.makeUuid()
+    object.setUniqueId(storage.panelUniqueId)
 
     local pos  = entity.position()
   
@@ -29,33 +27,19 @@ function init(virtual)
       setNpcData(args)
     end)
 
-    message.setHandler("onOpen", function(_,_, args) onOpen(args) end)
-
 end
 
 function onInteraction(args)
-  local interactionConfig = config.getParameter("uiConfig")
+  local interactionConfig = world.getObjectParameter(pane.containerEntityId(),"uiConfig")
   sb.logInfo("NpcPanel: onInteraction")
+  --world.containerOpen(storage.panelUniqueId)
 
-
-
-  return {"ScriptPane", interactionConfig}
-end
-
-function onOpen(args)
-  local interactionConfig = config.getParameter("uiConfig")
-  sb.logInfo("NpcPanel: opened")
-
-
-
-  return {"ScriptPane", interactionConfig}
+  return {"ScriptConsole", interactionConfig}
 end
 
 function update(dt)
 end 
 
------------------------------------------------------------------------------------
------------------------------------------------------------------------------------
 function setParentSpawner(spawnerId)
   storage.parentSpawner = spawnerId
   sb.logInfo("NpcPanel: recieved the id of the parent spawner")
