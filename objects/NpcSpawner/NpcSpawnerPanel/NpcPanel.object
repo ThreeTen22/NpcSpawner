@@ -19,7 +19,7 @@
   "uiConfig" : "/interface/NpcMenu/NpcPanelMenu.config",
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
 
-  "smashable" : true,
+  "smashOnBreak" : true,
 
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
   "orientations" : [
