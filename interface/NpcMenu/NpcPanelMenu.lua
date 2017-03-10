@@ -263,6 +263,10 @@ function update(dt)
       self.currentType = tostring(result.npcType)
     end
 
+    if result.npcLevel then
+      self.currentLevel = result.npcLevel
+    end
+
     if result.npcParams then
       self.currentIdentityOverrides = copy(result.npcParams)
       if not self.currentIdentityOverrides.identity then
