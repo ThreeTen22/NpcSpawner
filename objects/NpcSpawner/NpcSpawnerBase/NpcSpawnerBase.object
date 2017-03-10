@@ -66,5 +66,22 @@
         "dropPools" : [ ]
       }
     ]
+  },
+  "templateOverride": {
+    "description" : "Spawn Your Very Own Custom NPC!",
+    "shortdescription" : "Human Naked Villager Spawner",
+    "spawner" : {
+      "searchRadius" : 32,
+      "npcSpeciesOptions" : ["human"],
+      "npcTypeOptions" : ["nakedvillager"],
+      "npcParameterOptions" : [{
+          "identity" : {
+            "name" : "TestName",
+            "gender" : "female"
+          },
+          "dropPools" : []
+        }
+      ]
+    }
   }
 }
