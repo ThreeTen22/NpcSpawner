@@ -3,6 +3,7 @@ require "/scripts/npcspawnutil.lua"
 
 spnPersonality = {}
 --itmTradeItem = {}
+updateFunc = {}
 
 function init()
   sb.logInfo("NpcPanelMenu: init")
@@ -102,17 +103,32 @@ function init()
 
   --testFunction()
    -- setList({list = self.speciesList,  listType = "species"})
+
+  -- updateFunc[1] = function(args)
+--
+--
+  --  end
+  --
 end
 
 --function itmArmorGrid.right()
 --dLog(type(itmArmorGrid), "itmArmorGrid: right ")
 --end
 --
---function itmArmorGrid()
---  dLog(type(itmArmorGrid), "itmArmorGrid ")
---end
 
 
+function itemGrid(args)
+  dLogJson(args,  "itemGrid -")
+end
+
+function containerCallback()
+  dLog("npcPanel: ContainerCallback")
+end
+
+function containerPaneCallback()
+  dLog("container has been called back!")
+
+end
 --function itmTradeItem.right(...)
 --  dLog("itmTradeItem.right")
 --end

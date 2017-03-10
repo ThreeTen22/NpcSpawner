@@ -1,3 +1,4 @@
+require "/scripts/npcspawnutil.lua"
 function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
@@ -27,6 +28,16 @@ function init(virtual)
       setNpcData(args)
     end)
 
+end
+
+function containerCallback()
+  dLog("container has been called back!")
+
+end
+
+function containerInteracted()
+  dLog("container has been called back!")
+  object.setParameter()
 end
 
 function onInteraction(args)

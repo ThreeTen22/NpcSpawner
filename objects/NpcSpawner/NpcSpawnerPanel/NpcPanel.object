@@ -20,11 +20,12 @@
   "openSounds" : ["/sfx/objects/miningchest_open.ogg" ],
   "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
   "frameCooldown" : 5,
-  "autoCloseCooldown" : 3600,
+  "autoCloseCooldown" : 360000,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
   "capacity" : 1000,
   "smashOnBreak" : true,
-
+  "retainObjectParametersInItem" : true,
+  "containerCallback" : "containerInteracted",
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
   "orientations" : [
     {

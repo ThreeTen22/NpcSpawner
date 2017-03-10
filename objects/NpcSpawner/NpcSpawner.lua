@@ -33,7 +33,10 @@ function init(virtual)
   self.weapon = nil   --we keep a seperate var for the weapon so that we can handle switching between ranged and melee npc behavior
 
   self.speciesOptions = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
-  self.typeOptions = world.getObjectParameter(pane.containerEntityId(),"typeOptions",{})
+  self.typeOptions = config.getParameter("typeOptions", {})
+  if not self.typeOptions then
+    dLog("config.getparameter found nuthin")
+  end
 
   self.absPosition = nil
   --self.npcParameter = util.randomFromList(world.getObjectParameter(pane.containerEntityId(),"spawner.npcParameterOptions"))
@@ -78,9 +81,9 @@ end
 function findPanel()
   local pos = entity.position()
   pos[2] = pos[2] + 2
-  local objList = world.entityQuery(pos, 0)
-  for i,j in ipairs(objList) do
-    if world.entityName(j) == "NpcSpawnerPanel" then return j end
+  local obj = world.objectAt(pos)
+  if obj then
+    if world.entityName(obj) == "NpcSpawnerPanel" then return j end
   end
   return nil
 end
@@ -98,9 +101,9 @@ function update(dt)
       world.sendEntityMessage(self.panelID, "setParentSpawner", storage.uniqueId)
     end
   end
-  sb.logInfo("Finding Panel")
-  sb.logInfo("Panel Not Found")
+
   if not findPanel() then 
+    sb.logInfo("Panel Not Found")
     world.breakObject(entity.id()) 
   end
 
