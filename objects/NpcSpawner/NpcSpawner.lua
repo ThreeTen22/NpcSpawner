@@ -1,3 +1,4 @@
+require "/scripts/util.lua"
 function init(virtual)
   if not virtual then
     object.setInteractive(true)
@@ -21,6 +22,7 @@ function init(virtual)
   storage.npcSpecies = storage.npcSpecies or "human"
   storage.seedValue = storage.seedValue or 0
   storage.type = storage.type or "CAFguard"
+  storage.level = storage.level or 10
   storage.npcParams = storage.npcParams or {}
 
   self.maxSpawnTime = 5   --time between checks to see if a new NPC should be spawned
@@ -47,18 +49,18 @@ function onInteraction(args)
 end
 
 function setNpcData(args)
-  local okCheck = 0
+
   if args.npcSpecies then
-    okCheck = okCheck+1
     storage.npcSpecies = args.npcSpecies
   end
   if args.npcSeed then
-    okCheck = okCheck+1
     storage.seedValue = args.npcSeed
   end
   if args.npcType then
-    okCheck = okCheck+1
     storage.type = args.npcType
+  end
+  if args.npcLevel then
+    storage.level = args.npcLevel
   end
   if args.npcParams then
     storage.npcParams = args.npcParams
@@ -68,6 +70,7 @@ function setNpcData(args)
   else
     sb.logInfo(string.format("NpcSpawner: setNpcData: one or more args was nil - okCheck: %s", okCheck))
   end
+
 end
 
 function findPanel()
@@ -105,7 +108,25 @@ function update(dt)
     if self.spawnTimer < 0 then
       local position = object.toAbsolutePosition({ 0.0, 2.0 });
       self.absPosition = position
-      local npcId = world.spawnNpc(position, storage.npcSpecies, storage.type, level, storage.seedValue, storage.npcParams)
+
+      local newParam = copy(storage.npcParams)
+      --local npcConfigScript = root.npcConfig("villager").scripts
+      --local npcConfigScript = root.npcConfig(storage.type).scripts
+      --local scriptFound = false
+      --for _,v in ipairs(npcConfigScript) do
+      --  if string.find(v, "/npcs/CAFmain.lua") then 
+      --    scriptFound = true 
+      --    break 
+      --  end
+      --end
+      --if not scriptFound then
+      --  table.insert(npcConfigScript, "/npcs/CAFmain.lua")
+      --end
+      --newParam.scripts = npcConfigScript
+      --sb.logInfo("%s",sb.printJson(newParam))
+
+      --local npcId = world.spawnNpc(position, storage.npcSpecies, storage.type, level, storage.seedValue, storage.npcParams)
+      local npcId = world.spawnNpc(position, storage.npcSpecies,storage.type, storage.level, storage.seedValue, newParam)
       --sb.logInfo("spawning,  seed value"..storage.seedValue)
       -- local portrait = world.entityPortrait(npcId, "full")
       -- for _, y in pairs(portrait) do
@@ -128,6 +149,7 @@ function update(dt)
     if storage.spawnedID and world.loadUniqueEntity(storage.spawnedID) == 0 then
       storage.spawned = false
     elseif self.checkGearTimer < 0 then
+
       setGear()
       self.checkGearTimer = self.maxGearTime
     end
@@ -147,12 +169,32 @@ function setGear()
 
   --function calls to the NPC character. Updates all the NPC's gear.
   if spawnedID == 0 then return end
-  world.callScriptedEntity(spawnedID, "getWeapon", weaponID)
-  world.callScriptedEntity(spawnedID, "getAlt", altID)
-  world.callScriptedEntity(spawnedID, "getBack", backID)
-  world.callScriptedEntity(spawnedID, "getHeadArmor", headID)
-  world.callScriptedEntity(spawnedID, "getChestArmor", chestID)
-  world.callScriptedEntity(spawnedID, "getLegArmor", legsID)
+
+  if weaponID then
+    world.callScriptedEntity(spawnedID, "npc.setItemSlot","primary",weaponID)
+  end
+  if altID then
+    world.callScriptedEntity(spawnedID, "npc.setItemSlot","alt",altID)
+  end
+  if backID then
+    world.callScriptedEntity(spawnedID, "npc.setItemSlot","back",backID)
+  end
+
+  if headID then
+    world.callScriptedEntity(spawnedID, "npc.setItemSlot","head",headID)
+  end
+
+  if chestID then
+    world.callScriptedEntity(spawnedID, "npc.setItemSlot","chest",chestID)
+  end
+
+  if legsID then
+    world.callScriptedEntity(spawnedID, "npc.setItemSlot","legs",chestID)
+  end
+
+ -- if spawnedID then
+ --   world.callScriptedEntity(spawnedID, "npc.setDisplayNametag", true)
+ -- end
 
   -- world.callScriptedEntity(spawnedID, "logSeed")
   --this re-init stuff seems a little wonky, but needs to be done to manage combat behavior of the NPC when we are changing their weapon from ranged to melee and vice versa.
