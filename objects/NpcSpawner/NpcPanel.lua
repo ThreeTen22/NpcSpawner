@@ -1,5 +1,6 @@
 require "/scripts/npcspawnutil.lua"
 
+
 function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
@@ -28,11 +29,20 @@ function init(virtual)
       setNpcData(args)
     end)
 
+
 end
 
 function onInteraction(args)
   local interactionConfig = config.getParameter("uiConfig")
   sb.logInfo("NpcPanel: onInteraction")
+
+
+
+  return {"ScriptPane", interactionConfig}
+end
+
+  local interactionConfig = config.getParameter("uiConfig")
+  sb.logInfo("NpcPanel: opened")
 
 
 

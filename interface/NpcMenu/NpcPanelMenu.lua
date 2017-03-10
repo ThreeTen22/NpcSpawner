@@ -1,7 +1,8 @@
 require "/scripts/util.lua"
 require "/scripts/npcspawnutil.lua"
+
 spnPersonality = {}
-itmArmorGrid = {}
+itmTradeItem = {}
 
 function init()
   --self.gettingSpecies = nil
@@ -102,15 +103,26 @@ function init()
    -- setList({list = self.speciesList,  listType = "species"})
 end
 
-function itmArmorGrid.right()
-dLog(type(itmArmorGrid), "itmArmorGrid: right ")
+--function itmArmorGrid.right()
+--dLog(type(itmArmorGrid), "itmArmorGrid: right ")
+--end
+--
+--function itmArmorGrid()
+--  dLog(type(itmArmorGrid), "itmArmorGrid ")
+--end
+
+function itmTradeItem(...)
+ 
+  dLog(..., "itmTradeItem ...  ")
+ 
 end
 
-function itmArmorGrid()
-  dLog(type(itmArmorGrid), "itmArmorGrid ")
-end
-
-
+--function itmTradeItem.right(...)
+--  dLog("itmTradeItem.right")
+--end
+--function itmTradeItem:right()
+--  dLog("itmTradeItem2")
+--end
 
 function spnPersonality.up()
   dLog("spinner UP:  ")
@@ -265,7 +277,7 @@ function update(dt)
     dLog("Update :  FirstRun")
     self.firstRun = false
     self.gettingNpcData = world.sendEntityMessage(pane.sourceEntity(), "getNpcData")
-    
+    widget.setItemSlotItem("itmTradeItem", "scorchedcore")
   end
 
   --initializing the seed value from the panel object
@@ -458,7 +470,12 @@ function setPortrait(args)
     "portraitSlot12",
     "portraitSlot13",
     "portraitSlot14",
-    "portraitSlot15"
+    "portraitSlot15",
+    "portraitSlot16",
+    "portraitSlot17",
+    "portraitSlot18",
+    "portraitSlot19",
+    "portraitSlot20"
   }
 
 
