@@ -7,17 +7,22 @@
   "subtitle" : "Make all the npcs",
   "race" : "generic",
   "price" : 200,
-  "category" : "wire",
+  "category" : "storage",
+  "tooltipKind" : "container",
   "apexDescription" : "I wonder if I can order a freedom fighter.",
   "avianDescription" : "Such technology is controversial on Avos.",
   "floranDescription" : "Fassst Food?",
   "glitchDescription" : "Impressed. Such a fair system. No lords and ladies, no paltry peasants.",
   "humanDescription" : "This is the ultimate evolution of online classified ads.",
   "hylotlDescription" : "To help another being brings inner peace.",
-
-  "uiConfig" : "/interface/NpcMenu/NpcPanelMenu.config",
+  "objectType" : "container",
+  "slotCount" : 6,
+  "openSounds" : ["/sfx/objects/miningchest_open.ogg" ],
+  "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
+  "frameCooldown" : 5,
+  "autoCloseCooldown" : 3600,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
-
+  "capacity" : 1000,
   "smashOnBreak" : true,
 
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
@@ -49,5 +54,61 @@
       "spaceScan" : 0.1,
       "anchors" : [ "background" ]
     }
-  ]
+  ],
+   "itemOverrideTemplate": {
+    "items": {
+      "override": [[0,
+      [{
+        
+      }]]]
+    }
+  },
+  "itemTemplate": {
+    "item": [{
+      "name": "REPLACEME",
+      "parameters": {
+        "colorIndex": 0
+      }
+    }]
+  },
+  "rgNPCModOptions": ["Generate","Refine","IO"],
+  "categoryIconPaths": ["techIconHead","techIconBody","techIconLegs"],
+  "speciesData": {
+    "speciesDirectory": {
+      "ext": ".species",
+      "base": "/species/"
+    },
+    "additionalSpeciesToList": {
+      "fenerox": ""
+    }
+  },
+  "npcTypeList": [ 
+    "alpaca",
+    "blacksmith",
+    "desertvillager",
+    "feneroxguard",
+    "feneroxvillager",
+    "follower",
+    "forestvillager",
+    "foundryguard",
+    "foundryworker",
+    "hazmatscientist",
+    "maskedguard",
+    "merchant",
+    "nakedvillager",
+    "villageguard",
+    "villageguardcaptain",
+    "villager",
+    "wizardmerchant" 
+  ],
+  "npcTypeTags" : {
+    "feneroxvillager" : ["fenerox"],
+    "feneroxguard" : ["fenerox"]
+  },
+  "tabOptions" : {
+    "Generate" : ["Species", "NpcType", "-", "-","-","-"],
+    "Refine"  : ["Hair", "FHair","HColor", "FHColor", "BColor", "UColor"],
+    "IO"  : ["-", "-","-", "-","-","-"]
+  },
+  "typeOptions": ["Guard","Villager"]
 }

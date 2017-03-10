@@ -4,7 +4,7 @@ function init(virtual)
   if not virtual then
     object.setInteractive(true)
   end
-  sb.logInfo("NpcSpawner: init")
+  sb.logInfo("NpcSpawner: init")  
 
   --auto-place the config panel. if the panel cannot be placed, the update will catch that and destroy the spawner.
   local pos = entity.position()
@@ -33,10 +33,10 @@ function init(virtual)
   self.weapon = nil   --we keep a seperate var for the weapon so that we can handle switching between ranged and melee npc behavior
 
   self.speciesOptions = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
-  self.typeOptions = config.getParameter("typeOptions")
+  self.typeOptions = world.getObjectParameter(pane.containerEntityId(),"typeOptions",{})
 
   self.absPosition = nil
-  --self.npcParameter = util.randomFromList(config.getParameter("spawner.npcParameterOptions"))
+  --self.npcParameter = util.randomFromList(world.getObjectParameter(pane.containerEntityId(),"spawner.npcParameterOptions"))
 
   --handler (listener) for messsages from the panel object sending this spawner the species of the NPC to be spawned
 
@@ -90,23 +90,7 @@ function update(dt)
   --we have to do this here because it doesn't work in the init function unfortunately. we don't have an id assigned yet there apparently
   --storage.seedValue = dt
   if not storage.uniqueId then
-
-  --local newParameter = config.getParameter("testJson")
-  --if newParameter then
-  --  sb.logInfo("newParameterChanged")
-  --  sb.logInfo("%s",sb.printJson(newParameter))
-  --else
-  --  sb.logInfo("settingParameter")
-  --  object.setConfigParameter("testJson", {testString = "string", testArray = {1,2,3}})
-  --  object.setConfigParameter("objectName", "StoredNpcSpawnerBase")
-  --  object.setConfigParameter("inventoryIcon", "/items/generic/tradingcards/card01.png")
-  --  object.setConfigParameter("shortdescription", "modified CAF Panel")
-  --  sb.logInfo("%s",sb.printJson(config.getParameter("objectName")))
-  --  sb.logInfo("%s",sb.printJson(config.getParameter("inventoryIcon")))
-  --  sb.logInfo("%s",sb.printJson(config.getParameter("shortdescription")))
-  --end
-
-    storage.uniqueId = sb.makeUuid();
+    storage.uniqueId = sb.makeUuid()
     world.setUniqueId(entity.id(), storage.uniqueId)
     self.panelID = findPanel()
     if self.panelID then
@@ -114,11 +98,12 @@ function update(dt)
       world.sendEntityMessage(self.panelID, "setParentSpawner", storage.uniqueId)
     end
   end
+  sb.logInfo("Finding Panel")
+  sb.logInfo("Panel Not Found")
   if not findPanel() then 
     world.breakObject(entity.id()) 
   end
 
-  local position = object.toAbsolutePosition({ 0.0, 2.0 });
   --if we do not have a living NPC spawned, spawn a new one
   if storage.spawned == false then
     self.weapon = nil
@@ -156,7 +141,7 @@ function update(dt)
       storage.spawned = false
     elseif self.checkGearTimer < 0 then
 
-      setGear()
+      --setGear()
       self.checkGearTimer = self.maxGearTime
     end
   end
@@ -198,9 +183,6 @@ function setGear()
     world.callScriptedEntity(spawnedID, "npc.setItemSlot","legs",chestID)
   end
 
-  local itemDescriptor = world.callScriptedEntity(spawnedID, "npc.getItemSlot","head")
-  dLog(itemDescriptor, "headSlot:  ")
-
  -- if spawnedID then
  --   world.callScriptedEntity(spawnedID, "npc.setDisplayNametag", true)
  -- end
@@ -211,14 +193,14 @@ function setGear()
   if self.weapon == nil then
     if weaponID ~= nil then
       self.weapon = weaponID
-      world.callScriptedEntity(spawnedID, "reInit")
+      world.callScriptedEntity(spawnedID, "Init")
     end
   --if we DO have a weapon and there is not a new one in the chest, return
   elseif weaponID == nil then return
   --if we DO have a weapon and there IS one in the chest and they are not the same, update the weapon and re-initialize the NPC
   elseif self.weapon["name"] ~= weaponID["name"] then
     self.weapon = weaponID
-    world.callScriptedEntity(spawnedID, "reInit")
+    world.callScriptedEntity(spawnedID, "Init")
   end
 end
 
@@ -278,7 +260,7 @@ end
 
 --Works!
 function spawnTestItem()
-  local itemParam = config.getParameter("templateOverride")
+  local itemParam = world.getObjectParameter(pane.containerEntityId(),"templateOverride",{})
   if not itemParam then return end
   local item = world.spawnItem("spawnerwizard", self.absPosition, 1, itemParam)
 end

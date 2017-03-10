@@ -2,16 +2,17 @@ require "/scripts/util.lua"
 require "/scripts/npcspawnutil.lua"
 
 spnPersonality = {}
-itmTradeItem = {}
+--itmTradeItem = {}
 
 function init()
+  sb.logInfo("NpcPanelMenu: init")
   --self.gettingSpecies = nil
   --self.gettingSeedValue = nil
   --self.gettingType = nil
   --self.gettingPosition = nil
   self.gettingNpcData = nil
 	--these variables store the results of the messages we send to the parent panel obj
-  sb.logInfo("NpcPanelMenu: init")
+ 
 	self.sendingSpecies = nil
 	self.sendingSeedValue = nil
   self.sendingType = nil
@@ -51,7 +52,7 @@ function init()
   
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
 
-  self.typeList = config.getParameter(self.npcTypeConfigList)
+  self.typeList = world.getObjectParameter(pane.containerEntityId(),self.npcTypeConfigList,{})
 
   --CATEGORY VARS--
   --`int` widget.getSelectedOption(`String` widgetName)
@@ -65,7 +66,7 @@ function init()
   self.categoryWidgetData = "Generate"
 
   --OVERI
-  --self.buttonDataOptions = config.getParameter("rgNPCModOptions")
+  --self.buttonDataOptions = world.getObjectParameter(pane.containerEntityId(),"rgNPCModOptions")
   ------------
   ---OVERRIDE VARS----
   self.manualInput = false
@@ -111,11 +112,6 @@ end
 --  dLog(type(itmArmorGrid), "itmArmorGrid ")
 --end
 
-function itmTradeItem(...)
- 
-  dLog(..., "itmTradeItem ...  ")
- 
-end
 
 --function itmTradeItem.right(...)
 --  dLog("itmTradeItem.right")
@@ -276,8 +272,7 @@ function update(dt)
   if self.firstRun then
     dLog("Update :  FirstRun")
     self.firstRun = false
-    self.gettingNpcData = world.sendEntityMessage(pane.sourceEntity(), "getNpcData")
-    widget.setItemSlotItem("itmTradeItem", "scorchedcore")
+    self.gettingNpcData = world.sendEntityMessage(pane.containerEntityId(), "getNpcData")
   end
 
   --initializing the seed value from the panel object
@@ -296,7 +291,7 @@ function update(dt)
     end
 
     if result.npcLevel then
-      self.currentLevel = result.npcLevel
+      self.currentLevel = tonumber(result.npcLevel) or 10
     end
 
     if result.npcParams then
@@ -404,7 +399,7 @@ function acceptBtn()
     args.npcSeed = self.targetSize
     --self.sendingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "setSeedValuePanel", self.targetSize)
   end
-    self.sendingData = world.sendEntityMessage(pane.sourceEntity(), "setNpcData", args)
+    self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
 end
 
 
@@ -415,14 +410,14 @@ function replaceItemOverrides(args)
     legs = "hikerlegs",
     back = nil
   })
-  local params = config.getParameter("itemOverrideTemplate")
-  local item = config.getParameter("itemTemplate").item[1]
+  local params = world.getObjectParameter(pane.containerEntityId(),"itemOverrideTemplate")
+  local item = world.getObjectParameter(pane.containerEntityId(),"itemTemplate").item[1]
   dLogJson(params, "Params: ")
   local insertPosition = params.items.override[1][2][1]
   --debug--
-  insertPosition.chest = config.getParameter("itemTemplate").item
+  insertPosition.chest = world.getObjectParameter(pane.containerEntityId(),"itemTemplate").item
   insertPosition.chest[1].name = args.chest
-  insertPosition.legs = config.getParameter("itemTemplate").item
+  insertPosition.legs = world.getObjectParameter(pane.containerEntityId(),"itemTemplate").item
   insertPosition.legs[1].name = args.legs
   dLogJson(params, "replaceItemOverrides: Params: ")
   return params
@@ -1016,7 +1011,7 @@ function changeTabLabels(tabs, option)
   tabs = tabs or "nil"
   option = option or "nil"
 
-  local tabOptions = config.getParameter("tabOptions")[option]
+  local tabOptions = world.getObjectParameter(pane.containerEntityId(),"tabOptions")[option]
   local indx = 1
 
   if tabOptions then
@@ -1032,7 +1027,7 @@ end
   --button : ? (widget.getSelectedOption?)
   --indx buttonlabel.data (widget.getSelectedData)
 function selectGenCategory(button, data)
-  local  dataList = config.getParameter("rgNPCModOptions")
+  local  dataList = world.getObjectParameter(pane.containerEntityId(),"rgNPCModOptions")
 
   local tabNames = {"lblTab01","lblTab02","lblTab03","lblTab04","lblTab05","lblTab06"}
 
