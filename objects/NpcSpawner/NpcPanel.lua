@@ -29,6 +29,7 @@ function init(virtual)
       setNpcData(args)
     end)
 
+    message.setHandler("onOpen", function(_,_, args) onOpen(args) end)
 
 end
 
@@ -41,6 +42,7 @@ function onInteraction(args)
   return {"ScriptPane", interactionConfig}
 end
 
+function onOpen(args)
   local interactionConfig = config.getParameter("uiConfig")
   sb.logInfo("NpcPanel: opened")
 
