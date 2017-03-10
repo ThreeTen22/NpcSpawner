@@ -36,7 +36,7 @@ function init()
 
   self.seedInput = 0
 
-  self.personalityIndex = 1
+  self.personalityIndex = 0
 
   --LIST VARS--
   self.scrollArea = "techScrollArea"
@@ -48,7 +48,6 @@ function init()
   self.npcTypeConfigList = "npcTypeList"
   
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
-
 
   self.typeList = config.getParameter(self.npcTypeConfigList)
 
@@ -104,34 +103,39 @@ end
 
 
 function spnPersonality.up()
-  local personalities = root.assetJson("/humanoid.config:personalities")
   dLog("spinner UP:  ")
-  self.personalityIndex = util.wrap(self.personalityIndex + 1, 1, #personalities)
+  local personalities = getAsset("/humanoid.config:personalities")
+  self.personalityIndex = util.wrap(self.personalityIndex + 1, 0, #personalities)
   setPersonality(self.personalityIndex)
+
 end
 
 function spnPersonality.down()
   dLog("spinner DOWN:  ")
-  local personalities = root.assetJson("/humanoid.config:personalities")
-  self.personalityIndex = util.wrap(self.personalityIndex - 1, 1, #personalities)
+  local personalities = getAsset("/humanoid.config:personalities")
+  self.personalityIndex = util.wrap(self.personalityIndex - 1, 0, #personalities)
   setPersonality(self.personalityIndex)
 end
 
-
 function setPersonality(index)
-  local personalities = root.assetJson("/humanoid.config:personalities")
-  local personality = personalities[index]
-  assert(personality, string.format("cannot find personality, bad index?  :  %s", index))
-  local identity = self.currentIdentityOverrides.identity
-  identity.personalityIdle = personality[1]
-  identity.personalityHeadOffset = personality[3]
-  identity.personalityArmIdle = personality[2]
-  identity.personalityArmOffset = personality[4]
+  if index ~= 0 then
+    widget.setText("lblPersonality", tostring(index))
+    local personalities = getAsset("/humanoid.config:personalities")
+    local personality = personalities[index]
+    --assert(personality, string.format("cannot find personality, bad index?  :  %s", index))
+    local identity = self.currentIdentityOverrides.identity
+    identity.personalityIdle = personality[1]
+    identity.personalityHeadOffset = personality[3]
+    identity.personalityArmIdle = personality[2]
+    identity.personalityArmOffset = personality[4]
+  else
+    widget.setText("lblPersonality", "No Override")
+    return clearPersonality()
+  end
   self.portraitNeedsUpdate = true
 end
 
 function clearPersonality()
-  
   if self.currentIdentityOverrides.identity then
     local identity = self.currentIdentityOverrides.identity
     identity.personalityIdle = nil
@@ -298,6 +302,7 @@ function update(dt)
       widget.setText("tbNameBox", self.currentIdentityOverrides.identity.name)
     end
     --widget.setSelectedOption(self.tabGroupWidget, self.tabSelectedOption)
+    self.portraitNeedsUpdate = true
   end
 
   --main loop after everyting has been loaded in
@@ -973,7 +978,7 @@ function changeTabLabels(tabs, option)
   tabs = tabs or "nil"
   option = option or "nil"
 
-  local tabOptions = config.getParameter("tabOptions:option")
+  local tabOptions = config.getParameter("tabOptions")[option]
   local indx = 1
 
   if tabOptions then
@@ -1000,19 +1005,28 @@ function selectGenCategory(button, data)
     widget.setVisible(self.scrollArea, true)
     widget.setSliderEnabled("sldTargetSize", true)
     widget.setVisible("lblBlockNameBox", true)
+    widget.setVisible("spnPersonality", false)
+    widget.setVisible("lblPersonality", false)
   elseif data == "Refine" then
     changeTabLabels(tabNames, "Refine")
     widget.setVisible(self.scrollArea, true)
     widget.setSliderEnabled("sldTargetSize", false)
     widget.setVisible("lblBlockNameBox", false)
+    widget.setVisible("spnPersonality", true)
+    widget.setVisible("lblPersonality", true)
+  elseif data == "IO" then
+    widget.setSliderEnabled("sldTargetSize", false)
+    widget.setVisible("lblBlockNameBox", false)
+    widget.setVisible("spnPersonality", false)
+    widget.setVisible("lblPersonality", false)
   end
   dLog(data, "selectGenCategory - selectedOption:  ")
-    local indx = widget.getSelectedOption(self.tabGroupWidget)
-    local tabData = widget.getSelectedData(self.tabGroupWidget)
-    if indx and tabData then
-      return selectTab(indx, tabData)
-    end
-  
+  local indx = widget.getSelectedOption(self.tabGroupWidget)
+  local tabData = widget.getSelectedData(self.tabGroupWidget)
+  if indx and tabData then
+    return selectTab(indx, tabData)
+  end
+
 end
 
 -------END CATEGORY FUNCTIONS---------
