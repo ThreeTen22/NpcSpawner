@@ -1,4 +1,5 @@
 require "/scripts/util.lua"
+require "/scripts/npcspawnutil.lua"
 function init(virtual)
   if not virtual then
     object.setInteractive(true)
@@ -42,6 +43,7 @@ function init(virtual)
   message.setHandler("setNpcData", function(_, _, args)
     setNpcData(args)
   end)
+  
 end
 
 function onInteraction(args)
@@ -88,6 +90,22 @@ function update(dt)
   --we have to do this here because it doesn't work in the init function unfortunately. we don't have an id assigned yet there apparently
   --storage.seedValue = dt
   if not storage.uniqueId then
+
+  --local newParameter = config.getParameter("testJson")
+  --if newParameter then
+  --  sb.logInfo("newParameterChanged")
+  --  sb.logInfo("%s",sb.printJson(newParameter))
+  --else
+  --  sb.logInfo("settingParameter")
+  --  object.setConfigParameter("testJson", {testString = "string", testArray = {1,2,3}})
+  --  object.setConfigParameter("objectName", "StoredNpcSpawnerBase")
+  --  object.setConfigParameter("inventoryIcon", "/items/generic/tradingcards/card01.png")
+  --  object.setConfigParameter("shortdescription", "modified CAF Panel")
+  --  sb.logInfo("%s",sb.printJson(config.getParameter("objectName")))
+  --  sb.logInfo("%s",sb.printJson(config.getParameter("inventoryIcon")))
+  --  sb.logInfo("%s",sb.printJson(config.getParameter("shortdescription")))
+  --end
+
     storage.uniqueId = sb.makeUuid();
     world.setUniqueId(entity.id(), storage.uniqueId)
     self.panelID = findPanel()
@@ -110,21 +128,8 @@ function update(dt)
       self.absPosition = position
 
       local newParam = copy(storage.npcParams)
-      --local npcConfigScript = root.npcConfig("villager").scripts
-      --local npcConfigScript = root.npcConfig(storage.type).scripts
-      --local scriptFound = false
-      --for _,v in ipairs(npcConfigScript) do
-      --  if string.find(v, "/npcs/CAFmain.lua") then 
-      --    scriptFound = true 
-      --    break 
-      --  end
-      --end
-      --if not scriptFound then
-      --  table.insert(npcConfigScript, "/npcs/CAFmain.lua")
-      --end
-      --newParam.scripts = npcConfigScript
-      --sb.logInfo("%s",sb.printJson(newParam))
 
+      
       --local npcId = world.spawnNpc(position, storage.npcSpecies, storage.type, level, storage.seedValue, storage.npcParams)
       local npcId = world.spawnNpc(position, storage.npcSpecies,storage.type, storage.level, storage.seedValue, newParam)
       --sb.logInfo("spawning,  seed value"..storage.seedValue)
@@ -137,6 +142,7 @@ function update(dt)
       --assign our new NPC a special unique id
       storage.spawnedID = sb.makeUuid()
       world.setUniqueId(npcId, storage.spawnedID)
+
       storage.spawned = true 
       self.spawnTimer = self.maxSpawnTime
     else
@@ -191,6 +197,9 @@ function setGear()
   if legsID then
     world.callScriptedEntity(spawnedID, "npc.setItemSlot","legs",chestID)
   end
+
+  local itemDescriptor = world.callScriptedEntity(spawnedID, "npc.getItemSlot","head")
+  dLog(itemDescriptor, "headSlot:  ")
 
  -- if spawnedID then
  --   world.callScriptedEntity(spawnedID, "npc.setDisplayNametag", true)
@@ -264,4 +273,12 @@ function createLife(seed)
     --local npcJSON = world.spawnNpc(storage.npcSpecies, storage.type, level, parameters)
     local spawnNPC = world.spawnNpc(position, storage.npcSpecies, storage.type, level, nil, parameters);
     return spawnNPC
+end
+
+
+--Works!
+function spawnTestItem()
+  local itemParam = config.getParameter("templateOverride")
+  if not itemParam then return end
+  local item = world.spawnItem("spawnerwizard", self.absPosition, 1, itemParam)
 end

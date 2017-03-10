@@ -1,3 +1,5 @@
+require "/scripts/npcspawnutil.lua"
+
 function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
@@ -25,6 +27,7 @@ function init(virtual)
     message.setHandler("setNpcData", function(_,_, args)
       setNpcData(args)
     end)
+
 end
 
 function onInteraction(args)

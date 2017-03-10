@@ -1,6 +1,7 @@
 require "/scripts/util.lua"
-
+require "/scripts/npcspawnutil.lua"
 spnPersonality = {}
+itmArmorGrid = {}
 
 function init()
   --self.gettingSpecies = nil
@@ -101,6 +102,15 @@ function init()
    -- setList({list = self.speciesList,  listType = "species"})
 end
 
+function itmArmorGrid.right()
+dLog(type(itmArmorGrid), "itmArmorGrid: right ")
+end
+
+function itmArmorGrid()
+  dLog(type(itmArmorGrid), "itmArmorGrid ")
+end
+
+
 
 function spnPersonality.up()
   dLog("spinner UP:  ")
@@ -192,18 +202,28 @@ function finalizeOverride()
   dLog("FinalizingOverride")
   self.overrideText = widget.getText(self.overrideTextBox)
 
-  local parsedStrings = parseOverride(self.overrideText, "")
+  local parsedStrings = parseOverride(self.overrideText, "%w*")
   dLogJson(parsedStrings, "ParsedStrings:  ")
+  
+  parsedStrings = parseArgs(parsedStrings, {
+    "nil",
+    "nil",
+    "nil",
+    "nil"
+    })
 
   if parsedStrings[1] ~= "nil" then
     self.currentSpecies = parsedStrings[1]
   end
+
   if parsedStrings[2] ~= "nil" then
     self.currentType = parsedStrings[2]
   end
+
   if parsedStrings[3] ~= "nil" then
     self.currentLevel = parsedStrings[3]
   end
+
   if parsedStrings[4] ~= "nil" then
     self.seedInput = parsedStrings[4]
   end
@@ -213,10 +233,10 @@ function finalizeOverride()
   return
 end
 
-function parseOverride(txt, char)
+function parseOverride(txt, pattern)
   local parsedStrings = {}
 
-  for str in string.gmatch(txt, "%w*") do
+  for str in string.gmatch(txt, pattern) do
     if str ~= "" then
       table.insert(parsedStrings, str)
     end
@@ -332,14 +352,14 @@ function update(dt)
   end
 end
 
-function seedValue() 
-  if self.typeInitialized and self.speciesInitialized and self.seedValueInitialized then 
-    self.manualInput = true
-    self.seedInput = widget.getText("seedValue")
-    sb.logWarn("typedKey?")
-     self.portraitNeedsUpdate = true
-  end
-end
+--function seedValue() 
+--  if self.typeInitialized and self.speciesInitialized and self.seedValueInitialized then 
+--    self.manualInput = true
+--    self.seedInput = widget.getText("seedValue")
+--    sb.logWarn("typedKey?")
+--     self.portraitNeedsUpdate = true
+--  end
+--end
 
 function clampSize(newSize)
   return math.min(math.min(math.max(math.max(newSize, self.minTargetSize), self.currentSize), self.currentSize + self.maxStepSize), self.worldSize)
@@ -410,7 +430,7 @@ function setPortrait(args)
   self.currentIdentity.underwear = getDirectiveAtEnd(variant.humanoidIdentity.bodyDirectives)
 
   variant = root.npcVariant(args.curSpecies,args.curType, args.level, args.curSeed, self.currentIdentityOverrides)
-  dLogJson(variant, "variantCONFIG:  ")
+  --dLogJson(variant, "variantCONFIG:  ")
   dLog(variant.humanoidIdentity.bodyDirectives, "bodyDirectives: ")
   dLog(self.currentIdentityOverrides.identity.bodyDirectives, "overrideBodyDirectives")
 
@@ -938,9 +958,6 @@ function listItemSelected()
         self.currentIdentityOverrides.identity.emoteDirectives = replaceDirectiveAtEnd(self.currentIdentity.emoteDirectives, listArgs.directive)  
       end
     end
-    dLog(listArgs.directive," directive:  ")
-    dLogJson(self.currentIdentity, "listArgs:  currentIdentity:")
-    dLogJson(self.currentIdentityOverrides.identity, "listArgs:  identityOverride:")
 
   end
 
@@ -1034,26 +1051,6 @@ function selectGenCategory(button, data)
 end
 
 -------END CATEGORY FUNCTIONS---------
-
-function dLog(item, prefix)
-  local p = prefix or ""
-  if type(item) ~= "string" then
-    sb.logInfo("%s %s",p, dOut(item))
-  else 
-    sb.logInfo("%s %s",p,item)
-  end
-end
-
-function dOut(input)
-  return sb.print(input)
-end
-
-function dLogJson(input, prefix)
-  if prefix ~= nil then
-    sb.logInfo(prefix)
-  end
-   sb.logInfo("%s", sb.printJson(input))
-end
 
 function valuesToKeys(list)
   local newList = {}
