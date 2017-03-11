@@ -21,22 +21,33 @@ function dLogJson(input, prefix)
 end
 
 
+function dCompare(prefix, one, two)
   sb.logInfo(prefix)
+  dComp["nil"] = nilString
+  dComp[type(one)](one)
+  dComp[type(two)](two)
 end
 
 function dComp.string(input)
+  return dLog(input, "string: ")
 end
 
 function dComp.table(input)
+  return dLogJson(input, "table")
 end
 
 function dComp.number(input)
+  return dLog(input, "number")
 end
 
 function dComp.bool(input)
+  return dLog(input, "bool: ")
 end
 
 function dComp.userdata(input)
+  return dLogJson(input, "userdata:")
 end
 
+function nilString(input)
+  return sb.logInfo("nil")
 end
