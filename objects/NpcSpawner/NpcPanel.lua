@@ -1,4 +1,5 @@
 require "/scripts/npcspawnutil.lua"
+require "/scripts/util.lua"
 function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
