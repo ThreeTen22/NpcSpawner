@@ -51,3 +51,12 @@ end
 function nilString(input)
   return sb.logInfo("nil")
 end
+
+function countdown(number, amt)
+  number.clock = number.clock - amt
+  if number.clock < 0 then
+    number.clock = number.reset
+    return true
+  end
+  return false
+end

@@ -116,5 +116,5 @@
     "HColor" :["hairDirectives"]
   },
   "typeOptions": ["Guard","Villager"],
-  "updatedPortrait": false
+  "checkEquipmentSlots": false
 }
