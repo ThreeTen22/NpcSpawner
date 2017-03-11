@@ -1,3 +1,5 @@
+dComp = {}
+
 function dLog(item, prefix)
   local p = prefix or ""
   if type(item) ~= "string" then
@@ -16,4 +18,25 @@ function dLogJson(input, prefix)
     sb.logInfo(prefix)
   end
    sb.logInfo("%s", sb.printJson(input))
+end
+
+
+  sb.logInfo(prefix)
+end
+
+function dComp.string(input)
+end
+
+function dComp.table(input)
+end
+
+function dComp.number(input)
+end
+
+function dComp.bool(input)
+end
+
+function dComp.userdata(input)
+end
+
 end

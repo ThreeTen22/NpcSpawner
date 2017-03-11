@@ -5,8 +5,9 @@ function init(virtual)
   	end
     sb.logInfo("NpcPanel: init")
     storage.npcSpecies = storage.npcSpecies or "human"
-    storage.seedValue = storage.seedValue or 0
-    storage.type = storage.type or "CAFguard"
+    storage.npcSeed = storage.npcSeed or 0
+    storage.npcLevel = storage.npcLevel or 1
+    storage.npcType = storage.npcType or "CAFguard"
     storage.npcParams = storage.npcParams or {}
   	storage.parentSpawner = storage.parentSpawner or nil
     storage.panelUniqueId = storage.panelUniqueId or entity.uniqueId() or sb.makeUuid()
@@ -37,7 +38,7 @@ end
 
 function containerInteracted()
   dLog("container has been called back!")
-  object.setParameter()
+  world.setObjectParameter(pane.containerEntityId(), "")
 end
 
 function onInteraction(args)
@@ -60,9 +61,10 @@ end
 function getNpcData()
  local args = {
       npcSpecies = storage.npcSpecies,
-      seedValue = storage.seedValue,
-      npcType = storage.type,
-      npcParams = storage.npcParams
+      npcSeed = storage.npcSeed,
+      npcType = storage.npcType,
+      npcParams = storage.npcParams,
+      npcLevel = storage.npcLevel
     }
   return args
 end
@@ -70,16 +72,12 @@ end
 function setNpcData(args)
 
   storage.npcSpecies = args.npcSpecies
-  storage.seedValue = args.npcSeed
-  storage.type = args.npcType
+  storage.npcSeed = args.npcSeed
+  storage.npcType = args.npcType
   storage.npcParams = args.npcParams
+  storage.npcLevel = args.npcLevel
 
-  local newArgs = {
-    npcSpecies = args.npcSpecies,
-    npcSeed = args.npcSeed,
-    npcType = args.npcType,
-    npcParams = args.npcParams
-  }
+  local newArgs = copy(args)
 
   world.sendEntityMessage(storage.parentSpawner, "setNpcData", newArgs)
 end

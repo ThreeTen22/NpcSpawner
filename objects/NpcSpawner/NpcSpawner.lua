@@ -1,5 +1,6 @@
 require "/scripts/util.lua"
 require "/scripts/npcspawnutil.lua"
+
 function init(virtual)
   if not virtual then
     object.setInteractive(true)
@@ -21,9 +22,9 @@ function init(virtual)
 
   storage.uniqueId = storage.uniqueId or nil    --this object's unique id. used for giving to the spawned npc
   storage.npcSpecies = storage.npcSpecies or "human"
-  storage.seedValue = storage.seedValue or 0
-  storage.type = storage.type or "CAFguard"
-  storage.level = storage.level or 10
+  storage.npcSeed = storage.npcSeed or 0
+  storage.npcLevel = storage.npcLevel or 1
+  storage.npcType = storage.npcType or "CAFguard"
   storage.npcParams = storage.npcParams or {}
 
   self.maxSpawnTime = 5   --time between checks to see if a new NPC should be spawned
@@ -59,13 +60,13 @@ function setNpcData(args)
     storage.npcSpecies = args.npcSpecies
   end
   if args.npcSeed then
-    storage.seedValue = args.npcSeed
+    storage.npcSeed = args.npcSeed
   end
   if args.npcType then
-    storage.type = args.npcType
+    storage.npcType = args.npcType
   end
   if args.npcLevel then
-    storage.level = args.npcLevel
+    storage.npcLevel = args.npcLevel
   end
   if args.npcParams then
     storage.npcParams = args.npcParams
@@ -81,9 +82,9 @@ end
 function findPanel()
   local pos = entity.position()
   pos[2] = pos[2] + 2
-  local obj = world.objectAt(pos)
-  if obj then
-    if world.entityName(obj) == "NpcSpawnerPanel" then return j end
+  local objList = world.objectQuery(pos, 0, {name = "NpcSpawnerPanel"})
+  for i,j in ipairs(objList) do
+    if world.entityName(j) == "NpcSpawnerPanel" then return j end
   end
   return nil
 end
@@ -91,7 +92,7 @@ end
 function update(dt)
   --if we have not done so, send our uniqueId to the panel that we spawned
   --we have to do this here because it doesn't work in the init function unfortunately. we don't have an id assigned yet there apparently
-  --storage.seedValue = dt
+  --storage.npcSeed = dt
   if not storage.uniqueId then
     storage.uniqueId = sb.makeUuid()
     world.setUniqueId(entity.id(), storage.uniqueId)
@@ -117,16 +118,8 @@ function update(dt)
 
       local newParam = copy(storage.npcParams)
 
-      
-      --local npcId = world.spawnNpc(position, storage.npcSpecies, storage.type, level, storage.seedValue, storage.npcParams)
-      local npcId = world.spawnNpc(position, storage.npcSpecies,storage.type, storage.level, storage.seedValue, newParam)
-      --sb.logInfo("spawning,  seed value"..storage.seedValue)
-      -- local portrait = world.entityPortrait(npcId, "full")
-      -- for _, y in pairs(portrait) do
-      --   for a, b in pairs(y) do
-      --     world.logInfo(tostring(a) .. " -> " .. tostring(b))
-      --   end
-      -- end
+      local npcId = world.spawnNpc(position, storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, newParam)
+
       --assign our new NPC a special unique id
       storage.spawnedID = sb.makeUuid()
       world.setUniqueId(npcId, storage.spawnedID)

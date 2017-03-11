@@ -24,7 +24,6 @@
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
   "capacity" : 1000,
   "smashOnBreak" : true,
-  "retainObjectParametersInItem" : true,
   "containerCallback" : "containerInteracted",
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
   "orientations" : [
@@ -111,5 +110,11 @@
     "Refine"  : ["Hair", "FHair","HColor", "FHColor", "BColor", "UColor"],
     "IO"  : ["-", "-","-", "-","-","-"]
   },
-  "typeOptions": ["Guard","Villager"]
+  "getAssetParams" : {
+    "Hair" : ["hairGroup", "hair", "hair"],
+    "FHair" : ["facialHairGroup", "facialHair", "facialHairGroup"],
+    "HColor" :["hairDirectives"]
+  },
+  "typeOptions": ["Guard","Villager"],
+  "updatedPortrait": false
 }
