@@ -91,6 +91,9 @@ function init()
 
   self.updateIndx = 1
 
+  self.cd = 2
+  self.reset = 2
+
 
 
   widget.setSliderRange("sldTargetSize",0, self.worldSize)
@@ -166,6 +169,7 @@ function init()
     self.updateIndx = self.updateIndx + 1
     return updateNpc(getArgs())
   end
+
   updateFunc[4] = function(args)
     if self.npcDataInit then
       self.updateIndx = self.updateIndx + 1
@@ -173,19 +177,33 @@ function init()
   end
 
   updateFunc[5] = function(args)
-    if self.portraitNeedsUpdate then
-      self.portraitNeedsUpdate = false
-      return updateNpc(getArgs())
+        self.cd = self.cd-1
+        if self.cd < 0 then 
+          self.updateIndx = math.min(self.updateIndx + 1, 6)
+          self.cd = 10
+        end
+        if self.portraitNeedsUpdate then
+          self.portraitNeedsUpdate = false
+          return updateNpc(getArgs())
+        end
+  end 
+  updateFunc[6] = function(args)
+  dLog("checking for Equip")
+  self.updateIndx = math.min(self.updateIndx - 1, 6)
+  local checkEquip = world.getObjectParameter(pane.containerEntityId(),"checkEquipmentSlots")
+    if checkEquip then
+      return checkAndEquip()
     end
   end
-  
-  
 end
 
---function itmArmorGrid.right()
---dLog(type(itmArmorGrid), "itmArmorGrid: right ")
---end
---
+
+function checkAndEquip()
+  dLogJson("checkAndEqupi:  bag")
+  local bag = widget.itemGridItems("itemGrid")
+  dLogJson(bag, "bag")
+  dlog("itsm:" ,  type(bag) )
+end
 
 function getArgs()
   local args = {
@@ -318,21 +336,26 @@ function finalizeOverride()
     "nil",
     "nil"
     })
-  if parsedStrings[1] == "hs" and parsedStrings[2] == "hair" then
+
+  if parsedStrings[1] == "c&e" then
+    return checkAndEquip()
+  end
+
+  if parsedStrings[1] == "hue" and parsedStrings[2] == "hair" then
     self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives or  self.currentIdentity.hairDirectives
     self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives.."?hueshift="..parsedStrings[3]
     widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
     return updateNpc(getArgs())
   end
 
-  if parsedStrings[1] == "hs" and parsedStrings[2] == "body" then
+  if parsedStrings[1] == "hue" and parsedStrings[2] == "body" then
     self.currentOverride.identity.bodyDirectives = self.currentOverride.identity.bodyDirectives or  self.currentIdentity.bodyDirectives
     self.currentOverride.identity.bodyDirectives = self.currentOverride.identity.bodyDirectives.."?hueshift="..parsedStrings[3]
     widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
     return updateNpc(getArgs())
   end
 
-  if parsedStrings[1] == "hs" and parsedStrings[2] == "emote" then
+  if parsedStrings[1] == "hue" and parsedStrings[2] == "emote" then
     self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives or  self.currentIdentity.emoteDirectives
     self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives.."?hueshift="..parsedStrings[3]
     widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
@@ -409,14 +432,11 @@ end
 
 function update(dt)
   --Cannot send entity messages during init, so will do it here
- 
-  updateFunc[self.updateIndx](dt)
-
-  --initializing the seed value from the panel object
-
-  --main loop after everyting has been loaded in
   
-     --updateGUI()
+  updateFunc[math.min(self.updateIndx, 6)](dt)
+
+
+  checkAndEquip()
   
 end
 
@@ -496,9 +516,9 @@ function updateNpc(args)
   variant = root.npcVariant(args.curSpecies,args.curType, args.curLevel, args.curSeed, self.currentOverride)
   --dLogJson(variant, "variantCONFIG:  ")
   
-  dCompare("bodyDirectives - curIden/override", self.currentIdentity.bodyDirectives, variant.humanoidIdentity.bodyDirectives)
-  dCompare("hairDirectives - curIden/override", self.currentIdentity.hairDirectives, variant.humanoidIdentity.hairDirectives)
-  dCompare("emoteDirectives - curIden/override", self.currentIdentity.emoteDirectives, variant.humanoidIdentity.emoteDirectives)
+ -- dCompare("bodyDirectives - curIden/override", self.currentIdentity.bodyDirectives, variant.humanoidIdentity.bodyDirectives)
+ -- dCompare("hairDirectives - curIden/override", self.currentIdentity.hairDirectives, variant.humanoidIdentity.hairDirectives)
+ -- dCompare("emoteDirectives - curIden/override", self.currentIdentity.emoteDirectives, variant.humanoidIdentity.emoteDirectives)
 
 
   local npcPort = root.npcPortrait("full", args.curSpecies,args.curType, args.curLevel, args.curSeed, args.curOverride)
@@ -901,7 +921,6 @@ function listItemSelected()
       self.currentOverride.identity.bodyDirectives = replaceDirectiveAtEnd(self.currentOverride.identity.bodyDirectives, self.currentIdentity.underwear)
       self.currentOverride.identity.hairDirectives = replaceDirectiveAtEnd(self.currentOverride.identity.hairDirectives, self.currentIdentity.underwear)  
       self.currentOverride.identity.emoteDirectives = replaceDirectiveAtEnd(self.currentOverride.identity.emoteDirectives, self.currentIdentity.underwear)
-      --self.currentOverride.identity.hairDirectives = replaceDirectiveAtEnd(self.currentOverride.identity.hairDirectives, self.currentIdentity.underwear)
 
     else
       if self.currentOverride.identity.bodyDirectives then

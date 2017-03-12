@@ -22,6 +22,7 @@ end
 
 
 function dCompare(prefix, one, two)
+  if dLogLevel ~= 1 then return
   sb.logInfo(prefix)
   dComp["nil"] = nilString
   dComp[type(one)](one)
@@ -50,13 +51,4 @@ end
 
 function nilString(input)
   return sb.logInfo("nil")
-end
-
-function countdown(number, amt)
-  number.clock = number.clock - amt
-  if number.clock < 0 then
-    number.clock = number.reset
-    return true
-  end
-  return false
 end
