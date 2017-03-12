@@ -168,14 +168,7 @@ function init()
   end
   updateFunc[4] = function(args)
     if self.npcDataInit then
-        local tabOptns = world.getObjectParameter(pane.containerEntityId(),"tabOptions.Refine")
-        dLog(self.tabOptns, "tabOptions")
-        tabInfo["tab1"] = getSpeciesOptions(self.currentSpecies, tostring(tabOptns[1]), {curDirective = self.currentOverride.identity.hairType})
-        tabInfo["tab2"] = getSpeciesOptions(self.currentSpecies, tostring(tabOptns[2]), {curDirective = self.currentOverride.identity.facialHairType})
-        tabInfo["tab3"] = getSpeciesOptions(self.currentSpecies, tostring(tabOptns[3]), {curDirective = self.currentOverride.identity.hairDirectives or self.currentIdentity.hairDirectives})
-        tabInfo["tab4"] = getSpeciesOptions(self.currentSpecies, tostring(tabOptns[4]), {curDirective = self.currentOverride.identity.facialHairDirectives or self.currentIdentity.facialHairDirectives})
-        tabInfo["tab5"] = getSpeciesOptions(self.currentSpecies, tostring(tabOptns[5]), {curDirective = self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives })
-        tabInfo["tab6"] = getSpeciesOptions(self.currentSpecies, tostring(tabOptns[6]), {curDirective = self.currentOverride.underwear or self.currentIdentity.underwear})
+        
 
         widget.setSelectedOption(self.categoryWidget, -1)
         widget.setVisible(self.categoryWidget, true)
@@ -206,6 +199,25 @@ end
 function update(dt)
   --Cannot send entity messages during init, so will do it here
   updateFunc[math.min(self.updateIndx, 6)](dt)
+end
+
+function tabInfo.tab1(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.hairType}) 
+end
+function tabInfo.tab2(tabName) 
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialHairType}) 
+end
+function tabInfo.tab3(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.hairDirectives or self.currentIdentity.hairDirectives}) 
+end
+function tabInfo.tab4(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialHairDirectives or self.currentIdentity.facialHairDirectives}) 
+end
+function tabInfo.tab5(tabName) 
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives }) 
+end
+function tabInfo.tab6(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.underwear or self.currentIdentity.underwear}) 
 end
 
 
@@ -348,15 +360,16 @@ function acceptBtn()
     self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
 end
 
-function selectTab(button, data)
+function selectTab(index, data)
   local listOption = widget.getSelectedOption(self.tabGroupWidget)
-  local category = {
-    Generate = tabListOne,  
-    Refine = tabListTwo,
-    Equip = tabListThree
+  local tabGroup = {
+    Generate = tabGroupOne,  
+    Refine = tabGroupTwo,
+    Equip = tabGroupThree
   }
+  index = world.getObjectParameter(pane.containerEntityId(),"tabOptions.Refine")[index+2]
 
-  return category[self.categoryWidgetData](button, data)
+  return tabGroup[self.categoryWidgetData](index, data)
 end
 
 function selectGenCategory(button, data)
@@ -410,7 +423,7 @@ end
 
 ------TAB GROUP FUNCTIONS---------
 
-function tabListOne(button, data)
+function tabGroupOne(curTabName, data)
   local args = {}
   if data == "tab1" then
     args.list = copy(self.speciesList)
@@ -427,10 +440,10 @@ function tabListOne(button, data)
   end
 end
 
-function tabListTwo(button,data)
-  local args = nil
+function tabGroupTwo(curTabName,data)
+  local args = {}
 
-  local info = tabInfo[data]
+  local info = tabInfo[data](curTabName)
     if info then
       args = {list = info.title, 
               imgPath = info.imgPath, 
@@ -448,7 +461,7 @@ function tabListTwo(button,data)
     return setList(args)
 end
 
-function tabListThree(button,data)
+function tabGroupThree(button,data)
   return setList(nil)
 end
 
@@ -797,7 +810,7 @@ function updateNpc()
   local args = getArgs()
   local variant = root.npcVariant(args.curSpecies, args.curType, args.curLevel, args.curSeed)
   self.currentIdentity = copy(variant.humanoidIdentity)
-
+  dLogJson(self.currentIdentity, "curIdentity")
   if self.currentOverride.identity.name then
     widget.setText("tbNameBox", self.currentOverride.identity.name)
   else
@@ -814,7 +827,7 @@ function updateNpc()
  -- dCompare("emoteDirectives - curIden/override", self.currentIdentity.emoteDirectives, variant.humanoidIdentity.emoteDirectives)
 
 
-  local npcPort = root.npcPortrait("full", args.curSpecies,args.curType, args.curLevel, args.curSeed, self.currentOverride)
+  local npcPort = root.npcPortrait("full", args.curSpecies,args.curType, args.curLevel, args.curSeed, args.curOverride)
 
   return setPortrait(npcPort)
 end
