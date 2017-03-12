@@ -196,8 +196,8 @@ function init()
   end 
   updateFunc[6] = function(args)
     self.updateIndx = self.updateIndx - 1
-    local checkEquip = world.getObjectParameter(pane.containerEntityId(),"checkEquipmentSlots")
-    if checkEquip then
+    local checkEquip = world.getObjectParameter(pane.containerEntityId(),"newEquipment")
+    if  world.getObjectParameter(pane.containerEntityId(),"newEquipment") then
       return checkAndEquip()
     end
   end
@@ -392,14 +392,12 @@ end
 
 
 function selectListItem(button, data)
-  dLog(button, "button ")
-  dLog(data, "data ")
   local listItem = widget.getListSelected(self.techList)
-  --dLog(listItem, "listItem  ")
+  dLog(listItem, "listItem  ")
   if not listItem then return end
 
   local listArgs = widget.getData(string.format("%s.%s", self.techList, listItem))
-  --dLogJson(listItem, "listArgs")
+  dLogJson(listArgs, "listArgs")
   if not listArgs then return end
   if not listArgs.listType then return end
 
@@ -454,7 +452,125 @@ function tabListThree(button,data)
   return setList(nil)
 end
 
+--------SPECIES GATHER INFO FUNCTIONS--------
+function getSpeciesOptions(species, option, returnInfo)
+  returnInfo = returnInfo or {}
+  returnInfo.option = option
+  local speciesJson = getAsset("/species/"..species..".species") or nil
 
+  if not speciesJson then dLog("getSpeciesOptions:  nil AssetFile") end
+
+    --dLogJson(speciesJson, "speciesJSON: ")
+  local genderPath = speciesJson.genders
+  local gender = self.currentOverride.identity.gender or self.currentIdentity.gender
+  local genderIndx = 1
+
+  if not gender then 
+    dLog("getSpeciesOptions:  nil gender") 
+  end
+
+  if genderPath[1]["name"] == gender then
+    genderIndx = 1
+  else
+    genderIndx = 2
+  end
+
+  local title = {}
+  local imgPath = {}
+  local colorGenParams = {}
+  if speciesJson["headOptionAsFacialhair"] then
+    if speciesJson["headOptionAsFacialhair"] == true then
+      returnInfo["headOptionAsFacialhair"] = speciesJson["headOptionAsFacialhair"]
+    end
+  end
+
+  if speciesJson["altColorAsFacialMaskSubColor"] then
+    if speciesJson["altColorAsFacialMaskSubColor"] == true then
+      returnInfo["altColorAsFacialMaskSubColor"] = speciesJson["altColorAsFacialMaskSubColor"]
+    end
+  end
+
+  if speciesJson["bodyColorAsFacialMaskSubColor"] then
+    if speciesJson["bodyColorAsFacialMaskSubColor"] == true then
+      returnInfo["bodyColorAsFacialMaskSubColor"] = speciesJson["bodyColorAsFacialMaskSubColor"]
+    end
+  end
+
+  
+  if option == "HColor" then
+      returnInfo.colors = copy(speciesJson.hairColor)
+      return getColorInfo(returnInfo)
+  elseif option == "FHColor" then
+      return getColorInfo(returnInfo)
+  elseif option == "BColor" then
+      returnInfo.colors = copy(speciesJson.bodyColor)
+    return getColorInfo(returnInfo)
+  elseif option == "UColor" then
+      returnInfo.colors = copy(speciesJson.undyColor)
+    return getColorInfo(returnInfo)
+  else
+    return getSpeciesAsset(speciesJson, genderIndx, species, option, returnInfo) 
+  end
+end
+
+function getSpeciesAsset(speciesJson, genderIndx, species, option, output)
+  local optn = world.getObjectParameter(pane.containerEntityId(),"getAssetParams")[option]
+
+  local genderPath = speciesJson.genders[genderIndx]
+  local title = {}
+  local imgPath = {}
+  local info = {}
+  local oOne = tostring(optn[1])
+  local oTwo = tostring(optn[2])
+  dCompare("oOne - oTwo", oOne, oTwo)
+
+ 
+  info[oOne] = genderPath[oOne] or optn[3]
+  info[oTwo] = genderPath[oTwo]
+
+  for _,v in ipairs(info[oTwo]) do
+    table.insert(title, v)
+    table.insert(imgPath, string.format("/humanoid/%s/%s/%s.png",species,info[oOne],v))
+  end
+  output.title = title
+  output.imgPath = imgPath
+  output.hairGroup = info[oOne]
+  return output
+end
+
+
+function getColorInfo(args)
+  args = parseArgs(args, {
+    colors = nil,
+    curDirective = nil,
+    hexDirectives = {}
+    })
+
+    local returnInfo = {}
+    local newDirective = ""
+    local firstRun = true
+    local title = {}
+    local indx = 1
+    if args.colors then
+      for _,v in ipairs(args.colors) do
+        local nameString  = ""
+              if type(v) == "string" then
+                  return nil 
+              end
+          nameString = string.format("%s",indx)
+          indx = indx + 1
+          newDirective = replaceDirectives(args.curDirective,v)
+            
+        --local hashString = util.hashString(completeDirective)
+
+        args.hexDirectives[nameString] = newDirective
+        table.insert(title,nameString)
+        firstRun = true
+      end
+      args.title = title
+    end
+    return args
+end
 ------CHANGE NPC FUNCTIONS---------
 function modNpc.species(listArgs, ...)
     self.currentSpecies = tostring(listArgs.name)
@@ -592,14 +708,6 @@ function itemGrid(args)
   dLogJson(args,  "itemGrid -")
 end
 
-function containerCallback()
-  dLog("npcPanel: ContainerCallback")
-end
-
-function containerPaneCallback()
-  dLog("container has been called back!")
-end
-
 function setPersonality(index)
   if index ~= 0 then
     widget.setText("lblPersonality", tostring(index))
@@ -698,7 +806,7 @@ function updateNpc()
 
   self.currentIdentity.underwear = getDirectiveAtEnd(variant.humanoidIdentity.bodyDirectives)
 
-  variant = root.npcVariant(args.curSpecies,args.curType, args.curLevel, args.curSeed, self.currentOverride)
+  --variant = root.npcVariant(args.curSpecies,args.curType, args.curLevel, args.curSeed, self.currentOverride)
   --dLogJson(variant, "variantCONFIG:  ")
   
  -- dCompare("bodyDirectives - curIden/override", self.currentIdentity.bodyDirectives, variant.humanoidIdentity.bodyDirectives)
@@ -735,125 +843,7 @@ function testFunction()
     dLogJson(config, "config:")
 end
 
---------SPECIES GATHER INFO FUNCTIONS--------
-function getSpeciesOptions(species, option, returnInfo)
-  returnInfo = returnInfo or {}
-  returnInfo.option = option
-  local speciesJson = getAsset("/species/"..species..".species") or nil
 
-  if not speciesJson then dLog("getSpeciesOptions:  nil AssetFile") end
-
-    --dLogJson(speciesJson, "speciesJSON: ")
-  local genderPath = speciesJson.genders
-  local gender = self.currentOverride.identity.gender or self.currentIdentity.gender
-  local genderIndx = 1
-
-  if not gender then 
-    dLog("getSpeciesOptions:  nil gender") 
-  end
-
-  if genderPath[1]["name"] == gender then
-    genderIndx = 1
-  else
-    genderIndx = 2
-  end
-
-  local title = {}
-  local imgPath = {}
-  local colorGenParams = {}
-  if speciesJson["headOptionAsFacialhair"] then
-    if speciesJson["headOptionAsFacialhair"] == true then
-      returnInfo["headOptionAsFacialhair"] = speciesJson["headOptionAsFacialhair"]
-    end
-  end
-
-  if speciesJson["altColorAsFacialMaskSubColor"] then
-    if speciesJson["altColorAsFacialMaskSubColor"] == true then
-      returnInfo["altColorAsFacialMaskSubColor"] = speciesJson["altColorAsFacialMaskSubColor"]
-    end
-  end
-
-  if speciesJson["bodyColorAsFacialMaskSubColor"] then
-    if speciesJson["bodyColorAsFacialMaskSubColor"] == true then
-      returnInfo["bodyColorAsFacialMaskSubColor"] = speciesJson["bodyColorAsFacialMaskSubColor"]
-    end
-  end
-
-  
-  if option == "HColor" then
-      returnInfo.colors = copy(speciesJson.hairColor)
-      return getColorInfo(returnInfo)
-  elseif option == "FHColor" then
-      return getColorInfo(returnInfo)
-  elseif option == "BColor" then
-      returnInfo.colors = copy(speciesJson.bodyColor)
-    return getColorInfo(returnInfo)
-  elseif option == "UColor" then
-      returnInfo.colors = copy(speciesJson.undyColor)
-    return getColorInfo(returnInfo)
-  else
-    return getSpeciesAsset(speciesJson, genderIndx, species, option, returnInfo) 
-  end
-end
-
-function getSpeciesAsset(speciesJson, genderIndx, species, option, output)
-  local optn = world.getObjectParameter(pane.containerEntityId(),"getAssetParams")[option]
-
-  local genderPath = speciesJson.genders[genderIndx]
-  local title = {}
-  local imgPath = {}
-  local info = {}
-  local oOne = tostring(optn[1])
-  local oTwo = tostring(optn[2])
-  dCompare("oOne - oTwo", oOne, oTwo)
-
- 
-  info[oOne] = genderPath[oOne] or optn[3]
-  info[oTwo] = genderPath[oTwo]
-
-  for _,v in ipairs(info[oTwo]) do
-    table.insert(title, v)
-    table.insert(imgPath, string.format("/humanoid/%s/%s/%s.png",species,info[oOne],v))
-  end
-  output.title = title
-  output.imgPath = imgPath
-  output.hairGroup = info[oOne]
-  return output
-end
-
-
-function getColorInfo(args)
-  args = parseArgs(args, {
-    colors = nil,
-    curDirective = nil,
-    hexDirectives = {}
-    })
-
-    local returnInfo = {}
-    local newDirective = ""
-    local firstRun = true
-    local title = {}
-    local indx = 1
-    if args.colors then
-      for _,v in ipairs(args.colors) do
-        local nameString  = ""
-              if type(v) == "string" then
-                  return nil 
-              end
-          nameString = string.format("%s",indx)
-          indx = indx + 1
-          newDirective = replaceDirectives(args.curDirective,v)
-            
-        --local hashString = util.hashString(completeDirective)
-
-        args.hexDirectives[nameString] = newDirective
-        table.insert(title,nameString)
-        firstRun = true
-      end
-      args.title = title
-    end
-    return args
-end
 
 function getAsset(assetPath)
   local asset = root.assetJson(assetPath)
@@ -942,7 +932,7 @@ function getDirectiveAtEnd(directiveBase)
   local returnValue = ""
   local split = util.split(directiveBase, "?replace")
   local indx = #split
-  if #split < 3 then 
+  if indx < 3 then 
     return nil 
   end
   while indx > 2 do

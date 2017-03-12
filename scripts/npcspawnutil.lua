@@ -1,15 +1,16 @@
 dComp = {}
 
 function dLog(item, prefix)
-  local p = prefix or ""
+  if not prefix then prefix = "" end
   if type(item) ~= "string" then
-    sb.logInfo("%s %s",p, dOut(item))
+    sb.logInfo(prefix.."  "..dOut(item))
   else 
-    sb.logInfo("%s %s",p,item)
+    sb.logInfo(prefix.."  "..item)
   end
 end
 
 function dOut(input)
+  if not input then input = "" end
   return sb.print(input)
 end
 

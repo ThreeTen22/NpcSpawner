@@ -115,5 +115,7 @@
     "FHair" : ["facialHairGroup", "facialHair", "facialHairGroup"]
   },
   "typeOptions": ["Guard","Villager"],
-  "checkEquipmentSlots": false
+  "newEquipment": false,
+  "equipmentList" : [""]
+
 }
