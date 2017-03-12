@@ -20,9 +20,7 @@ function dLogJson(input, prefix)
    sb.logInfo("%s", sb.printJson(input))
 end
 
-
 function dCompare(prefix, one, two)
-  if dLogLevel ~= 1 then return
   sb.logInfo(prefix)
   dComp["nil"] = nilString
   dComp[type(one)](one)
@@ -51,4 +49,23 @@ end
 
 function nilString(input)
   return sb.logInfo("nil")
+end
+
+function valuesToKeys(list)
+  local newList = {}
+  local vName = ""
+  for k,v in pairs(list) do
+    vName = tostring(v)
+    newList.vName = {}
+  end
+end
+
+function keysToList(keyList)
+  local newList = {}
+  local count = 0
+  for k,_ in pairs(keyList) do
+    count = count + 1
+    table.insert(newList,tostring(k))
+  end
+  return newList
 end

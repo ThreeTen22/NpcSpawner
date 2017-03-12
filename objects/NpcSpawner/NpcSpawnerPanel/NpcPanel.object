@@ -113,7 +113,10 @@
   "getAssetParams" : {
     "Hair" : ["hairGroup", "hair", "hair"],
     "FHair" : ["facialHairGroup", "facialHair", "facialHairGroup"],
-    "HColor" :["hairDirectives"]
+    "HColor" :["hairDirectives"],
+    "FHColor":["facialHairDirectives"],
+    "BColor":["facialHairDirectives"],
+    "UColor":["facialHairDirectives"]
   },
   "typeOptions": ["Guard","Villager"],
   "checkEquipmentSlots": false

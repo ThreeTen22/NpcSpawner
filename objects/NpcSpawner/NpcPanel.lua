@@ -1,5 +1,7 @@
 require "/scripts/npcspawnutil.lua"
 require "/scripts/util.lua"
+
+paneParameter = {checkEquipment = false}
 function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
@@ -11,7 +13,7 @@ function init(virtual)
     storage.npcType = storage.npcType or "CAFguard"
     storage.npcParams = storage.npcParams or {}
   	storage.parentSpawner = storage.parentSpawner or nil
-    storage.panelUniqueId = storage.panelUniqueId or entity.uniqueId() or sb.makeUuid()
+    storage.panelUniqueId = (storage.panelUniqueId or entity.uniqueId()) or sb.makeUuid()
     object.setUniqueId(storage.panelUniqueId)
 
     local pos  = entity.position()
@@ -39,8 +41,8 @@ end
 
 function containerInteracted()
   dLog("container has been called back!")
-  world.setObjectParameter(pane.containerEntityId(), "checkEquipmentSlots", true)
-  deLog(world.getObjectParameter(pane.containerEntityId(), "checkEquipmentSlots"))
+  object.setConfigParameter("checkEquipmentSlots", true)
+  dLog(world.getObjectParameter(pane.containerEntityId(), "checkEquipmentSlots"))
 end
 
 function onInteraction(args)
