@@ -4,7 +4,14 @@ require "/scripts/npcspawnutil.lua"
 spnPersonality = {}
 updateFunc = {}
 modNpc = {}
-tabInfo = {}
+tabInfo = {
+  tab1 = {},
+  tab2 = {},
+  tab3 = {},
+  tab4 = {},
+  tab5 = {},
+  tab6 = {}
+}
 
 function init()
   sb.logInfo("NpcPanelMenu: init")
@@ -48,6 +55,12 @@ function init()
   self.currentLevel = 10
 
 	self.raceButtons = {}
+
+  self.hairColor = {}
+  self.bodyColor = {}
+  self.undyColor = {}
+  self.facialHairColor = {}
+  self.facialSubMaskColor = {}
 
   self.seedInput = 0
 
@@ -93,7 +106,6 @@ function init()
 
   self.cd = 2
   self.reset = 2
-
 
 
   widget.setSliderRange("sldTargetSize",0, self.worldSize)
@@ -164,20 +176,20 @@ function init()
     end
     --widget.setSelectedOption(self.tabGroupWidget, self.tabSelectedOption)
     self.updateIndx = self.updateIndx + 1
-    return updateNpc()
+    updateNpc()
+    return 
   end
   updateFunc[4] = function(args)
     if self.npcDataInit then
-        
-
         widget.setSelectedOption(self.categoryWidget, -1)
         widget.setVisible(self.categoryWidget, true)
         widget.setVisible(self.tabGroupWidget, true)
         widget.setVisible(self.scrollArea, true)
 
         script.setUpdateDelta(10)
-        self.updateIndx = self.updateIndx + 1
-        return selectGenCategory("",self.categoryWidgetData)
+          self.updateIndx = self.updateIndx + 1
+          selectGenCategory(-1,self.categoryWidgetData)
+        return 
     end
   end
   updateFunc[5] = function(args)
@@ -201,39 +213,107 @@ function update(dt)
   updateFunc[math.min(self.updateIndx, 6)](dt)
 end
 
-function tabInfo.tab1(tabName)
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.hairType}) 
+function tabInfo.tab1.Generate(tabName)
+  dLog("Species HAS BEEN HIT")
+  local args = {}
+    args.title = copy(self.speciesList)
+    args.listType = tabName
+    args.currentSelection = self.currentSpecies
+    args.isOverride = false
+    return setList(args) 
 end
-function tabInfo.tab2(tabName) 
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialHairType}) 
+
+function tabInfo.tab2.Generate(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.hairType or self.currentIdentity.hairType}) 
 end
-function tabInfo.tab3(tabName)
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.hairDirectives or self.currentIdentity.hairDirectives}) 
+
+function tabInfo.tab3.Generate(tabName) 
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType}) 
 end
-function tabInfo.tab4(tabName)
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialHairDirectives or self.currentIdentity.facialHairDirectives}) 
+
+function tabInfo.tab4.Generate(tabName) 
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType}) 
 end
-function tabInfo.tab5(tabName) 
+
+function tabInfo.tab1.Refine(tabName) 
   return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives }) 
 end
-function tabInfo.tab6(tabName)
+
+function tabInfo.tab2.Refine(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.hairDirectives or self.currentIdentity.hairDirectives}) 
+end
+
+function tabInfo.tab3.Refine(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialHairDirectives or self.currentIdentity.facialHairDirectives}) 
+end
+
+function tabInfo.tab4.Refine(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialHairDirectives or self.currentIdentity.facialHairDirectives}) 
+end
+
+function tabInfo.tab5.Refine(tabName)
   return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.underwear or self.currentIdentity.underwear}) 
 end
 
-
------NEED TO BE SORTED --------
-function tbSet(name, text)
-  widget.setText(name, text)
+function tabInfo.tab1.IO(tabName) 
+    local args = {}
+    args.title = copy(self.typeList)
+    args.listType = tabName
+    args.currentSelection = self.currentType
+    args.isOverride = false
+    return setList(args)
 end
 
 
+
+
+
+
+
+
+-----NEED TO BE SORTED --------
+function changeSpeciesGlobals(species)
+  local speciesJson = getAsset("/species/"..species..".species") or nil
+
+  if not speciesJson then dLog("getSpeciesOptions:  nil AssetFile") end
+  self.indexedSpecies = species
+  self.bodyColor = lowercaseCopy(speciesJson.bodyColor)
+  self.hairColor = lowercaseCopy(speciesJson.hairColor)
+  self.undyColor = lowercaseCopy(speciesJson.undyColor)
+
+  self.altOptionAsUndyColor = speciesJson.altOptionAsUndyColor
+    --dLogJson(speciesJson, "speciesJSON: ")
+  local genderName = self.currentOverride.identity.gender or self.currentIdentity.gender
+  local genderIndx = 1
+
+  if not genderName then 
+    dLog("getSpeciesOptions:  nil gender") 
+  end
+
+  if speciesJson.genders[1]["name"] == genderName then
+    genderIndx = 1
+  else
+    genderIndx = 2
+  end
+
+  local genderPath = speciesJson.genders[self.genderIndx]
+  self.hairGroup = genderPath["hairGroup"] or "hair"
+  self.facialHairGroup = genderPath["hairGroup"] or ""
+  self.facialMaskGroup = genderPath["facialHairGroup"] or ""
+  self.facialHair  = genderPath["facialHair"] or ""
+  self.facialMask = genderPath["facialMask"] or ""
+  self.characterImage = genderPath["characterImage"]
+
+
+end
 -----CALLBACK FUNCTIONS-------
 function spnPersonality.up()
   dLog("spinner UP:  ")
   local personalities = getAsset("/humanoid.config:personalities")
   self.personalityIndex = util.wrap(self.personalityIndex + 1, 0, #personalities)
   setPersonality(self.personalityIndex)
-  return updateNpc()
+  updateNpc()
+  return 
 end
 
 function spnPersonality.down()
@@ -241,7 +321,8 @@ function spnPersonality.down()
   local personalities = getAsset("/humanoid.config:personalities")
   self.personalityIndex = util.wrap(self.personalityIndex - 1, 0, #personalities)
   setPersonality(self.personalityIndex)
-  return updateNpc()
+  updateNpc()
+  return 
 end
 
 function finalizeOverride()
@@ -362,14 +443,28 @@ end
 
 function selectTab(index, data)
   local listOption = widget.getSelectedOption(self.tabGroupWidget)
-  local tabGroup = {
-    Generate = tabGroupOne,  
-    Refine = tabGroupTwo,
-    Equip = tabGroupThree
-  }
-  index = world.getObjectParameter(pane.containerEntityId(),"tabOptions.Refine")[index+2]
+  local args = {}
 
-  return tabGroup[self.categoryWidgetData](index, data)
+  curTabName = world.getObjectParameter(pane.containerEntityId(),"tabOptions."..self.categoryWidgetData)[index+2]
+  local info = tabInfo[data][self.categoryWidgetData](curTabName)
+    if info then
+      args = {title = info.title, 
+              imgPath = info.imgPath, 
+              hairGroup = info.hairGroup, 
+              facialHairGroup = info.facialHairGroup,
+              hexDirectives = info.hexDirectives,
+              currentSelection = info.curDirective,
+              listType = info.option,
+              isOverride = info.isOverride}
+    else
+      args = {
+              title = {""},
+              listType = data
+      }
+    end
+    setList(args)
+    return 
+
 end
 
 function selectGenCategory(button, data)
@@ -398,7 +493,8 @@ function selectGenCategory(button, data)
   changeTabLabels(tabNames, data)
   dLog(data, "selectGenCategory - selectedOption:  ")
   if indx and tabData then
-    return selectTab(indx, tabData)
+    selectTab(indx, tabData)
+    return 
   end
 end
 
@@ -423,43 +519,6 @@ end
 
 ------TAB GROUP FUNCTIONS---------
 
-function tabGroupOne(curTabName, data)
-  local args = {}
-  if data == "tab1" then
-    args.list = copy(self.speciesList)
-    args.listType = "species"
-    args.currentSelection = self.currentSpecies
-    return setList(args)
-  elseif data == "tab2" then
-    args.list = copy(self.typeList)
-    args.listType = "npcType"
-    args.currentSelection = self.currentType
-    return setList(args)
-  else
-    return setList(nil)
-  end
-end
-
-function tabGroupTwo(curTabName,data)
-  local args = {}
-
-  local info = tabInfo[data](curTabName)
-    if info then
-      args = {list = info.title, 
-              imgPath = info.imgPath, 
-              hairGroup = info.hairGroup, 
-              facialHairGroup = info.facialHairGroup,
-              hexDirectives = info.hexDirectives,
-              currentSelection = info.curDirective,
-              listType = info.option}
-    else
-      args = {
-              list = {""},
-              listType = data
-      }
-    end
-    return setList(args)
-end
 
 function tabGroupThree(button,data)
   return setList(nil)
@@ -512,17 +571,27 @@ function getSpeciesOptions(species, option, returnInfo)
   
   if option == "HColor" then
       returnInfo.colors = copy(speciesJson.hairColor)
-      return getColorInfo(returnInfo)
-  elseif option == "FHColor" then
-      return getColorInfo(returnInfo)
+      returnInfo.isOverride = true
+      getColorInfo(returnInfo)
+      return returnInfo
+  elseif option == "FHColor" or option == "FMColor" then
+      returnInfo.isOverride = true
+      getColorInfo(returnInfo)
+
+      return returnInfo
   elseif option == "BColor" then
+      returnInfo.isOverride = true
       returnInfo.colors = copy(speciesJson.bodyColor)
-    return getColorInfo(returnInfo)
+      getColorInfo(returnInfo)
+      return returnInfo
   elseif option == "UColor" then
+      returnInfo.isOverride = true
       returnInfo.colors = copy(speciesJson.undyColor)
-    return getColorInfo(returnInfo)
+      getColorInfo(returnInfo)
+      return returnInfo
   else
-    return getSpeciesAsset(speciesJson, genderIndx, species, option, returnInfo) 
+      getSpeciesAsset(speciesJson, genderIndx, species, option, returnInfo)
+      return returnInfo
   end
 end
 
@@ -548,7 +617,7 @@ function getSpeciesAsset(speciesJson, genderIndx, species, option, output)
   output.title = title
   output.imgPath = imgPath
   output.hairGroup = info[oOne]
-  return output
+  return copy(output)
 end
 
 
@@ -560,7 +629,6 @@ function getColorInfo(args)
     })
 
     local returnInfo = {}
-    local newDirective = ""
     local firstRun = true
     local title = {}
     local indx = 1
@@ -572,7 +640,7 @@ function getColorInfo(args)
               end
           nameString = string.format("%s",indx)
           indx = indx + 1
-          newDirective = replaceDirectives(args.curDirective,v)
+          local newDirective = replaceDirectives(args.curDirective,v)
             
         --local hashString = util.hashString(completeDirective)
 
@@ -585,11 +653,11 @@ function getColorInfo(args)
     return args
 end
 ------CHANGE NPC FUNCTIONS---------
-function modNpc.species(listArgs, ...)
+function modNpc.Species(listArgs, cur, curO)
     self.currentSpecies = tostring(listArgs.name)
 end
 
-function modNpc.npcType(listArgs,...)
+function modNpc.npcType(listArgs, cur, curO)
     self.currentType = tostring(listArgs.name)
 end
 
@@ -810,7 +878,6 @@ function updateNpc()
   local args = getArgs()
   local variant = root.npcVariant(args.curSpecies, args.curType, args.curLevel, args.curSeed)
   self.currentIdentity = copy(variant.humanoidIdentity)
-  dLogJson(self.currentIdentity, "curIdentity")
   if self.currentOverride.identity.name then
     widget.setText("tbNameBox", self.currentOverride.identity.name)
   else
@@ -869,25 +936,24 @@ end
   --list
   --listType
 function setList(args)
-  dLogJson("setList - ARGS")
+  dLogJson(args, "setList - ARGS")
   --table.sort(args.list)
   widget.clearListItems(self.techList)
   if not args then return end
   local indx = 1
-  if (self.categoryWidgetData ~= "Generate") then
+  if (args.isOverride) then
     local defaultArgs = {
     listType = args.listType,
     clearConfig = true
     }
 
     local defaultListItem = widget.addListItem(self.techList)
-      widget.setText(string.format("%s.%s.techName", self.techList, defaultListItem), "No Override")
+      widget.setText(string.format("%s.%s.techName", self.techList, defaultListItem), "Remove Overrides")
       widget.setData(string.format("%s.%s", self.techList, defaultListItem), defaultArgs)
   end
-  if not args.list then return end
-  if #args.list < 2 then return end
-  for _,v in pairs(args.list) do
-
+  if not args.title then return end
+  if #(args.title) < 2 then return end
+  for _,v in pairs(args.title) do
       local listItem = widget.addListItem(self.techList)
       local newArgs = parseArgs(args, {
           name = v,
@@ -925,8 +991,7 @@ function setList(args)
         indx = indx+1
         sb.logInfo("setList:  entered setListSelected")
         widget.setListSelected(self.techList, listItem)
-      end
-      
+      end 
   end
 end
 

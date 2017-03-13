@@ -70,3 +70,17 @@ function keysToList(keyList)
   end
   return newList
 end
+
+function lowercaseCopy(v)
+  if type(v) ~= "table" then
+    return string.lower(v)
+  else
+    local c = {}
+    for k,v in pairs(v) do
+
+      c[string.lower(k)] = lowercaseCopy(v)
+    end
+    setmetatable(c, getmetatable(v))
+    return c
+  end
+end
