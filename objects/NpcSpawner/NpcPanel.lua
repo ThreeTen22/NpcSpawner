@@ -78,15 +78,16 @@ function getNpcData()
 end
 
 function setNpcData(args)
-  dLog("setting npcData")
+  dLog(args, "setting npcData")
   storage.npcSpecies = args.npcSpecies
   storage.npcSeed = args.npcSeed
   storage.npcType = args.npcType
-  storage.npcParam = args.npcParam
   storage.npcLevel = args.npcLevel
+  storage.npcParam = args.npcParam
 
   local newArgs = copy(args)
-
+  dLog(newArgs, " new parameters ")
+  --world.spawnNpc(pos, args.npcSpecies,args.npcType, args.npcSeed ,args.npcLevel,args.npcParam)
   world.sendEntityMessage(storage.parentSpawner, "setNpcData", newArgs)
 end
 

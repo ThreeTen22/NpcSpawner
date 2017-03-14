@@ -324,7 +324,7 @@ function selectTab(index, option)
   local generateInfo = {}
   curTabName = tostring(curTabName)
   returnInfo.listType = curTabName
-  if not curTabName then return setList(nil) end
+  if not curTabName or curTabName == "" then return setList(nil) end
   if self.categoryWidgetData == "Generate" then
     dLog(Generate[option](curTabName), "  GENERATE")
     generateInfo = Generate[option](curTabName)
@@ -387,6 +387,10 @@ function selectTab(index, option)
         self.returnInfoColors = self.speciesJson.bodyColor
       elseif compareDirectiveToColor(self.currentIdentity.facialHairDirectives, self.speciesJson.hairColor) then
         self.returnInfoColors = self.speciesJson.hairColor
+      elseif compareDirectiveToColor(self.currentIdentity.facialHairDirectives, self.speciesJson.undyColor) then
+        self.returnInfoColors = self.speciesJson.undyColor
+      else
+        self.returnInfoColors = nil
       end
       getColorInfo(returnInfo)
   elseif curTabName == "FMColor" then
@@ -395,6 +399,10 @@ function selectTab(index, option)
         self.returnInfoColors = self.speciesJson.bodyColor
       elseif compareDirectiveToColor(self.currentIdentity.facialMaskDirectives, self.speciesJson.hairColor) then
         self.returnInfoColors = self.speciesJson.hairColor
+      elseif compareDirectiveToColor(self.currentIdentity.facialMaskDirectives, self.speciesJson.undyColor) then
+        self.returnInfoColors = self.speciesJson.undyColor
+      else 
+        self.returnInfoColors = nil
       end
       getColorInfo(returnInfo)
   elseif curTabName == "BColor" then
@@ -513,7 +521,7 @@ function selectListItem(name, listData)
   listData.itemTitle = itemData.itemTitle
   listData.clearConfig = itemData.clearConfig
   if not listData and listData.listType then return end
-  dLogJson(listData, "LIST DATA :")
+  --dLogJson(listData, "LIST DATA :")
   modNpc[listData.listType](listData, self.currentIdentity, self.currentOverride.identity)
 
   updateNpc()
@@ -532,8 +540,9 @@ function compareDirectiveToColor(directive, json)
   if type(json) ~= "table" or (tostring(directive) == "") then return false end
   local set = next(json)
   local k,v  = next(set)
-
-  return string.match(directive,tostring(k))
+  dLog(k, "MATCHING TEST")
+  dLog(string.match(directive,tostring(k).."="), "result ")
+  return string.match(directive,tostring(k).."=")
 end
 
 function getSpeciesAsset(speciesJson, genderIndx, species, optn, output)

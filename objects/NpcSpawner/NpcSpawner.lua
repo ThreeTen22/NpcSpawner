@@ -26,7 +26,7 @@ function init(virtual)
   storage.npcSeed = storage.npcSeed or 0
   storage.npcLevel = storage.npcLevel or 1
   storage.npcType = storage.npcType or "CAFguard"
-  storage.npcParams = storage.npcParams or {}
+  storage.npcParam = storage.npcParam or {}
 
   self.maxSpawnTime = 5   --time between checks to see if a new NPC should be spawned
   self.maxGearTime = 8    --time between NPC gear change refreshes
@@ -70,8 +70,8 @@ function setNpcData(args)
   if args.npcLevel then
     storage.npcLevel = args.npcLevel
   end
-  if args.npcParams then
-    storage.npcParams = args.npcParams
+  if args.npcParam then
+    storage.npcParam = args.npcParam
   end
   if storage.spawned then
      killNpc()
@@ -118,9 +118,7 @@ function update(dt)
       local position = object.toAbsolutePosition({ 0.0, 2.0 });
       self.absPosition = position
 
-      local newParam = copy(storage.npcParams)
-
-      local npcId = world.spawnNpc(position, storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, newParam)
+      local npcId = world.spawnNpc(position, storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
 
       --assign our new NPC a special unique id
       storage.spawnedID = sb.makeUuid()
