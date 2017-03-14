@@ -5,12 +5,9 @@ spnPersonality = {}
 updateFunc = {}
 modNpc = {}
 tabInfo = {
-  tab1 = {},
-  tab2 = {},
-  tab3 = {},
-  tab4 = {},
-  tab5 = {},
-  tab6 = {}
+  Generate = {},
+  Refine = {},
+  IO = {}
 }
 
 function init()
@@ -134,7 +131,6 @@ function init()
       self.updateIndx = self.updateIndx + 1 
     end
   end  
-
   updateFunc[3] = function(args)
     local result = self.gettingNpcData:result()
     if type(result) ~= "table" then result = {} end
@@ -213,55 +209,54 @@ function update(dt)
   updateFunc[math.min(self.updateIndx, 6)](dt)
 end
 
-function tabInfo.tab1.Generate(tabName)
+function tabInfo.Generate.tab1(tabName)
   dLog("Species HAS BEEN HIT")
   local args = {}
     args.title = copy(self.speciesList)
     args.listType = tabName
     args.currentSelection = self.currentSpecies
     args.isOverride = false
-    return setList(args) 
+    return args
 end
 
-function tabInfo.tab2.Generate(tabName)
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.hairType or self.currentIdentity.hairType}) 
+function tabInfo.Generate.tab2(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName, {currentSelection = self.currentOverride.identity.hairType or self.currentIdentity.hairType}) 
 end
 
-function tabInfo.tab3.Generate(tabName) 
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType}) 
+function tabInfo.Generate.tab3(tabName) 
+  return getSpeciesOptions(self.currentSpecies, tabName, {currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType}) 
 end
 
-function tabInfo.tab4.Generate(tabName) 
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType}) 
+function tabInfo.Generate.tab4(tabName) 
+  return getSpeciesOptions(self.currentSpecies, tabName, {currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType}) 
 end
 
-function tabInfo.tab1.Refine(tabName) 
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives }) 
+function tabInfo.Refine.tab1(tabName) 
+  return getSpeciesOptions(self.currentSpecies, tabName) 
 end
 
-function tabInfo.tab2.Refine(tabName)
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.hairDirectives or self.currentIdentity.hairDirectives}) 
+function tabInfo.Refine.tab2(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName)
 end
 
-function tabInfo.tab3.Refine(tabName)
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialHairDirectives or self.currentIdentity.facialHairDirectives}) 
+function tabInfo.Refine.tab3(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName)
+
+function tabInfo.Refine.tab4(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName)
 end
 
-function tabInfo.tab4.Refine(tabName)
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.identity.facialHairDirectives or self.currentIdentity.facialHairDirectives}) 
+function tabInfo.Refine.tab5(tabName)
+  return getSpeciesOptions(self.currentSpecies, tabName)
 end
 
-function tabInfo.tab5.Refine(tabName)
-  return getSpeciesOptions(self.currentSpecies, tabName, {curDirective = self.currentOverride.underwear or self.currentIdentity.underwear}) 
-end
-
-function tabInfo.tab1.IO(tabName) 
+function tabInfo.IO.tab1(tabName) 
     local args = {}
     args.title = copy(self.typeList)
     args.listType = tabName
     args.currentSelection = self.currentType
     args.isOverride = false
-    return setList(args)
+    return args
 end
 
 
@@ -443,28 +438,14 @@ end
 
 function selectTab(index, data)
   local listOption = widget.getSelectedOption(self.tabGroupWidget)
-  local args = {}
+  local args
 
   curTabName = world.getObjectParameter(pane.containerEntityId(),"tabOptions."..self.categoryWidgetData)[index+2]
-  local info = tabInfo[data][self.categoryWidgetData](curTabName)
+  local info = tabInfo[self.categoryWidgetData][data](curTabName)
     if info then
-      args = {title = info.title, 
-              imgPath = info.imgPath, 
-              hairGroup = info.hairGroup, 
-              facialHairGroup = info.facialHairGroup,
-              hexDirectives = info.hexDirectives,
-              currentSelection = info.curDirective,
-              listType = info.option,
-              isOverride = info.isOverride}
-    else
-      args = {
-              title = {""},
-              listType = data
-      }
     end
-    setList(args)
+      setList(info)
     return 
-
 end
 
 function selectGenCategory(button, data)
@@ -504,16 +485,15 @@ function selectListItem(button, data)
   local listItem = widget.getListSelected(self.techList)
   dLog(listItem, "listItem  ")
   if not listItem then return end
+  local listArgs = widget.getData(string.format(self.techList))
+  local itemData = widget.getData(string.format("%s.%s", self.techList, listItem))
+  listArgs. = 
+  if not listArgs and listArgs.listType then return end
 
-  local listArgs = widget.getData(string.format("%s.%s", self.techList, listItem))
-  dLogJson(listArgs, "listArgs")
-  if not listArgs then return end
-  if not listArgs.listType then return end
+  modNpc[self.categoryWidgetData][listArgs.listType](listArgs, self.currentIdentity, self.currentOverride.identity)
 
-  modNpc[listArgs.listType](listArgs, self.currentIdentity, self.currentOverride.identity)
-
-
-  return updateNpc()
+  updateNpc()
+  return 
 end
 
 
@@ -527,7 +507,7 @@ end
 --------SPECIES GATHER INFO FUNCTIONS--------
 function getSpeciesOptions(species, option, returnInfo)
   returnInfo = returnInfo or {}
-  returnInfo.option = option
+  returnInfo.listType = option
   local speciesJson = getAsset("/species/"..species..".species") or nil
 
   if not speciesJson then dLog("getSpeciesOptions:  nil AssetFile") end
@@ -570,7 +550,7 @@ function getSpeciesOptions(species, option, returnInfo)
 
   
   if option == "HColor" then
-      returnInfo.colors = copy(speciesJson.hairColor)
+      returnInfo.colors = lowercaseCopy(speciesJson.hairColor)
       returnInfo.isOverride = true
       getColorInfo(returnInfo)
       return returnInfo
@@ -581,12 +561,12 @@ function getSpeciesOptions(species, option, returnInfo)
       return returnInfo
   elseif option == "BColor" then
       returnInfo.isOverride = true
-      returnInfo.colors = copy(speciesJson.bodyColor)
+      returnInfo.colors = lowercaseCopy(speciesJson.bodyColor)
       getColorInfo(returnInfo)
       return returnInfo
   elseif option == "UColor" then
       returnInfo.isOverride = true
-      returnInfo.colors = copy(speciesJson.undyColor)
+      returnInfo.colors = lowercaseCopy(speciesJson.undyColor)
       getColorInfo(returnInfo)
       return returnInfo
   else
@@ -617,43 +597,38 @@ function getSpeciesAsset(speciesJson, genderIndx, species, option, output)
   output.title = title
   output.imgPath = imgPath
   output.hairGroup = info[oOne]
-  return copy(output)
 end
 
 
-function getColorInfo(args)
-  args = parseArgs(args, {
-    colors = nil,
-    curDirective = nil,
-    hexDirectives = {}
-    })
+function getColorInfo(output)
+    output.colors = output.colors or nil
+    output.hexTables = {}
 
     local returnInfo = {}
     local firstRun = true
     local title = {}
     local indx = 1
-    if args.colors then
-      for _,v in ipairs(args.colors) do
+    if output.colors then
+      for _,v in ipairs(output.colors) do
         local nameString  = ""
               if type(v) == "string" then
                   return nil 
               end
           nameString = string.format("%s",indx)
           indx = indx + 1
-          local newDirective = replaceDirectives(args.curDirective,v)
             
         --local hashString = util.hashString(completeDirective)
 
-        args.hexDirectives[nameString] = newDirective
+        output.hexTables[nameString] = v
         table.insert(title,nameString)
         firstRun = true
       end
-      args.title = title
+      output.title = title
     end
-    return args
 end
 ------CHANGE NPC FUNCTIONS---------
 function modNpc.Species(listArgs, cur, curO)
+    dLog("modNPC.HItSpecies")
     self.currentSpecies = tostring(listArgs.name)
 end
 
@@ -819,35 +794,36 @@ end
 function replaceDirectives(directive, directiveJson)
   local returnString = ""
 
-  if not directive then 
-    return createDirective(directiveJson)
+  if (not directive) or (not (directive == ""))  then 
+    --return createDirective(directiveJson)
+    return returnString
   end
+
   local splitDirectives = util.split(directive,"?replace")
 
   --dLogJson(splitDirectives, "replaceDirectives: split: ")
  -- dLogJson(directiveJson, "directiveJson")
-  for _,v in ipairs(splitDirectives) do
+  for i,v in ipairs(splitDirectives) do
     --dLogJson(v, "replaceDirectives: v: ")
     if not (v == "") then
-      --dLog("entered iPairLoop:  ")
-      --dLog(string.match(v, "(%w+)=(%w+)"), "string Match:  ")
-      --test if its correct directiveGroup
         local k = string.match(v, "(%w+)=(%w+)")
         if directiveJson[k] or directiveJson[string.upper(k)] or directiveJson[string.lower(k)] then
            -- dLogJson(directiveJson[k], "matchJsonValue:")
-            returnString = returnString..createDirective(directiveJson)
-        else
-            returnString = returnString.."?replace"..v
+            splitDirectives[i] = createDirective(directiveJson)
         end
      -- dLog(returnString, "returnString:  ")
     end
   end
- -- dLog(returnString, "returnString:  ")
+  returnString = "?replace"
+  for i,v in ipairs(splitDirectives)
+  returnString = returnString..v
+  end
+ --dLog(returnString, "returnString:  ")
   return returnString
 end
 
 function createDirective(directiveJson)
-  local prefix = "?replace"
+  local prefix = ""
   for k,v in pairs(directiveJson) do
     prefix = string.format("%s;%s=%s",prefix,k,v)
   end
@@ -939,59 +915,44 @@ function setList(args)
   dLogJson(args, "setList - ARGS")
   --table.sort(args.list)
   widget.clearListItems(self.techList)
-  if not args then return end
-  local indx = 1
-  if (args.isOverride) then
-    local defaultArgs = {
-    listType = args.listType,
-    clearConfig = true
-    }
+  if not args then dLog("no args found"); return end
 
+  widget.setData(string.format("%s", self.techList), args)
+  
+  if (args.isOverride) then
+    args.clearConfig = true
     local defaultListItem = widget.addListItem(self.techList)
       widget.setText(string.format("%s.%s.techName", self.techList, defaultListItem), "Remove Overrides")
-      widget.setData(string.format("%s.%s", self.techList, defaultListItem), defaultArgs)
+      widget.setData(string.format("%s.%s", self.techList, defaultListItem), args)
   end
-  if not args.title then return end
-  if #(args.title) < 2 then return end
-  for _,v in pairs(args.title) do
+
+  if not args.title then dLog("no title found"); return end
+  local title = args.title
+  dLog(tostring(#title), "titleArgs count : ")
+  if #(title) < 2 then return end
+  for _,v in pairs(title) do
       local listItem = widget.addListItem(self.techList)
-      local newArgs = parseArgs(args, {
-          name = v,
-          listType = nil,
-          hairGroup = nil,
-          facialHairGroup = nil,
-          directive = nil,
-          clearConfig = false
-        })
-      if args.hexDirectives then
-        newArgs.directive = args.hexDirectives[v] or " "
-        --args.hexDirectives = nil
-        local hexId = string.match(newArgs.directive, "=(%w+)")
+      local displayText = tostring(v) 
+      local hexTable = nil
+
+      if args.hexTables then
+        hexTable = args.hexTables[v] or {}
+        --args.hexTables = nil
+        local hexId = tostring(v[1])
         if hexId then
-          v = "^#"..hexId..";"..v
+          displayText = "^#"..hexId..";"..displayText
         end
+      else
+
       end
 
-
-      --newArgs.name = v
-      --newArgs.listType = args.listType
-      --newArgs.hairGroup = args.hairGroup or nil
-      --newArgs.facialHairGroup = arg.facialHairGroup or nil
-
-      widget.setText(string.format("%s.%s.techName", self.techList, listItem), v)
-      widget.setData(string.format("%s.%s", self.techList, listItem), newArgs)
-      --if args.hexDirectives then
-      --  indx = indx+1
-      --  if newArgs.directive == args.currentSelection then
-      --    widget.setListSelected(self.techList, listItem)
-      --    break
-      --  end
-      --end
-      if newArgs.name == args.currentSelection then 
-        indx = indx+1
+      if args.name == args.currentSelection then 
         sb.logInfo("setList:  entered setListSelected")
         widget.setListSelected(self.techList, listItem)
       end 
+
+      widget.setText(string.format("%s.%s.techName", self.techList, listItem), displayText)
+      widget.setData(string.format("%s.%s", self.techList, listItem), {listItemTitle = v, hexTable = hexTable})
   end
 end
 
@@ -1002,7 +963,14 @@ function replaceDirectiveAtEnd(directiveBase, directiveReplace)
   local split = util.split(directiveBase, "?replace")
   if #split < 3 then return directiveBase end
   if not string.match(directiveReplace, "?replace") then directiveReplace = "?replace"..directiveReplace end
-  return "?replace"..split[2]..directiveReplace
+
+  split[#split] = directiveReplace
+  local result = ""
+  for _,v in ipairs(split) do
+    result = "?replace"..v
+  end
+
+  return result
 end
 
 function getDirectiveAtEnd(directiveBase)
@@ -1010,7 +978,7 @@ function getDirectiveAtEnd(directiveBase)
   local returnValue = ""
   local split = util.split(directiveBase, "?replace")
   local indx = #split
-  if indx < 3 then 
+  if indx < 2 then 
     return nil 
   end
   while indx > 2 do
