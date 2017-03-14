@@ -312,11 +312,10 @@ function selectTab(index, data)
   dLog("SelectTab")
   local listOption = widget.getSelectedOption(self.tabGroupWidget)
   local args
-
   local curTabName = world.getObjectParameter(pane.containerEntityId(),"tabOptions."..self.categoryWidgetData)[index+2]
   local info = tabInfo[self.categoryWidgetData][data](curTabName)
-
-        setList(info)
+  local newInfo = copy(info)
+        setList(newInfo)
 end
 
 function selectGenCategory(button, data)
@@ -374,7 +373,7 @@ function setList(args)
       local listItem = widget.addListItem(self.techList)
       local displayText = tostring(v) 
 
-      if args.colors then
+      if args.colors and #args.colors > 1 then
         --args.hexTables = nil
         local _,hexId = next(args.colors[i])
         if hexId then
@@ -929,17 +928,20 @@ function tabInfo.Generate.tab1(tabName)
 end
 
 function tabInfo.Generate.tab2(tabName)
-    local args = {currentSelection = self.currentOverride.identity.hairType or self.currentIdentity.hairType, title = {}}
+    local args = {currentSelection = self.currentOverride.identity.hairType or self.currentIdentity.hairType, 
+                  title = {}}
   return getSpeciesOptions(self.currentSpecies, tabName,args ) 
 end
 
 function tabInfo.Generate.tab3(tabName) 
-  local args = {currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType}
+  local args = {currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType,
+                title = {}}
   return getSpeciesOptions(self.currentSpecies, tabName, args) 
 end
-args
+
 function tabInfo.Generate.tab4(tabName) 
-  local args = {currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType}
+  local args = {currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType,
+                title = {}}
   return getSpeciesOptions(self.currentSpecies, tabName, args) 
 end
 
@@ -947,9 +949,10 @@ end
 ----------------------------------
 function tabInfo.Refine.tab1(tabName) 
   local args = {
-    args.title = {}
-    args.listType = tabName
-    args.currentSelection = self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives
+    title = {},
+    listType = tabName,
+    colors = {},
+    currentSelection = (self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives)
   }
   return getSpeciesOptions(self.currentSpecies, tabName, args) 
 end
@@ -960,17 +963,26 @@ function tabInfo.Refine.tab2(tabName)
 end
 
 function tabInfo.Refine.tab3(tabName)
-  local args = {currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType}
+  local args =  {
+    title = {},
+    listType = tabName,
+    colors = {},
+    currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType}
   return getSpeciesOptions(self.currentSpecies, tabName, args)
 end
 
 function tabInfo.Refine.tab4(tabName)
-  local args = {currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType}
+  local args = {
+    title = {},
+    listType = tabName,
+    colors = {},
+    currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType}
   return getSpeciesOptions(self.currentSpecies, tabName, args)
 end
 
 function tabInfo.Refine.tab5(tabName)
-  return getSpeciesOptions(self.currentSpecies, tabName)
+  local args = {}
+  return getSpeciesOptions(self.currentSpecies, tabName, args)
 end
 
 function tabInfo.IO.tab1(tabName) 
