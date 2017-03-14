@@ -10,7 +10,7 @@ function init(virtual)
     storage.npcSeed = storage.npcSeed or 0
     storage.npcLevel = storage.npcLevel or 1
     storage.npcType = storage.npcType or "CAFguard"
-    storage.npcParams = storage.npcParams or {}
+    storage.npcParam = storage.npcParam or {}
   	storage.parentSpawner = storage.parentSpawner or nil
     storage.panelUniqueId = (storage.panelUniqueId or entity.uniqueId())
    
@@ -72,17 +72,17 @@ function getNpcData()
       args.npcSpecies = storage.npcSpecies
       args.npcSeed = storage.npcSeed
       args.npcType = storage.npcType
-      args.npcParams = storage.npcParams
+      args.npcParam = storage.npcParam
       args.npcLevel = storage.npcLevel
   return args
 end
 
 function setNpcData(args)
-
+  dLog("setting npcData")
   storage.npcSpecies = args.npcSpecies
   storage.npcSeed = args.npcSeed
   storage.npcType = args.npcType
-  storage.npcParams = args.npcParams
+  storage.npcParam = args.npcParam
   storage.npcLevel = args.npcLevel
 
   local newArgs = copy(args)
