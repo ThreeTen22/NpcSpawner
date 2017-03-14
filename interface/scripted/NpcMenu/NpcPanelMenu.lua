@@ -284,7 +284,7 @@ function replaceDirectives(directive, directiveJson)
       --dLog(string.match(v, "(%w+)=(%w+)"), "string Match:  ")
       --test if its correct directiveGroup
         local k = string.match(v, "(%w+)=(%w+)")
-        if directiveJson[k] or directiveJson[string.upper(k)] or directiveJson[string.lower(k)] then
+        if directiveJson[k] or directiveJson[string.upper(k)] then
            -- dLogJson(directiveJson[k], "matchJsonValue:")
             returnString = returnString..createDirective(directiveJson)
         else
@@ -309,7 +309,7 @@ function finalizeOverride()
   dLog("FinalizingOverride")
   self.overrideText = widget.getText(self.overrideTextBox)
 
-  local parsedStrings = util.split(self.overrideText, " ")
+  local parsedStrings = parseOverride(self.overrideText, "%w*")
   dLogJson(parsedStrings, "ParsedStrings:  ")
   
   parsedStrings = parseArgs(parsedStrings, {
@@ -318,47 +318,6 @@ function finalizeOverride()
     "nil",
     "nil"
     })
-  if parsedStrings[1] == "hs" and parsedStrings[2] == "hair" then
-    self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives or  self.currentIdentity.hairDirectives
-    self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives.."?hueshift="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc(getArgs())
-  end
-
-  if parsedStrings[1] == "hs" and parsedStrings[2] == "body" then
-    self.currentOverride.identity.bodyDirectives = self.currentOverride.identity.bodyDirectives or  self.currentIdentity.bodyDirectives
-    self.currentOverride.identity.bodyDirectives = self.currentOverride.identity.bodyDirectives.."?hueshift="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc(getArgs())
-  end
-
-  if parsedStrings[1] == "hs" and parsedStrings[2] == "emote" then
-    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives or  self.currentIdentity.emoteDirectives
-    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives.."?hueshift="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc(getArgs())
-  end
-
-  if parsedStrings[1] == "sat" and parsedStrings[2] == "hair" then
-    self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives or  self.currentIdentity.hairDirectives
-    self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives.."?saturation="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc(getArgs())
-  end
-
-  if parsedStrings[1] == "sat" and parsedStrings[2] == "body" then
-    self.currentOverride.identity.bodyDirectives = self.currentOverride.identity.bodyDirectives or  self.currentIdentity.bodyDirectives
-    self.currentOverride.identity.bodyDirectives = self.currentOverride.identity.bodyDirectives.."?saturation="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc(getArgs())
-  end
-
-  if parsedStrings[1] == "sat" and parsedStrings[2] == "emote" then
-    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives or  self.currentIdentity.emoteDirectives
-    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives.."?saturation="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc(getArgs())
-  end
 
   if parsedStrings[1] ~= "nil" then
     self.currentSpecies = parsedStrings[1]
@@ -570,7 +529,7 @@ function tabListOne(button, data)
     args.listType = "species"
     args.currentSelection = self.currentSpecies
     return setList(args)
-  elseif data == "tab2" then
+  elseif data == "tab2"
     args.list = copy(self.typeList)
     args.listType = "npcType"
     args.currentSelection = self.currentType
@@ -583,29 +542,14 @@ end
 function tabListTwo(button,data)
   local args = {}
   local tabInfo = {}
-  tabInfo["tab1"] = getSpeciesOptions(self.currentSpecies, "Hair", {curDirective = self.currentOverride.identity.hairType})
-  tabInfo["tab2"] = getSpeciesOptions(self.currentSpecies, "FHair", {curDirective = self.currentOverride.identity.hairType})
+  tabInfo["tab1"] = getSpeciesOptions(self.currentSpecies, "Hair" {})
+  tabInfo["tab2"] = getSpeciesOptions(self.currentSpecies, "FHair" {})
   tabInfo["tab3"] = getSpeciesOptions(self.currentSpecies, "HColor", {curDirective = self.currentOverride.identity.hairDirectives or self.currentIdentity.hairDirectives})
-  tabInfo["tab4"] = nil
+  tabInfo["tab4"] = ""
   tabInfo["tab5"] = getSpeciesOptions(self.currentSpecies, "BColor", {curDirective = self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives })
   tabInfo["tab6"] = getSpeciesOptions(self.currentSpecies, "UColor", {curDirective = self.currentOverride.underwear or self.currentIdentity.underwear})
 
-  local info = tabInfo[data]
-    if info then
-      args = {list = info.title, 
-              imgPath = info.imgPath, 
-              hairGroup = info.hairGroup, 
-              facialHairGroup = info.facialHairGroup,
-              hexDirectives = info.hexDirectives,
-              currentSelection = info.curDirective,
-              listType = info.option}
-    else
-      args = {
-              list = {""},
-              listType = data
-      }
-    end
-    return setList(args)
+
 end
 
 function selectTab(button, data)
@@ -615,14 +559,103 @@ function selectTab(button, data)
   category["Generate"] = tabListOne
   category["Refine"] = tabListTwo
   category["Equip"] = ""
-  return category[self.categoryWidgetData](button, data)
+
+
+  dLog("selectTab :")
+ 
+
+
+  dLog(listOption, "listOption: ")
+  if data == "tab1" then
+    local data = getSpeciesOptions(self.currentSpecies, "Hair" {})
+    args = {list = data.title, 
+            imgPath = data.imgPath, 
+            hairGroup = data.hairGroup, 
+            currentSelection = self.currentOverride.identity.hairType,
+            listType = "Hair"}
+    return setList(args)
+  end
+  if data == "tab2" then
+    local data = getSpeciesOptions(self.currentSpecies, "FHair" {})
+    args = {list = data.title, 
+            imgPath = data.imgPath,
+            facialHairGroup = data.facialHairGroup,
+            currentSelection = self.currentOverride.identity.facialHairType,
+            listType = "FHair"}
+    return setList(args)
+  end
+  if data == "tab3" then
+      local data = getSpeciesOptions(self.currentSpecies, "HColor", {curDirective = self.currentOverride.identity.hairDirectives or self.currentIdentity.hairDirectives})
+      if data then 
+        args = {list = data.title, 
+                hexDirectives = data.hexDirectives,
+                currentSelection = data.curHairDirective,
+                listType = "HColor"}
+      else 
+        args = {
+                list = {""},
+                listType = "HColor"
+        }
+      end
+      return setList(args)
+  end
+  if data == "tab4" then
+      --local data = getSpeciesOptions(self.currentSpecies, "fhcolor")
+      if data then 
+        args = {list = data.title, 
+                hexDirectives = data.hexDirectives,
+                currentSelection = data.curDirective,
+                listType = "FHcolor"}
+        
+      else
+        args = {
+                list = {""},
+                listType = "FHcolor"}
+       
+      end
+      return setList(args)
+  end
+  if data == "tab5" then
+      local data = getSpeciesOptions(self.currentSpecies, "BColor", {curDirective = self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives })
+      if data then 
+        args = {list = data.title, 
+                hexDirectives = data.hexDirectives,
+                currentSelection = data.curDirective,
+                listType = "BColor"}
+        
+      else
+        args = {
+                list = {""},
+                listType = "BColor"}
+       
+      end
+       return setList(args)
+  end
+
+  if data == "tab6" then
+      local data = getSpeciesOptions(self.currentSpecies, "UColor", {curDirective = self.currentOverride.underwear or self.currentIdentity.underwear})
+      if data then 
+        args = {list = data.title, 
+                hexDirectives = data.hexDirectives,
+                currentSelection = data.curDirective,
+                listType = "UColor"}
+        
+      else
+        args = {
+                list = {""},
+                listType = "UColor"}
+       
+      end
+      return setList(args)
+  end
+
+  return setList(nil)
  -- dLog(args, "selectTab Failed - > args: ")
 end
 
 
 function getSpeciesOptions(species, option, returnInfo)
   returnInfo = returnInfo or {}
-  returnInfo.option = option
   local speciesJson = getAsset("/species/"..species..".species") or nil
 
   if not speciesJson then dLog("getSpeciesOptions:  nil AssetFile") end
@@ -676,22 +709,27 @@ function getSpeciesOptions(species, option, returnInfo)
       returnInfo.colors = copy(speciesJson.undyColor)
     return getColorInfo(returnInfo)
   else
-    return getSpeciesAsset(speciesJson, genderIndx, species, option, returnInfo) 
+    return getSpeciesAsset(speciesJson, speciesIndex, species, option, returnInfo) 
   end
 end
 
 
-function getSpeciesAsset(speciesJson, genderIndx, species, option, output)
+function getSpeciesAsset(speciesJson,speciesIndx, species, option, output)
   local optn = world.getObjectParameter(pane.containerEntityId(),"getAssetParams")[option]
+  dLog(optn, "getspeciesAsset:  optn")
 
-  local genderPath = speciesJson.genders[genderIndx]
+  local genderPath = speciesJson.genders[speciesIndx]
   local title = {}
   local imgPath = {}
   local info = {}
   local oOne = tostring(optn[1])
   local oTwo = tostring(optn[2])
   dCompare("oOne - oTwo", oOne, oTwo)
-
+  dLog(optn[1])
+  dLog(optn[2])
+  dLogJson(genderPath)
+  dLog(species)
+  dLog(option)
  
   info[oOne] = genderPath[oOne] or optn[3]
   info[oTwo] = genderPath[oTwo]
@@ -735,9 +773,12 @@ function getColorInfo(args)
         table.insert(title,nameString)
         firstRun = true
       end
-      args.title = title
+
+      returnInfo.title = title
+      returnInfo.hexDirectives = args.hexDirectives
     end
-    return args
+    returnInfo.curDirective = args.curDirective
+    return returnInfo
 end
 
 function getAsset(assetPath)
