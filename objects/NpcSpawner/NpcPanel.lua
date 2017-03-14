@@ -1,7 +1,6 @@
 require "/scripts/npcspawnutil.lua"
 require "/scripts/util.lua"
 
-paneParameter = {checkEquipment = false}
 function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
@@ -13,9 +12,8 @@ function init(virtual)
     storage.npcType = storage.npcType or "CAFguard"
     storage.npcParams = storage.npcParams or {}
   	storage.parentSpawner = storage.parentSpawner or nil
-    storage.panelUniqueId = (storage.panelUniqueId or entity.uniqueId()) or sb.makeUuid()
-    object.setUniqueId(storage.panelUniqueId)
-
+    storage.panelUniqueId = (storage.panelUniqueId or entity.uniqueId())
+   
     local pos  = entity.position()
   
     --handler for messages coming from the spawner with the spawner's unique id
@@ -23,11 +21,11 @@ function init(virtual)
  	  message.setHandler("setParentSpawner", function(_, _, params)
       setParentSpawner(params)
     end)
-
+     dLog("get NPC DATA")
     message.setHandler("getNpcData",function(_, _)
       return getNpcData()
     end)
-    
+    dLog("set NPC DATA")
     message.setHandler("setNpcData", function(_,_, args)
       setNpcData(args)
     end)
@@ -42,13 +40,13 @@ end
 function containerInteracted()
   dLog("container has been called back!")
   object.setConfigParameter("checkEquipmentSlots", true)
+  dLog(world.getObjectParameter(pane.containerEntityId(), "checkEquipmentSlots:  "))
 end
 
 function onInteraction(args)
   local interactionConfig = world.getObjectParameter(pane.containerEntityId(),"uiConfig")
   sb.logInfo("NpcPanel: onInteraction")
   --world.containerOpen(storage.panelUniqueId)
-
   return {"ScriptConsole", interactionConfig}
 end
 
@@ -58,17 +56,24 @@ end
 function setParentSpawner(spawnerId)
   storage.parentSpawner = spawnerId
   sb.logInfo("NpcPanel: recieved the id of the parent spawner")
+
+  if not storage.panelUniqueId then
+    storage.panelUniqueId = sb.makeUuid()
+    object.setUniqueId(storage.panelUniqueId)
+    dCompare("uniqueIds - ",entity.uniqueId(), storage.panelUniqueId)
+    dLog("regid: ", entity.id())
+  end
 end
 
 
 function getNpcData()
- local args = {
-      npcSpecies = storage.npcSpecies,
-      npcSeed = storage.npcSeed,
-      npcType = storage.npcType,
-      npcParams = storage.npcParams,
-      npcLevel = storage.npcLevel
-    }
+  dLog("Gettin NPC DATA")
+  local args = {}
+      args.npcSpecies = storage.npcSpecies
+      args.npcSeed = storage.npcSeed
+      args.npcType = storage.npcType
+      args.npcParams = storage.npcParams
+      args.npcLevel = storage.npcLevel
   return args
 end
 
