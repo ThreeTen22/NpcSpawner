@@ -106,23 +106,14 @@
     "feneroxguard" : ["fenerox"]
   },
   "tabOptions" : {
-    "Generate" : ["Species", "Hair", "FHair", "FMask","",""],
-    "Refine"  : ["BColor", "HColor","FHColor", "FMColor", "UColor", ""],
-    "IO"  : ["npcType", "","", "","",""]
+    "Generate" : ["species", "NpcType", "-", "-","-","-"],
+    "Refine"  : ["Hair", "FHair","HColor", "FHColor", "BColor", "UColor"],
+    "IO"  : ["-", "-","-", "-","-","-"]
   },
   "getAssetParams" : {
     "Hair" : ["hairGroup", "hair", "hair"],
-    "FHair" : ["facialHairGroup", "facialHair", ""],
-    "FMask" : ["facialMaskGroup", "facialMask", ""]
-  },
-  "getCurDirectivesParams" : {
-    "species" : "",
-    "Hair" : "",
-    "FHair" : "",
-    "FMask" : ""
-
+    "FHair" : ["facialHairGroup", "facialHair", "facialHairGroup"]
   },
   "typeOptions": ["Guard","Villager"],
-  "newEquipment": false,
-  "equipmentList" : [""]
+  "checkEquipmentSlots": false
 }

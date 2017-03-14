@@ -5,7 +5,6 @@ function init(virtual)
   if not virtual then
     object.setInteractive(true)
   end
-
   sb.logInfo("NpcSpawner: init")  
 
   --auto-place the config panel. if the panel cannot be placed, the update will catch that and destroy the spawner.
@@ -55,9 +54,8 @@ function onInteraction(args)
   return {"ScriptConsole", interactionConfig}
 end
 
-
 function setNpcData(args)
-  dLog("NpcSpawner SetNpcData")
+
   if args.npcSpecies then
     storage.npcSpecies = args.npcSpecies
   end
