@@ -57,7 +57,7 @@ end
 
 
 function setNpcData(args)
-
+  dLog("NpcSpawner SetNpcData")
   if args.npcSpecies then
     storage.npcSpecies = args.npcSpecies
   end

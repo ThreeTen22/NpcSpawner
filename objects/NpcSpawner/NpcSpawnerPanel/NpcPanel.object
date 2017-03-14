@@ -106,9 +106,9 @@
     "feneroxguard" : ["fenerox"]
   },
   "tabOptions" : {
-    "Generate" : ["Species", "Hair", "FHair", "FMask","-","-"],
+    "Generate" : ["Species", "Hair", "FHair", "FMask","",""],
     "Refine"  : ["BColor", "HColor","FHColor", "FMColor", "UColor", ""],
-    "IO"  : ["npcType", "-","-", "-","-","-"]
+    "IO"  : ["npcType", "","", "","",""]
   },
   "getAssetParams" : {
     "Hair" : ["hairGroup", "hair", "hair"],

@@ -42,7 +42,6 @@ end
 function containerInteracted()
   dLog("container has been called back!")
   object.setConfigParameter("checkEquipmentSlots", true)
-  dLog(world.getObjectParameter(pane.containerEntityId(), "checkEquipmentSlots"))
 end
 
 function onInteraction(args)
