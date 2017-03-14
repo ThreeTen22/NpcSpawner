@@ -20,10 +20,9 @@
 
   "openSounds" : [ "/sfx/objects/miningchest_open.ogg" ],
   "slotCount" : 6,
-  "uiConfig" : "/interface/NpcMenu/NpcInventory.config",
+  "uiConfig" : "/interface/scripted/NpcMenu/NpcInventory.config",
   "frameCooldown" : 5,
   "autoCloseCooldown" : 3600,
-
   "scripts" : [ "/objects/NpcSpawner/NpcSpawner.lua" ],
 
   "inventoryIcon" : "/objects/ship/humanteleporter/teleportericon.png",

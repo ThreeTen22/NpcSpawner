@@ -1,9 +1,11 @@
 require "/scripts/util.lua"
 require "/scripts/npcspawnutil.lua"
+
 function init(virtual)
   if not virtual then
     object.setInteractive(true)
   end
+
   sb.logInfo("NpcSpawner: init")  
 
   --auto-place the config panel. if the panel cannot be placed, the update will catch that and destroy the spawner.
@@ -21,9 +23,9 @@ function init(virtual)
 
   storage.uniqueId = storage.uniqueId or nil    --this object's unique id. used for giving to the spawned npc
   storage.npcSpecies = storage.npcSpecies or "human"
-  storage.seedValue = storage.seedValue or 0
-  storage.type = storage.type or "CAFguard"
-  storage.level = storage.level or 10
+  storage.npcSeed = storage.npcSeed or 0
+  storage.npcLevel = storage.npcLevel or 1
+  storage.npcType = storage.npcType or "CAFguard"
   storage.npcParams = storage.npcParams or {}
 
   self.maxSpawnTime = 5   --time between checks to see if a new NPC should be spawned
@@ -33,7 +35,10 @@ function init(virtual)
   self.weapon = nil   --we keep a seperate var for the weapon so that we can handle switching between ranged and melee npc behavior
 
   self.speciesOptions = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
-  self.typeOptions = world.getObjectParameter(pane.containerEntityId(),"typeOptions",{})
+  self.typeOptions = config.getParameter("typeOptions", {})
+  if not self.typeOptions then
+    dLog("config.getparameter found nuthin")
+  end
 
   self.absPosition = nil
   --self.npcParameter = util.randomFromList(world.getObjectParameter(pane.containerEntityId(),"spawner.npcParameterOptions"))
@@ -50,19 +55,20 @@ function onInteraction(args)
   return {"ScriptConsole", interactionConfig}
 end
 
-function setNpcData(args)
 
+function setNpcData(args)
+  dLog("NpcSpawner SetNpcData")
   if args.npcSpecies then
     storage.npcSpecies = args.npcSpecies
   end
   if args.npcSeed then
-    storage.seedValue = args.npcSeed
+    storage.npcSeed = args.npcSeed
   end
   if args.npcType then
-    storage.type = args.npcType
+    storage.npcType = args.npcType
   end
   if args.npcLevel then
-    storage.level = args.npcLevel
+    storage.npcLevel = args.npcLevel
   end
   if args.npcParams then
     storage.npcParams = args.npcParams
@@ -78,7 +84,7 @@ end
 function findPanel()
   local pos = entity.position()
   pos[2] = pos[2] + 2
-  local objList = world.entityQuery(pos, 0)
+  local objList = world.objectQuery(pos, 0, {name = "NpcSpawnerPanel"})
   for i,j in ipairs(objList) do
     if world.entityName(j) == "NpcSpawnerPanel" then return j end
   end
@@ -88,7 +94,7 @@ end
 function update(dt)
   --if we have not done so, send our uniqueId to the panel that we spawned
   --we have to do this here because it doesn't work in the init function unfortunately. we don't have an id assigned yet there apparently
-  --storage.seedValue = dt
+  --storage.npcSeed = dt
   if not storage.uniqueId then
     storage.uniqueId = sb.makeUuid()
     world.setUniqueId(entity.id(), storage.uniqueId)
@@ -98,9 +104,9 @@ function update(dt)
       world.sendEntityMessage(self.panelID, "setParentSpawner", storage.uniqueId)
     end
   end
-  sb.logInfo("Finding Panel")
-  sb.logInfo("Panel Not Found")
+
   if not findPanel() then 
+    sb.logInfo("Panel Not Found")
     world.breakObject(entity.id()) 
   end
 
@@ -114,16 +120,8 @@ function update(dt)
 
       local newParam = copy(storage.npcParams)
 
-      
-      --local npcId = world.spawnNpc(position, storage.npcSpecies, storage.type, level, storage.seedValue, storage.npcParams)
-      local npcId = world.spawnNpc(position, storage.npcSpecies,storage.type, storage.level, storage.seedValue, newParam)
-      --sb.logInfo("spawning,  seed value"..storage.seedValue)
-      -- local portrait = world.entityPortrait(npcId, "full")
-      -- for _, y in pairs(portrait) do
-      --   for a, b in pairs(y) do
-      --     world.logInfo(tostring(a) .. " -> " .. tostring(b))
-      --   end
-      -- end
+      local npcId = world.spawnNpc(position, storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, newParam)
+
       --assign our new NPC a special unique id
       storage.spawnedID = sb.makeUuid()
       world.setUniqueId(npcId, storage.spawnedID)
