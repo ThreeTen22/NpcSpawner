@@ -1,20 +1,17 @@
 require "/scripts/npcspawnutil.lua"
-require "/scripts/util.lua"
 
-paneParameter = {checkEquipment = false}
+
 function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
   	end
     sb.logInfo("NpcPanel: init")
+
     storage.npcSpecies = storage.npcSpecies or "human"
-    storage.npcSeed = storage.npcSeed or 0
-    storage.npcLevel = storage.npcLevel or 1
-    storage.npcType = storage.npcType or "CAFguard"
+    storage.seedValue = storage.seedValue or 0
+    storage.type = storage.type or "CAFguard"
     storage.npcParams = storage.npcParams or {}
   	storage.parentSpawner = storage.parentSpawner or nil
-    storage.panelUniqueId = (storage.panelUniqueId or entity.uniqueId()) or sb.makeUuid()
-    object.setUniqueId(storage.panelUniqueId)
 
     local pos  = entity.position()
   
@@ -32,30 +29,33 @@ function init(virtual)
       setNpcData(args)
     end)
 
-end
+    message.setHandler("onOpen", function(_,_, args) onOpen(args) end)
 
-function containerCallback()
-  dLog("container has been called back!")
-
-end
-
-function containerInteracted()
-  dLog("container has been called back!")
-  object.setConfigParameter("checkEquipmentSlots", true)
-  dLog(world.getObjectParameter(pane.containerEntityId(), "checkEquipmentSlots"))
 end
 
 function onInteraction(args)
-  local interactionConfig = world.getObjectParameter(pane.containerEntityId(),"uiConfig")
+  local interactionConfig = config.getParameter("uiConfig")
   sb.logInfo("NpcPanel: onInteraction")
-  --world.containerOpen(storage.panelUniqueId)
 
-  return {"ScriptConsole", interactionConfig}
+
+
+  return {"ScriptPane", interactionConfig}
+end
+
+function onOpen(args)
+  local interactionConfig = config.getParameter("uiConfig")
+  sb.logInfo("NpcPanel: opened")
+
+
+
+  return {"ScriptPane", interactionConfig}
 end
 
 function update(dt)
 end 
 
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
 function setParentSpawner(spawnerId)
   storage.parentSpawner = spawnerId
   sb.logInfo("NpcPanel: recieved the id of the parent spawner")
@@ -65,10 +65,9 @@ end
 function getNpcData()
  local args = {
       npcSpecies = storage.npcSpecies,
-      npcSeed = storage.npcSeed,
-      npcType = storage.npcType,
-      npcParams = storage.npcParams,
-      npcLevel = storage.npcLevel
+      seedValue = storage.seedValue,
+      npcType = storage.type,
+      npcParams = storage.npcParams
     }
   return args
 end
@@ -76,12 +75,16 @@ end
 function setNpcData(args)
 
   storage.npcSpecies = args.npcSpecies
-  storage.npcSeed = args.npcSeed
-  storage.npcType = args.npcType
+  storage.seedValue = args.npcSeed
+  storage.type = args.npcType
   storage.npcParams = args.npcParams
-  storage.npcLevel = args.npcLevel
 
-  local newArgs = copy(args)
+  local newArgs = {
+    npcSpecies = args.npcSpecies,
+    npcSeed = args.npcSeed,
+    npcType = args.npcType,
+    npcParams = args.npcParams
+  }
 
   world.sendEntityMessage(storage.parentSpawner, "setNpcData", newArgs)
 end

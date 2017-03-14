@@ -20,11 +20,11 @@
   "openSounds" : ["/sfx/objects/miningchest_open.ogg" ],
   "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
   "frameCooldown" : 5,
-  "autoCloseCooldown" : 360000,
+  "autoCloseCooldown" : 3600,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
   "capacity" : 1000,
   "smashOnBreak" : true,
-  "containerCallback" : "containerInteracted",
+
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
   "orientations" : [
     {
@@ -106,14 +106,9 @@
     "feneroxguard" : ["fenerox"]
   },
   "tabOptions" : {
-    "Generate" : ["species", "NpcType", "-", "-","-","-"],
+    "Generate" : ["Species", "NpcType", "-", "-","-","-"],
     "Refine"  : ["Hair", "FHair","HColor", "FHColor", "BColor", "UColor"],
     "IO"  : ["-", "-","-", "-","-","-"]
   },
-  "getAssetParams" : {
-    "Hair" : ["hairGroup", "hair", "hair"],
-    "FHair" : ["facialHairGroup", "facialHair", "facialHairGroup"]
-  },
-  "typeOptions": ["Guard","Villager"],
-  "checkEquipmentSlots": false
+  "typeOptions": ["Guard","Villager"]
 }
