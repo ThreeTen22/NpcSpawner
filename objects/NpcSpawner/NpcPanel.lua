@@ -30,6 +30,7 @@ function init(virtual)
       setNpcData(args)
     end)
 
+    getUserInformation()
 end
 
 function containerCallback()

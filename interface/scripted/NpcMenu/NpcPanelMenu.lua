@@ -34,12 +34,9 @@ function init()
     }
 
   self.assetParams = world.getObjectParameter(pane.containerEntityId(),"getAssetParams")
+  self.npcTypeList = world.getObjectParameter(pane.containerEntityId(),"npcTypeList")
   dLog(self.assetParams)
   self.gettingNpcData = nil
- 
-	self.sendingSpecies = nil
-	self.sendingSeedValue = nil
-  self.sendingType = nil
 
   self.npcDataInit = false
 
@@ -57,8 +54,6 @@ function init()
   self.hairColor = {}
   self.bodyColor = {}
   self.undyColor = {}
-  self.facialHairColor = {}
-  self.facialSubMaskColor = {}
 
   self.seedInput = 0
 
@@ -73,7 +68,6 @@ function init()
   self.tabData = nil
 
   self.tabGroupWidget = "rgTabs"
-  self.npcTypeConfigList = "npcTypeList"
   
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
 
@@ -333,6 +327,7 @@ function selectTab(index, option)
     dLog(Refine[option](curTabName),  "REFINE  ")
   else
     generateInfo = IO[option](curTabName)
+    dLog(Refine[option](curTabName),  "IO  ")
   end
   returnInfo.title = copy(generateInfo.title)
   returnInfo.currentSelection = tostring(generateInfo.currentSelection)
@@ -887,6 +882,7 @@ end
 ------CHANGE NPC FUNCTIONS---------
 function modNpc.Species(listData, cur, curO)
   if self.currentSpecies ~= listData.itemTitle then
+    self.speciesJSON
     dLog({listData,cur,curO},"modNPC.HitSpecies")
     curO = {}
     self.currentSpecies = tostring(listData.itemTitle)
@@ -1052,7 +1048,7 @@ end
 
 function IO.tab1(tabName) 
     local args = {}
-    args.title = copy(self.typeList)
+    args.title = copy(self.npcTypeList)
     args.listType = tabName
     args.currentSelection = self.currentType
     args.isOverride = false
