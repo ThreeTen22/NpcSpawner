@@ -24,7 +24,7 @@
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
   "capacity" : 1000,
   "smashOnBreak" : true,
-  "containerCallback" : "containerInteracted",
+  "containerCallback" : "containerCallback",
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
   "orientations" : [
     {
@@ -42,7 +42,7 @@
       "anchors" : [ "background" ]
     },
     {
-      "image" : "CAFspawnerPanel.png",
+      "image" : "CAFspawnerBase.png",
       "imagePosition" : [-8, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
@@ -52,7 +52,7 @@
       "lightPosition" : [0, 3],
 
       "spaceScan" : 0.1,
-      "anchors" : [ "background" ]
+      "anchors" : [ "bottom" ]
     }
   ],
    "itemOverrideTemplate": {
@@ -71,19 +71,18 @@
       }
     }]
   },
-  "rgNPCModOptions": ["Generate","Refine","IO"],
   "categoryIconPaths": ["techIconHead","techIconBody","techIconLegs"],
   "speciesData": {
     "speciesDirectory": {
       "ext": ".species",
       "base": "/species/"
     },
-    "additionalSpeciesToList": {
+    "additionalSpeciesList": {
       "fenerox": ""
     }
   },
   "npcTypeList": [ 
-    "alpaca",
+    "nakedvillager",
     "blacksmith",
     "desertvillager",
     "feneroxguard",
@@ -95,7 +94,6 @@
     "hazmatscientist",
     "maskedguard",
     "merchant",
-    "nakedvillager",
     "villageguard",
     "villageguardcaptain",
     "villager",
@@ -108,7 +106,7 @@
   "tabOptions" : {
     "Generate" : ["Species", "Hair", "FHair", "FMask","",""],
     "Refine"  : ["BColor", "HColor","FHColor", "FMColor", "UColor", ""],
-    "IO"  : ["npcType", "","", "","",""]
+    "Manage"  : ["npcType", "","", "","",""]
   },
   "getAssetParams" : {
     "Hair" : ["hairGroup", "hair", "hair"],

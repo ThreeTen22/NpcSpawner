@@ -30,18 +30,12 @@ function init(virtual)
       setNpcData(args)
     end)
 
-    getUserInformation()
 end
 
 function containerCallback()
-  dLog("container has been called back!")
-
-end
-
-function containerInteracted()
-  dLog("container has been called back!")
+  dLog( "Panel:  container has been called back!")
   object.setConfigParameter("checkEquipmentSlots", true)
-  dLog(world.getObjectParameter(pane.containerEntityId(), "checkEquipmentSlots:  "))
+  dLog(world.getObjectParameter(entity.id(), "checkEquipmentSlots"), "Get")
 end
 
 function onInteraction(args)

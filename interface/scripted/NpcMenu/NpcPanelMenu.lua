@@ -5,7 +5,7 @@ spnPersonality = {}
 modNpc = {}
 Generate = {}
 Refine = {}
-IO = {}
+Manage = {}
 
 function init()
   self.returnInfo = {}
@@ -35,7 +35,7 @@ function init()
 
   self.assetParams = world.getObjectParameter(pane.containerEntityId(),"getAssetParams")
   self.npcTypeList = world.getObjectParameter(pane.containerEntityId(),"npcTypeList")
-  dLog(self.assetParams)
+
   self.gettingNpcData = nil
 
   self.npcDataInit = false
@@ -51,10 +51,11 @@ function init()
 
 	self.raceButtons = {}
 
-  self.hairColor = {}
-  self.bodyColor = {}
-  self.undyColor = {}
+  --self.hairColor = {}
+  --self.bodyColor = {}
+  --self.undyColor = {}
 
+  self.genderIndx = 1
   self.seedInput = 0
 
   self.personalityIndex = 0
@@ -95,9 +96,6 @@ function init()
   self.doingMainUpdate = false
   self.firstRun = true
 
-  self.cd = 2
-  self.reset = 2
-
 
 
   widget.setSliderRange("sldTargetSize",0, self.worldSize)
@@ -129,6 +127,7 @@ function update(dt)
     self.firstRun = false
   else
       getParamsFromSpawner()
+      script.setUpdateDelta(10)
   end
 end
 
@@ -248,6 +247,14 @@ function finalizeOverride()
     return updateNpc()
   end
 
+  if parsedStrings[1] == "sat" and parsedStrings[2] == "emote" then
+    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives or  self.currentIdentity.emoteDirectives
+    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives.."?saturation="..parsedStrings[3]
+    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
+    return updateNpc()
+  end
+
+
   if parsedStrings[1] ~= "nil" then
     self.currentSpecies = parsedStrings[1]
   end
@@ -313,12 +320,21 @@ function selectTab(index, option)
   self.returnInfoColors = {}
   local listOption = widget.getSelectedOption(self.tabGroupWidget)
 
-  local curTabName = world.getObjectParameter(pane.containerEntityId(),"tabOptions."..self.categoryWidgetData)[index+2]
+  local curTab = world.getObjectParameter(pane.containerEntityId(),"tabOptions."..self.categoryWidgetData)
+  local curTabName = curTab[index+2]
   local returnInfo = self.returnInfo
   local generateInfo = {}
   curTabName = tostring(curTabName)
   returnInfo.listType = curTabName
   if not curTabName or curTabName == "" then return setList(nil) end
+
+  if not(self.speciesJson and (self.speciesJson.kind == self.currentSpecies)) then
+    self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
+  end
+
+  local genderPath = self.speciesJson.genders
+  self.genderIndx = getGenderIndx(self.currentOverride.identity.gender or self.currentIdentity.gender)
+  
   if self.categoryWidgetData == "Generate" then
     dLog(Generate[option](curTabName), "  GENERATE")
     generateInfo = Generate[option](curTabName)
@@ -326,32 +342,19 @@ function selectTab(index, option)
     generateInfo = Refine[option](curTabName)
     dLog(Refine[option](curTabName),  "REFINE  ")
   else
-    generateInfo = IO[option](curTabName)
-    dLog(Refine[option](curTabName),  "IO  ")
+    generateInfo = Manage[option](curTabName)
+    dLog(Manage[option](curTabName),  "Manage  ")
   end
-  returnInfo.title = copy(generateInfo.title)
-  returnInfo.currentSelection = tostring(generateInfo.currentSelection)
-  returnInfo.isOverride = generateInfo.isOverride
+  --returnInfo.title = copy(generateInfo.title)
+  --returnInfo.currentSelection = tostring(generateInfo.currentSelection)
+  --returnInfo.isOverride = generateInfo.isOverride
+
+  returnInfo = parseArgs(returnInfo, generateInfo)
 
 
-  if not(self.speciesJson and (self.speciesJson.kind == self.currentSpecies)) then
-    self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
-  end
+  self.returnInfoColors = nil
   returnInfo.species = self.currentSpecies
     --dLogJson(speciesJson, "speciesJSON: ")
-  local genderPath = self.speciesJson.genders
-  local gender = self.currentOverride.identity.gender or self.currentIdentity.gender
-  local genderIndx = 1
-  self.returnInfoColors = nil
-  if not gender then 
-    dLog("getSpeciesOptions:  nil gender") 
-  end
-
-  if genderPath[1]["name"] == gender then
-    genderIndx = 1
-  else
-    genderIndx = 2
-  end
 
   if self.speciesJson["headOptionAsFacialhair"] then
     if self.speciesJson["headOptionAsFacialhair"] == true then
@@ -413,7 +416,7 @@ function selectTab(index, option)
   elseif curTabName == "BColor" then
       
       if #self.speciesJson.bodyColor > 1 then
-        self.returnInfoColors =  lowercaseCopy(self.speciesJson.bodyColor)
+        self.returnInfoColors =  self.speciesJson.bodyColor
       end
       returnInfo.isOverride = true
       getColorInfo(returnInfo)
@@ -426,7 +429,7 @@ function selectTab(index, option)
       getColorInfo(returnInfo)
   else
       local optn  = world.getObjectParameter(pane.containerEntityId(),"getAssetParams")[curTabName]
-      getSpeciesAsset(self.speciesJson, genderIndx, self.currentSpecies, optn, returnInfo)
+      getSpeciesAsset(self.speciesJson, self.genderIndx, self.currentSpecies, optn, returnInfo)
   end
       returnInfo.colors = self.returnInfoColors
       dLog(returnInfo, "selectTab End  ")
@@ -451,7 +454,7 @@ function selectGenCategory(button, data)
     widget.setVisible("lblBlockNameBox", false)
     widget.setVisible("spnPersonality", true)
     widget.setVisible("lblPersonality", true)
-  elseif data == "IO" then
+  elseif data == "Manage" then
     widget.setSliderEnabled("sldTargetSize", false)
     widget.setVisible("lblBlockNameBox", false)
     widget.setVisible("spnPersonality", false)
@@ -502,6 +505,9 @@ function setList(args)
         displayText = tostring(v) 
         iTitle = tostring(v)
         iData = v
+        if iIcon then
+          widget.setImage(string.format("%s.%s.techIcon", self.techList, listItem), iIcon)
+        end
       end
 
       widget.setText(string.format("%s.%s.techName", self.techList, listItem), displayText)
@@ -662,6 +668,7 @@ function replaceDirectives(directive, directiveJson)
   dLog("replaceDirectives")
   dLog(directive, "enterString:  ")
   dLog(directiveJson,"enter Json")
+  if not directive and type(directive) == "nil" then return nil end
   local splitDirectives = util.split(directive,"?replace")
 
   dLogJson(splitDirectives, "replaceDirectives: split: ")
@@ -879,14 +886,27 @@ function getParamsFromSpawner()
     --self.updateIndx = self.updateIndx + 1 
 end
 
+function getGenderIndx(name)
+  local genderIndx
+ if self.speciesJson.genders[1]["name"] == name then
+    genderIndx = 1
+  else
+    genderIndx = 2
+  end
+  return genderIndx
+end
 ------CHANGE NPC FUNCTIONS---------
 function modNpc.Species(listData, cur, curO)
   if self.currentSpecies ~= listData.itemTitle then
-    self.speciesJSON
     dLog({listData,cur,curO},"modNPC.HitSpecies")
     curO = {}
     self.currentSpecies = tostring(listData.itemTitle)
+    self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
+    self.genderIndx = getGenderIndx(self.currentOverride.identity.gender or self.currentIdentity.gender)
+    local speciesIcon = self.speciesJson.genders[self.genderIndx].characterImage
+    widget.setImage("techIconHead",speciesIcon)
   end
+
 end
 
 function modNpc.npcType(listData, cur, curO)
@@ -1046,7 +1066,7 @@ function Refine.tab5(tabName)
   return getSpeciesOptions(self.currentSpecies, tabName, args)
 end
 
-function IO.tab1(tabName) 
+function Manage.tab1(tabName) 
     local args = {}
     args.title = copy(self.npcTypeList)
     args.listType = tabName
