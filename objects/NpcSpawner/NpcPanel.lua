@@ -33,9 +33,7 @@ function init(virtual)
 end
 
 function containerCallback()
-  dLog( "Panel:  container has been called back!")
   object.setConfigParameter("checkEquipmentSlots", true)
-  dLog(world.getObjectParameter(entity.id(), "checkEquipmentSlots"), "Get")
 end
 
 function onInteraction(args)

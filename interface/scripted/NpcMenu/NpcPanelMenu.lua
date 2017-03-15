@@ -95,7 +95,8 @@ function init()
 
   self.doingMainUpdate = false
   self.firstRun = true
-
+  self.itemBag  = nil
+  self.itemBagStorage = nil
 
 
   widget.setSliderRange("sldTargetSize",0, self.worldSize)
@@ -117,17 +118,48 @@ end
 function update(dt)
   --Cannot send entity messages during init, so will do it here
   if self.doingMainUpdate then
-      local checkEquip = world.getObjectParameter(pane.containerEntityId(),"newEquipment")
-      if world.getObjectParameter(pane.containerEntityId(),"newEquipment") then
-        return checkAndEquip()
+      --local checkEquip = world.getObjectParameter(pane.containerEntityId(),"newEquipment")
+      --if world.getObjectParameter(pane.containerEntityId(),"newEquipment") then
+      --  return checkAndEquip()
+      --end
+      self.itemBag = widget.itemGridItems("itemGrid")
+      dLogJson(self.itemBag,  "Items  ") 
+      if self.itemBag[1] then 
+       
+          local params = world.getObjectParameter(pane.containerEntityId(),"itemOverrideTemplate")
+          --local item = world.getObjectParameter(pane.containerEntityId(),"itemTemplate").item[1]
+          --dLogJson(params, "Params: ")
+          local insertPosition = params.items.override[1][2][1]
+          local chest = world.getObjectParameter(pane.containerEntityId(),"itemTemplate").item[1]
+          local itemContainer = self.itemBag[1]
+          itemContainer.count = nil
+          chest.name = itemContainer.name
+          chest.parameters = itemContainer.parameters
+          insertPosition.chest = {chest}
+          self.currentOverride.items = params.items
+          dLogJson(self.currentOverride)
+          updateNpc()
       end
+      if not self.itemBag[1] then 
+        if self.currentOverride.items.override then
+          self.currentOverride.items.override = nil
+          updateNpc()  
+        end
+        
+      end
+            
+      
   elseif self.firstRun then
+    self.itemBag = widget.itemGridItems("itemGrid")
+    self.itemBagStorage = nil
     dLog(pane.containerEntityId(), "FirstRUN BABY  ")
     self.gettingNpcData = world.sendEntityMessage(pane.containerEntityId(), "getNpcData")
     self.firstRun = false
   else
-      getParamsFromSpawner()
-      script.setUpdateDelta(10)
+      if self.gettingNpcData:finished() then 
+        getParamsFromSpawner()
+        script.setUpdateDelta(10)
+      end
   end
 end
 
@@ -200,10 +232,6 @@ function finalizeOverride()
     "nil",
     "nil"
     })
-
-  if parsedStrings[1] == "c&e" then
-    return checkAndEquip()
-  end
 
   if parsedStrings[1] == "hue" and parsedStrings[2] == "hair" then
     self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives or  self.currentIdentity.hairDirectives
@@ -526,11 +554,11 @@ end
 function selectListItem(name, listData)
 
   local listItem = widget.getListSelected(self.techList)
-  dLog(listItem, "listItem  ")
+  --dLog(listItem, "listItem  ")
   if not listItem then return end
   
   local itemData = widget.getData(string.format("%s.%s", self.techList, listItem))
-  dLog(itemData, "ItemData:  ")
+  --dLog(itemData, "ItemData:  ")
   listData.itemData = itemData.itemData
   listData.itemTitle = itemData.itemTitle
   listData.clearConfig = itemData.clearConfig
@@ -613,12 +641,6 @@ function changeTabLabels(tabs, option)
     end
   end
 end
-
-function checkAndEquip()
-  dLogJson("checkAndEqupi:  bag")
-  local bag = widget.itemGridItems("itemGrid")
-  dLogJson(bag, "bag"
-)end
 
 function getArgs()
   local args = {
