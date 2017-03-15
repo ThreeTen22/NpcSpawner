@@ -340,14 +340,14 @@ function selectTab(index, option)
 
 
   if not(self.speciesJson and (self.speciesJson.kind == self.currentSpecies)) then
-    self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species") or nil
+    self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
   end
   returnInfo.species = self.currentSpecies
     --dLogJson(speciesJson, "speciesJSON: ")
   local genderPath = self.speciesJson.genders
   local gender = self.currentOverride.identity.gender or self.currentIdentity.gender
   local genderIndx = 1
-
+  self.returnInfoColors = nil
   if not gender then 
     dLog("getSpeciesOptions:  nil gender") 
   end
@@ -378,40 +378,56 @@ function selectTab(index, option)
 
 
   if curTabName == "HColor" then
-      self.returnInfoColors = lowercaseCopy(self.speciesJson.hairColor)
+      --self.returnInfoColors = lowercaseCopy(self.speciesJson.hairColor)
+      --if returnInfo["headOptionAsFacialhair"] then
+      --  self.returnInfoColors = lowercaseCopy(self.speciesJson.bodyColor)
+      --end
+      if compareDirectiveToColor(self.currentIdentity.hairDirectives, self.speciesJson.bodyColor) then
+        self.returnInfoColors = self.speciesJson.bodyColor
+      elseif compareDirectiveToColor(self.currentIdentity.hairDirectives, self.speciesJson.hairColor) then
+        self.returnInfoColors = self.speciesJson.hairColor
+      elseif compareDirectiveToColor(self.currentIdentity.hairDirectives, self.speciesJson.undyColor) then
+        self.returnInfoColors = self.speciesJson.undyColor
+      else 
+        self.returnInfoColors = nil
+      end
       returnInfo.isOverride = true
       getColorInfo(returnInfo)
   elseif option == "FHColor" then
-      returnInfo.isOverride = true
+      
       if compareDirectiveToColor(self.currentIdentity.facialHairDirectives, self.speciesJson.bodyColor) then
         self.returnInfoColors = self.speciesJson.bodyColor
       elseif compareDirectiveToColor(self.currentIdentity.facialHairDirectives, self.speciesJson.hairColor) then
         self.returnInfoColors = self.speciesJson.hairColor
       elseif compareDirectiveToColor(self.currentIdentity.facialHairDirectives, self.speciesJson.undyColor) then
         self.returnInfoColors = self.speciesJson.undyColor
-      else
-        self.returnInfoColors = nil
       end
+      returnInfo.isOverride = true
       getColorInfo(returnInfo)
   elseif curTabName == "FMColor" then
-      returnInfo.isOverride = true
+      
       if compareDirectiveToColor(self.currentIdentity.facialMaskDirectives, self.speciesJson.bodyColor) then
         self.returnInfoColors = self.speciesJson.bodyColor
       elseif compareDirectiveToColor(self.currentIdentity.facialMaskDirectives, self.speciesJson.hairColor) then
         self.returnInfoColors = self.speciesJson.hairColor
       elseif compareDirectiveToColor(self.currentIdentity.facialMaskDirectives, self.speciesJson.undyColor) then
         self.returnInfoColors = self.speciesJson.undyColor
-      else 
-        self.returnInfoColors = nil
       end
+      returnInfo.isOverride = true
       getColorInfo(returnInfo)
   elseif curTabName == "BColor" then
+      
+      if #self.speciesJson.bodyColor > 1 then
+        self.returnInfoColors =  lowercaseCopy(self.speciesJson.bodyColor)
+      end
       returnInfo.isOverride = true
-      self.returnInfoColors =  lowercaseCopy(self.speciesJson.bodyColor)
       getColorInfo(returnInfo)
   elseif curTabName == "UColor" then
       returnInfo.isOverride = true
-      self.returnInfoColors =  lowercaseCopy(self.speciesJson.undyColor)
+      if #self.speciesJson.undyColor > 1 then
+        self.returnInfoColors =  self.speciesJson.undyColor
+      end
+      returnInfo.isOverride = true
       getColorInfo(returnInfo)
   else
       local optn  = world.getObjectParameter(pane.containerEntityId(),"getAssetParams")[curTabName]
@@ -462,6 +478,9 @@ function setList(args)
   --table.sort(args.list)
   widget.clearListItems(self.techList)
   local indx = 1
+  local displayText = nil
+  local iTitle = nil
+  local iData = nil
   if not args then dLog("no args found") return end
 
   
@@ -473,27 +492,21 @@ function setList(args)
       widget.setText(string.format("%s.%s.techName", self.techList, defaultListItem), "Remove Overrides")
       widget.setData(string.format("%s.%s", self.techList, defaultListItem), {listType = tostring(args.listType), clearConfig = true})
   end 
-  local parse = {}
-  if (not args.title) or (#args.title == 0) then 
-    parse = args.colors
-  else
-    parse = args.title
-  end
-  dLog(parse["1"],  "setDATA PARSE")
-  for _,v in pairs(parse) do
+  for _,v in pairs(args.title) do
       --dLog({i,v}, "HIT PAIR")
       local listItem = widget.addListItem(self.techList)
-      local displayText = tostring(v) 
-      local iTitle = tostring(v)
-      local iData = nil
-      if type(v) ~= "string" then
+      if args.colors then
         displayText = tostring(indx)
         iTitle = tostring(indx)
-        iData = parse[iTitle]
+        iData = args.colors[indx]
         local _,hexId = next(iData)
         if hexId then
           displayText = "^#"..hexId..";"..displayText
         end
+      else
+        displayText = tostring(v) 
+        iTitle = tostring(v)
+        iData = v
       end
 
       widget.setText(string.format("%s.%s.techName", self.techList, listItem), displayText)
@@ -538,7 +551,8 @@ end
 
 function compareDirectiveToColor(directive, json)
   if type(json) ~= "table" or (tostring(directive) == "") then return false end
-  local set = next(json)
+  local _,set = next(json)
+  if type(set) ~= "table" then return false end
   local k,v  = next(set)
   dLog(k, "MATCHING TEST")
   dLog(string.match(directive,tostring(k).."="), "result ")
@@ -569,6 +583,7 @@ function getSpeciesAsset(speciesJson, genderIndx, species, optn, output)
 end
 
 function getColorInfo(output)
+  output.title = output.title or {}
   local colors = self.returnInfoColors
   local firstRun = false
   local indx = 1
@@ -601,8 +616,8 @@ end
 function checkAndEquip()
   dLogJson("checkAndEqupi:  bag")
   local bag = widget.itemGridItems("itemGrid")
-  dLogJson(bag, "bag")
-end
+  dLogJson(bag, "bag"
+)end
 
 function getArgs()
   local args = {

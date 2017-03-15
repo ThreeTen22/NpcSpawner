@@ -77,8 +77,8 @@ function lowercaseCopy(v)
   else
     local c = {}
     for k,v in pairs(v) do
-
-      c[string.lower(k)] = lowercaseCopy(v)
+      if type(k) == "string" then k = string.lower(k) end
+      c[k] = lowercaseCopy(v)
     end
     setmetatable(c, getmetatable(v))
     return c
