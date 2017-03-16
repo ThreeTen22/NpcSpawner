@@ -8,6 +8,7 @@ Refine = {}
 Manage = {}
 
 function init()
+
   self.returnInfo = {}
   sb.logInfo("NpcPanelMenu: init")
   self.portraits = {
@@ -33,7 +34,7 @@ function init()
     "portraitSlot20"
     }
 
-  self.assetParams = world.getObjectParameter(pane.containerEntityId(),"getAssetParams")
+  self.assetParams = config.getParameter("getAssetParams")
   self.npcTypeList = world.getObjectParameter(pane.containerEntityId(),"npcTypeList")
 
   self.gettingNpcData = nil
@@ -46,7 +47,7 @@ function init()
   self.currentSeed = 0
   self.currentType = "nakedvillager"
   self.currentIdentity = {}
-  self.currentOverride = {identity = {}, items = {}}
+  self.currentOverride = {identity = {}}
   self.currentLevel = 10
 
 	self.raceButtons = {}
@@ -95,8 +96,8 @@ function init()
 
   self.doingMainUpdate = false
   self.firstRun = true
-  self.itemBag  = nil
-  self.itemBagStorage = nil
+
+  
 
 
   widget.setSliderRange("sldTargetSize",0, self.worldSize)
@@ -109,49 +110,54 @@ function init()
   
   widget.setProgress("prgAvailable", 0.0)
 
+  self.itemsToAdd = {}
 
+  self.equipSlot = {
+                    "head",
+                    "back",
+                    "chest",
+                    "primary",
+                    "legs",
+                    "secondary"
+                  }
   --testFunction()
    -- setList({list = self.speciesList,  listType = "species"})
-  
+  --if not curO.items then curO.items = {} end
+  --if not curO.items.override then curO.items.override = config.getParameter("itemOverrideTemplate.items.override") end
+  --if not curO.items.override then dLog("Could Not get override template from world object, aborting equip"); return end
+  self.itemBagStorage = widget.itemGridItems("itemGrid")
 end
 
 function update(dt)
   --Cannot send entity messages during init, so will do it here
   if self.doingMainUpdate then
-      --local checkEquip = world.getObjectParameter(pane.containerEntityId(),"newEquipment")
-      --if world.getObjectParameter(pane.containerEntityId(),"newEquipment") then
-      --  return checkAndEquip()
-      --end
-      self.itemBag = widget.itemGridItems("itemGrid")
-      dLogJson(self.itemBag,  "Items  ") 
-      if self.itemBag[1] then 
-       
-          local params = world.getObjectParameter(pane.containerEntityId(),"itemOverrideTemplate")
-          --local item = world.getObjectParameter(pane.containerEntityId(),"itemTemplate").item[1]
-          --dLogJson(params, "Params: ")
-          local insertPosition = params.items.override[1][2][1]
-          local chest = world.getObjectParameter(pane.containerEntityId(),"itemTemplate").item[1]
-          local itemContainer = self.itemBag[1]
-          itemContainer.count = nil
-          chest.name = itemContainer.name
-          chest.parameters = itemContainer.parameters
-          insertPosition.chest = {chest}
-          self.currentOverride.items = params.items
-          dLogJson(self.currentOverride)
-          updateNpc()
-      end
-      if not self.itemBag[1] then 
-        if self.currentOverride.items.override then
-          self.currentOverride.items.override = nil
-          updateNpc()  
+    dLog("main Update")
+    local needsUpdate = false
+    local itemBag = widget.itemGridItems("itemGrid")
+    local curO = self.currentOverride 
+    for i = 1, 6 do
+      if not compare(self.itemBagStorage[i], itemBag[i]) then
+        --insertPosition = path(insertPosition, "items","override",1,2,1)
+        if not self.currentOverride.items  then 
+          self.currentOverride.items = config.getParameter("overrideContainerTemplate.items") 
+          dLogJson(insertPosition)
         end
-        
+        local insertPosition = self.currentOverride.items.override[1][2][1]
+        --dLogJson(insertPosition)
+
+        setItemOverride(self.equipSlot[i],insertPosition,itemBag[i])
+        needsUpdate = true
       end
-            
-      
+    end
+    if path(curO, "override",1,2,1) and isEmpty(curO.override[1][2][1]) then
+      self.currentOverride.items.override = nil
+    end     
+    if needsUpdate then 
+      self.itemBagStorage = widget.itemGridItems("itemGrid") 
+      updateNpc() 
+    end
+    dLogJson(self.currentOverride)
   elseif self.firstRun then
-    self.itemBag = widget.itemGridItems("itemGrid")
-    self.itemBagStorage = nil
     dLog(pane.containerEntityId(), "FirstRUN BABY  ")
     self.gettingNpcData = world.sendEntityMessage(pane.containerEntityId(), "getNpcData")
     self.firstRun = false
@@ -163,7 +169,16 @@ function update(dt)
   end
 end
 
-
+function setItemOverride(slotName, insertPosition, itemContainer)
+      if itemContainer then 
+        local slotContainer = config.getParameter("itemContainerTemplate.item[1]")
+        itemContainer.count = nil
+        insertPosition[slotName] = {itemContainer}
+      else
+        insertPosition[slotName] = nil
+      end
+      dLog(insertPosition, "insert pos ")
+end
 -----NEED TO BE SORTED --------
 --[[
 function changeSpeciesGlobals(species)
@@ -219,6 +234,8 @@ function spnPersonality.down()
   return 
 end
 
+
+--callback
 function finalizeOverride()
   dLog("FinalizingOverride")
   self.overrideText = widget.getText(self.overrideTextBox)
@@ -304,6 +321,7 @@ function finalizeOverride()
   return updateNpc()
 end
 
+--Callback
 function setNpcName()
   local text = widget.getText("tbNameBox")
   if text == "" then
@@ -317,6 +335,7 @@ function setNpcName()
   end
 end
 
+--Callback
 function updateTargetSize()
   self.currentOverride.identity = {}
   self.manualInput = false
@@ -348,7 +367,7 @@ function selectTab(index, option)
   self.returnInfoColors = {}
   local listOption = widget.getSelectedOption(self.tabGroupWidget)
 
-  local curTab = world.getObjectParameter(pane.containerEntityId(),"tabOptions."..self.categoryWidgetData)
+  local curTab = config.getParameter("tabOptions."..self.categoryWidgetData)
   local curTabName = curTab[index+2]
   local returnInfo = self.returnInfo
   local generateInfo = {}
@@ -456,7 +475,7 @@ function selectTab(index, option)
       returnInfo.isOverride = true
       getColorInfo(returnInfo)
   else
-      local optn  = world.getObjectParameter(pane.containerEntityId(),"getAssetParams")[curTabName]
+      local optn  = config.getParameter("getAssetParams."..curTabName)
       getSpeciesAsset(self.speciesJson, self.genderIndx, self.currentSpecies, optn, returnInfo)
   end
       returnInfo.colors = self.returnInfoColors
@@ -629,9 +648,9 @@ end
 
 function changeTabLabels(tabs, option)
   tabs = tabs or "nil"
-  option = option or "nil"
+  option = option or "Error"
 
-  local tabOptions = world.getObjectParameter(pane.containerEntityId(),"tabOptions")[option]
+  local tabOptions = config.getParameter("tabOptions."..option)
   local indx = 1
 
   if tabOptions then
@@ -877,7 +896,7 @@ function getParamsFromSpawner()
     end
 
     if result.npcParam then
-      self.currentOverride = parseArgs(result.npcParam, {identity = {}, items = {}})
+      self.currentOverride = parseArgs(result.npcParam, {identity = {}})
     end
     
     if type(result.npcSeed) == "string" then 
@@ -1095,4 +1114,17 @@ function Manage.tab1(tabName)
     args.currentSelection = self.currentType
     args.isOverride = false
     return args
+end
+
+
+function logENV()
+  for i,v in pairs(_ENV) do
+    if type(v) == "function" then
+      sb.logInfo("%s", i)
+    elseif type(v) == "table" then
+      for j,k in pairs(v) do
+        sb.logInfo("%s.%s (%s)", i, j, type(k))
+      end
+    end
+  end
 end

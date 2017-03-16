@@ -23,9 +23,8 @@ end
 
 function dCompare(prefix, one, two)
   sb.logInfo(prefix)
-  dComp["nil"] = nilString
-  dComp[type(one)](one)
-  dComp[type(two)](two)
+  dComp[type(one)](one) 
+  dComp[type(two)](two) 
 end
 
 function dComp.string(input)
@@ -46,10 +45,6 @@ end
 
 function dComp.userdata(input)
   return dLogJson(input, "userdata:")
-end
-
-function nilString(input)
-  return sb.logInfo("nil")
 end
 
 function valuesToKeys(list)
@@ -84,3 +79,5 @@ function lowercaseCopy(v)
     return c
   end
 end
+
+dComp["nil"] = function(input) return dLog("nil") end

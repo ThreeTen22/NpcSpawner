@@ -18,24 +18,36 @@
   "objectType" : "container",
   "slotCount" : 6,
   "openSounds" : ["/sfx/objects/miningchest_open.ogg" ],
+  "interactAction" : "ScriptConsole",
   "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
   "frameCooldown" : 5,
   "autoCloseCooldown" : 360000,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
-  "capacity" : 1000,
   "smashOnBreak" : true,
   "containerCallback" : "containerCallback",
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
+  "isContainer": true,
   "orientations" : [
     {
       "image" : "CAFspawnerPanel.png",
-      "imagePosition" : [-8, 0],
+      "imagePosition" : [0, -4],
       "frames" : 1,
       "animationCycle" : 0.5,
-      
       "direction" : "left",
       "flipImages" : true,
-      "animationPosition" : [-8, 0],
+      "animationPosition" : [0, -4],
+      "lightPosition" : [0, 3],
+      "spaceScan" : 0.1,
+      "anchors" : [ "background" ]
+    },
+    {
+      "image" : "CAFspawnerPanel.png",
+      "imagePosition" : [0, -4],
+      "frames" : 1,
+      "animationCycle" : 0.5,
+      "direction" : "right",
+      "flipImages" : true,
+      "animationPosition" : [0, -4],
       "lightPosition" : [0, 3],
 
       "spaceScan" : 0.1,
@@ -43,43 +55,38 @@
     },
     {
       "image" : "CAFspawnerBase.png",
-      "imagePosition" : [-8, 0],
+      "imagePosition" : [0, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
-      
       "direction" : "right",
-      "animationPosition" : [-8, 0],
+      "animationPosition" : [0, 0],
+      "lightPosition" : [0, 3],
+
+      "spaceScan" : 0.1,
+      "anchors" : [ "bottom" ]
+    },
+    {
+      "image" : "CAFspawnerBase.png",
+      "imagePosition" : [0, 0],
+      "frames" : 1,
+      "animationCycle" : 0.5,
+      "direction" : "left",
+      "animationPosition" : [0, 0],
       "lightPosition" : [0, 3],
 
       "spaceScan" : 0.1,
       "anchors" : [ "bottom" ]
     }
   ],
-   "itemOverrideTemplate": {
-    "items": {
-      "override": [[0,
-      [{
-        
-      }]]]
-    }
-  },
-  "itemTemplate": {
-    "item": [{
-      "name": "REPLACEME",
-      "parameters": {
-        "colorIndex": 0
-      }
-    }]
-  },
   "categoryIconPaths": ["techIconHead","techIconBody","techIconLegs"],
   "speciesData": {
     "speciesDirectory": {
       "ext": ".species",
       "base": "/species/"
     },
-    "additionalSpeciesList": {
-      "fenerox": ""
-    }
+    "additionalSpeciesList": [
+      "fenerox"
+    ]
   },
   "npcTypeList": [ 
     "nakedvillager",
@@ -103,22 +110,11 @@
     "feneroxvillager" : ["fenerox"],
     "feneroxguard" : ["fenerox"]
   },
-  "tabOptions" : {
-    "Generate" : ["Species", "Hair", "FHair", "FMask","",""],
-    "Refine"  : ["BColor", "HColor","FHColor", "FMColor", "UColor", ""],
-    "Manage"  : ["npcType", "","", "","",""]
-  },
-  "getAssetParams" : {
-    "Hair" : ["hairGroup", "hair", "hair"],
-    "FHair" : ["facialHairGroup", "facialHair", ""],
-    "FMask" : ["facialMaskGroup", "facialMask", ""]
-  },
   "getCurDirectivesParams" : {
     "species" : "",
     "Hair" : "",
     "FHair" : "",
     "FMask" : ""
-
   },
   "typeOptions": ["Guard","Villager"],
   "newEquipment": false,

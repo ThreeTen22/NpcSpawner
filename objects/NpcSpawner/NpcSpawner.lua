@@ -2,10 +2,10 @@ require "/scripts/util.lua"
 require "/scripts/npcspawnutil.lua"
 
 function init(virtual)
-  if not virtual then
-    object.setInteractive(true)
-  end
-
+  --if not virtual then
+  --  object.setInteractive(true)
+  --end
+  self.needsEquipCheck = false
   sb.logInfo("NpcSpawner: init")  
 
   --auto-place the config panel. if the panel cannot be placed, the update will catch that and destroy the spawner.
@@ -51,9 +51,9 @@ function init(virtual)
   
 end
 
-function onInteraction(args)
-  return {"ScriptConsole", interactionConfig}
-end
+--function onInteraction(args)
+--  return {"ScriptConsole", interactionConfig}
+--end
 
 
 function setNpcData(args)
@@ -82,8 +82,7 @@ function setNpcData(args)
 end
 
 function findPanel()
-  local pos = entity.position()
-  pos[2] = pos[2] + 2
+  local pos = object.toAbsolutePosition({0,2})
   local objList = world.objectQuery(pos, 0, {name = "NpcSpawnerPanel"})
   for i,j in ipairs(objList) do
     if world.entityName(j) == "NpcSpawnerPanel" then return j end
@@ -125,6 +124,9 @@ function update(dt)
       world.setUniqueId(npcId, storage.spawnedID)
 
       storage.spawned = true 
+      if self.needsEquipCheck then
+        return containerCallback
+      end
       self.spawnTimer = self.maxSpawnTime
     else
       self.spawnTimer = self.spawnTimer - dt
@@ -137,7 +139,6 @@ function update(dt)
       storage.spawned = false
     elseif self.checkGearTimer < 0 then
 
-      --setGear()
       self.checkGearTimer = self.maxGearTime
     end
   end
@@ -155,30 +156,23 @@ function setGear()
   local legsID = world.containerItemAt(id, 5)
 
   --function calls to the NPC character. Updates all the NPC's gear.
+  dLog("setting Gear")
   if spawnedID == 0 then return end
 
-  if weaponID then
-    world.callScriptedEntity(spawnedID, "npc.setItemSlot","primary",weaponID)
-  end
-  if altID then
-    world.callScriptedEntity(spawnedID, "npc.setItemSlot","alt",altID)
-  end
-  if backID then
-    world.callScriptedEntity(spawnedID, "npc.setItemSlot","back",backID)
-  end
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","primary",weaponID)
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","alt",altID)
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","back",backID)
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","backCosmetic",backID)
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","head",headID)
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","headCosmetic",chestID)
 
-  if headID then
-    world.callScriptedEntity(spawnedID, "npc.setItemSlot","head",headID)
-  end
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","chest",chestID)
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","chestCosmetic",chestID)
 
-  if chestID then
-    world.callScriptedEntity(spawnedID, "npc.setItemSlot","chest",chestID)
-  end
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","legs",legsID)
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","legsCosmetic",legsID)
 
-  if legsID then
-    world.callScriptedEntity(spawnedID, "npc.setItemSlot","legs",chestID)
-  end
-
+  dLog("endSettingGear Gear")
  -- if spawnedID then
  --   world.callScriptedEntity(spawnedID, "npc.setDisplayNametag", true)
  -- end
@@ -259,4 +253,15 @@ function spawnTestItem()
   local itemParam = world.getObjectParameter(pane.containerEntityId(),"templateOverride",{})
   if not itemParam then return end
   local item = world.spawnItem("spawnerwizard", self.absPosition, 1, itemParam)
+end
+
+function containerCallback()
+  if storage.spawnedID and world.loadUniqueEntity(storage.spawnedID) ~= 0 then
+    dLog("NPC Spawner Callback")
+    setGear()
+  else
+    self.needsEquipCheck = true
+    storage.spawned = false
+    update(0)
+  end
 end

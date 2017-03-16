@@ -5,6 +5,7 @@ function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
   	end
+    dCompare("compareTest:  ",nil,nil)
     sb.logInfo("NpcPanel: init")
     storage.npcSpecies = storage.npcSpecies or "human"
     storage.npcSeed = storage.npcSeed or 0
@@ -36,12 +37,12 @@ function containerCallback()
   object.setConfigParameter("checkEquipmentSlots", true)
 end
 
-function onInteraction(args)
-  local interactionConfig = world.getObjectParameter(pane.containerEntityId(),"uiConfig")
-  sb.logInfo("NpcPanel: onInteraction")
-  --world.containerOpen(storage.panelUniqueId)
-  return {"ScriptConsole", interactionConfig}
-end
+--function onInteraction(args)
+--  local interactionConfig = world.getObjectParameter(pane.containerEntityId(),"uiConfig")
+--  sb.logInfo("NpcPanel: onInteraction")
+--  --world.containerOpen(storage.panelUniqueId)
+--  return {"ScriptConsole", interactionConfig}
+--end
 
 function update(dt)
 end 
