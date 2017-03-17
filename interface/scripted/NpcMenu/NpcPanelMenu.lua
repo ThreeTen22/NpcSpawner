@@ -47,7 +47,7 @@ function init()
   self.currentOverride = {identity = {}}
   self.currentLevel = 10
 
-	self.raceButtons = {}
+  self.raceButtons = {}
 
   --self.hairColor = {}
   --self.bodyColor = {}
@@ -874,18 +874,26 @@ function getParamsFromSpawner()
 
     if result.npcSpecies then
       self.currentSpecies = tostring( result.npcSpecies)
+      dLog("init:  getting species")
     end
 
     if result.npcType then
       self.currentType = tostring(result.npcType)
+      dLog("init:  getting type")
     end
 
     if result.npcLevel then
       self.currentLevel = tonumber(result.npcLevel) or 10
+      dLog("init:  getting level")
     end
 
     if result.npcParam then
-      self.currentOverride = result.npcParam
+      self.currentOverride = copy(result.npcParam)
+      dLogJson(self.currentOverride, "init:  getting parms")
+      local pathset = self.currentOverride
+    end
+    if not self.currentOverride.identity then 
+      self.currentOverride.identity = {}
     end
     
     if type(result.npcSeed) == "string" then 
