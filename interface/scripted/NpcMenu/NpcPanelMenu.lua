@@ -141,11 +141,11 @@ function update(dt)
       end
     end
     local curO = self.currentOverride
-    dLog("checking Path")
+    --dLog("checking Path")
     if path(curO,"items","override",1,2,1) then
-      dLog(curO,"Made Path")
+      --dLog(curO,"Made Path")
       if isEmpty(curO.items.override[1][2][1]) then
-        dLog("clearing Items")
+        --dLog("clearing Items")
         curO.items = nil
         needsUpdate = true
       end
@@ -351,6 +351,7 @@ function acceptBtn()
     npcLevel = self.currentLevel,
     npcParam = self.currentOverride
   }
+    dLogJson(args,"SENT IDENTITY", true)
     --self.sendingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "setSeedValuePanel", self.targetSize)
     self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
 
@@ -379,24 +380,9 @@ function selectTab(index, option)
 
   local genderPath = self.speciesJson.genders
 
-  --if self.categoryWidgetData == "Generate" then
-  --   generateInfo = Generate[option](listType)
-  --  --dLog(Generate[option](listType), "  GENERATE")
-  --elseif self.categoryWidgetData == "Refine" then
-  --  generateInfo = Refine[option](listType)
-  --  --dLog(Refine[option](listType),  "REFINE  ")
-  --else
-  --  generateInfo = Manage[option](listType)
-  --  --dLog(Manage[option](listType),  "Manage  ")
-  --end
-  --returnInfo.title = copy(generateInfo.title)
-  --returnInfo.currentSelection = tostring(generateInfo.currentSelection)
-  --returnInfo.isOverride = generateInfo.isOverride
-
-  --returnInfo = parseArgs(returnInfo, generateInfo)
 
   returnInfo.species = self.currentSpecies
-
+  
   if self.speciesJson["headOptionAsFacialhair"] then
     if self.speciesJson["headOptionAsFacialhair"] == true then
       returnInfo["headOptionAsFacialhair"] = self.speciesJson["headOptionAsFacialhair"]
@@ -1030,43 +1016,6 @@ function modNpc.UColor(listData, cur, curO)
     curO.emoteDirectives = replaceDirectives(curO.emoteDirectives or cur.emoteDirectives, listData.itemData)  
   end
 end
-
-
---function Generate.tab1(tabName)
---end
---
---function Generate.tab2(tabName)
---end
---
---function Generate.tab3(tabName)  
---end
---
---function Generate.tab4(tabName) 
---
---end
---
---
---
---function Refine.tab1(tabName) 
---
---end
---
---function Refine.tab2(tabName)
---
---end
---
---function Refine.tab3(tabName)
---end
---
---function Refine.tab4(tabName)
---end
---
---function Refine.tab5(tabName)
---end
---
---function Manage.tab1(tabName) 
---
---end
 
 --TODO -- ADD args.listype UP TOP!!!!
 function selectedTab.Species(args)

@@ -14,11 +14,11 @@ function dOut(input)
   return sb.print(input)
 end
 
-function dLogJson(input, prefix)
+function dLogJson(input, prefix, clean)
   if prefix ~= nil then
     sb.logInfo(prefix)
   end
-   sb.logInfo("%s", sb.printJson(input))
+   sb.logInfo("%s", sb.printJson(input, clean or false))
 end
 
 function dCompare(prefix, one, two)
