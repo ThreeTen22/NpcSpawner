@@ -23,7 +23,7 @@ function init(virtual)
 
   storage.uniqueId = storage.uniqueId or nil    --this object's unique id. used for giving to the spawned npc
   storage.npcSpecies = storage.npcSpecies or "human"
-  storage.npcSeed = storage.npcSeed or 0
+  storage.npcSeed = storage.npcSeed or math.random(2000)
   storage.npcLevel = storage.npcLevel or 1
   storage.npcType = storage.npcType or "CAFguard"
   storage.npcParam = storage.npcParam or {}

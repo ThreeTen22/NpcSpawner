@@ -3,9 +3,10 @@ require "/scripts/npcspawnutil.lua"
 
 spnPersonality = {}
 modNpc = {}
-Generate = {}
-Refine = {}
-Manage = {}
+selectedTab = {}
+--Generate = {}
+--Refine = {}
+--Manage = {}
 
 function init()
 
@@ -37,11 +38,9 @@ function init()
 
   self.gettingNpcData = nil
 
-  self.npcDataInit = false
-
   self.sendingData = nil
 
-  self.currentSpecies = "human"
+  self.currentSpecies = "penguin"
   self.currentSeed = 0
   self.currentType = "nakedvillager"
   self.currentIdentity = {}
@@ -53,9 +52,6 @@ function init()
   --self.hairColor = {}
   --self.bodyColor = {}
   --self.undyColor = {}
-
-  self.genderIndx = 1
-  self.seedInput = 0
 
   self.personalityIndex = 0
 
@@ -70,6 +66,7 @@ function init()
   self.tabGroupWidget = "rgTabs"
   
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
+  table.sort(self.speciesList)
 
   self.categoryWidget = "sgSelectCategory"
 
@@ -100,13 +97,9 @@ function init()
 
   widget.setSliderRange("sldTargetSize",0, self.worldSize)
   widget.setSliderEnabled("sldTargetSize", true)
-  widget.setSliderValue("sldTargetSize",0)
+  widget.setSliderValue("sldTargetSize",self.targetSize)
   
   local currentRatio = self.currentSize / self.worldSize
-  
-  widget.setProgress("prgCurrentProgress", currentRatio)
-  
-  widget.setProgress("prgAvailable", 0.0)
 
   self.itemsToAdd = {}
 
@@ -132,13 +125,13 @@ function update(dt)
     dLog("main Update")
     local needsUpdate = false
     local itemBag = widget.itemGridItems("itemGrid")
-    local curO = self.currentOverride 
+    
     for i = 1, 6 do
       if not compare(self.itemBagStorage[i], itemBag[i]) then
         --insertPosition = path(insertPosition, "items","override",1,2,1)
         if not self.currentOverride.items  then 
           self.currentOverride.items = config.getParameter("overrideContainerTemplate.items") 
-          dLogJson(insertPosition)
+          dLog(insertPosition)
         end
         local insertPosition = self.currentOverride.items.override[1][2][1]
         --dLogJson(insertPosition)
@@ -147,16 +140,22 @@ function update(dt)
         needsUpdate = true
       end
     end
-    if path(curO, "override",1,2,1) and isEmpty(curO.override[1][2][1]) then
-      self.currentOverride.items.override = nil
+    local curO = self.currentOverride
+    dLog("checking Path")
+    if path(curO,"items","override",1,2,1) then
+      dLog(curO,"Made Path")
+      if isEmpty(curO.items.override[1][2][1]) then
+        dLog("clearing Items")
+        curO.items = nil
+        needsUpdate = true
+      end
     end     
     if needsUpdate then 
       self.itemBagStorage = widget.itemGridItems("itemGrid") 
       updateNpc() 
     end
-    dLogJson(self.currentOverride)
+    dLog(self.currentOverride)
   elseif self.firstRun then
-    dLog(pane.containerEntityId(), "FirstRUN BABY  ")
     self.gettingNpcData = world.sendEntityMessage(pane.containerEntityId(), "getNpcData")
     self.firstRun = false
   else
@@ -189,7 +188,6 @@ function changeSpeciesGlobals(species)
   self.undyColor = lowercaseCopy(speciesJson.undyColor)
 
   self.altOptionAsUndyColor = speciesJson.altOptionAsUndyColor
-    --dLogJson(speciesJson, "speciesJSON: ")
   local genderName = self.currentOverride.identity.gender or self.currentIdentity.gender
   local genderIndx = 1
 
@@ -311,7 +309,7 @@ function finalizeOverride()
   end
 
   if parsedStrings[4] ~= "nil" then
-    self.seedInput = parsedStrings[4]
+    self.currentSeed = parsedStrings[4]
   end
 
   self.manualInput = true
@@ -340,8 +338,7 @@ function updateTargetSize()
   self.targetSize = widget.getSliderValue("sldTargetSize")
   self.currentSeed = self.targetSize
   widget.setText("lblSliderAmount", tostring(self.targetSize))
-
-  return updateNpc()
+  updateNpc()
 end
 
 function acceptBtn()
@@ -361,43 +358,44 @@ end
 
 function selectTab(index, option)
   dLog(option,  "    SelectTab")
-  self.returnInfo = nil
+  self.returnInfo = {}
   self.returnInfoColors = nil
   local listOption = widget.getSelectedOption(self.tabGroupWidget)
 
   local curTab = config.getParameter("tabOptions."..self.categoryWidgetData)
-  local curTabName = curTab[index+2]
-  local returnInfo = {}
+  local listType = curTab[index+2]
+  
   local generateInfo = {}
-  curTabName = tostring(curTabName)
-  returnInfo.listType = curTabName
-  if not curTabName or curTabName == "" then return setList(nil) end
+  listType = tostring(listType)
+  if not listType or listType == "" then return setList(nil) end
+
+  selectedTab[listType](self.returnInfo)
+  local returnInfo = self.returnInfo
+  returnInfo.listType = listType
 
   if not(self.speciesJson and (self.speciesJson.kind == self.currentSpecies)) then
     self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
   end
 
   local genderPath = self.speciesJson.genders
-  self.genderIndx = getGenderIndx(self.currentOverride.identity.gender or self.currentIdentity.gender)
-  
-  if self.categoryWidgetData == "Generate" then
-     generateInfo = Generate[option](curTabName)
-    --dLog(Generate[option](curTabName), "  GENERATE")
-  elseif self.categoryWidgetData == "Refine" then
-    generateInfo = Refine[option](curTabName)
-    --dLog(Refine[option](curTabName),  "REFINE  ")
-  else
-    generateInfo = Manage[option](curTabName)
-    --dLog(Manage[option](curTabName),  "Manage  ")
-  end
+
+  --if self.categoryWidgetData == "Generate" then
+  --   generateInfo = Generate[option](listType)
+  --  --dLog(Generate[option](listType), "  GENERATE")
+  --elseif self.categoryWidgetData == "Refine" then
+  --  generateInfo = Refine[option](listType)
+  --  --dLog(Refine[option](listType),  "REFINE  ")
+  --else
+  --  generateInfo = Manage[option](listType)
+  --  --dLog(Manage[option](listType),  "Manage  ")
+  --end
   --returnInfo.title = copy(generateInfo.title)
   --returnInfo.currentSelection = tostring(generateInfo.currentSelection)
   --returnInfo.isOverride = generateInfo.isOverride
 
-  returnInfo = parseArgs(returnInfo, generateInfo)
+  --returnInfo = parseArgs(returnInfo, generateInfo)
 
   returnInfo.species = self.currentSpecies
-    --dLogJson(speciesJson, "speciesJSON: ")
 
   if self.speciesJson["headOptionAsFacialhair"] then
     if self.speciesJson["headOptionAsFacialhair"] == true then
@@ -418,7 +416,7 @@ function selectTab(index, option)
   end
 
 
-  if curTabName == "HColor" then
+  if listType == "HColor" then
       --self.returnInfoColors = lowercaseCopy(self.speciesJson.hairColor)
       --if returnInfo["headOptionAsFacialhair"] then
       --  self.returnInfoColors = lowercaseCopy(self.speciesJson.bodyColor)
@@ -434,7 +432,7 @@ function selectTab(index, option)
       end
       returnInfo.isOverride = true
       getColorInfo(self.returnInfoColors, returnInfo)
-  elseif option == "FHColor" then
+  elseif listType == "FHColor" then
       
       if compareDirectiveToColor(self.currentIdentity.facialHairDirectives, self.speciesJson.bodyColor) then
         self.returnInfoColors = self.speciesJson.bodyColor
@@ -445,7 +443,7 @@ function selectTab(index, option)
       end
       returnInfo.isOverride = true
       getColorInfo(self.returnInfoColors, returnInfo)
-  elseif curTabName == "FMColor" then
+  elseif listType == "FMColor" then
       
       if compareDirectiveToColor(self.currentIdentity.facialMaskDirectives, self.speciesJson.bodyColor) then
         self.returnInfoColors = self.speciesJson.bodyColor
@@ -456,14 +454,14 @@ function selectTab(index, option)
       end
       returnInfo.isOverride = true
       getColorInfo(self.returnInfoColors, returnInfo)
-  elseif curTabName == "BColor" then
+  elseif listType == "BColor" then
       
       if #self.speciesJson.bodyColor > 1 then
         self.returnInfoColors =  self.speciesJson.bodyColor
       end
       returnInfo.isOverride = true
       getColorInfo(self.returnInfoColors, returnInfo)
-  elseif curTabName == "UColor" then
+  elseif listType == "UColor" then
       returnInfo.isOverride = true
       if #self.speciesJson.undyColor > 1 then
         self.returnInfoColors =  self.speciesJson.undyColor
@@ -471,8 +469,8 @@ function selectTab(index, option)
       returnInfo.isOverride = true
       getColorInfo(self.returnInfoColors, returnInfo)
   else
-      local optn  = config.getParameter("assetParams."..curTabName)
-      getSpeciesAsset(self.speciesJson, self.genderIndx, self.currentSpecies, optn, returnInfo)
+      local optn  = config.getParameter("assetParams."..listType)
+      getSpeciesAsset(self.speciesJson, getGenderIndx(self.currentIdentity.gender), self.currentSpecies, optn, returnInfo)
   end
       returnInfo.colors = self.returnInfoColors
       dLog(returnInfo, "selectTab End  ")
@@ -873,10 +871,9 @@ function getParamsFromSpawner()
     end
     --world.logInfo("UI: the seed value has been initialized from panel object. Changed to: " .. tostring(result))
     --self.slider.value = result
-    self.npcDataInit = true
 
     if result.npcSpecies then
-      self.currentSpecies = tostring(result.npcSpecies)
+      self.currentSpecies = tostring( result.npcSpecies)
     end
 
     if result.npcType then
@@ -888,14 +885,13 @@ function getParamsFromSpawner()
     end
 
     if result.npcParam then
-      self.currentOverride = parseArgs(result.npcParam, {identity = {}})
+      self.currentOverride = result.npcParam
     end
     
     if type(result.npcSeed) == "string" then 
         self.currentSeed = tostring(result.npcSeed)
-        widget.setText("seedValue", self.seedInput)
+        widget.setText("seedValue", self.currentSeed)
     elseif type(result.npcSeed) == "number" then
-      
         self.manualInput = false
         self.currentSeed = tostring(result.npcSeed)
         self.targetSize = result.npcSeed
@@ -909,7 +905,9 @@ function getParamsFromSpawner()
     end
    -- self.updateIndx = self.updateIndx + 1
     updateNpc()
-    
+    --self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
+    --modNpc.Species({itemTitle = self.currentSpecies})
+
     widget.setSelectedOption(self.categoryWidget, -1)
     widget.setVisible(self.categoryWidget, true)
     widget.setVisible(self.tabGroupWidget, true)
@@ -921,25 +919,20 @@ end
 
 function getGenderIndx(name)
   local genderIndx
- if self.speciesJson.genders[1]["name"] == name then
-    genderIndx = 1
-  else
-    genderIndx = 2
+  for i,v in ipairs(self.speciesJson.genders) do
+    if v.name == name then return i end
   end
-  return genderIndx
 end
 ------CHANGE NPC FUNCTIONS---------
 function modNpc.Species(listData, cur, curO)
   if self.currentSpecies ~= listData.itemTitle then
-    dLog({listData,cur,curO},"modNPC.HitSpecies")
+    dLog({listData,curO},"modNPC.HitSpecies")
     curO = {}
     self.currentSpecies = tostring(listData.itemTitle)
     self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
-    self.genderIndx = getGenderIndx(self.currentOverride.identity.gender or self.currentIdentity.gender)
-    local speciesIcon = self.speciesJson.genders[self.genderIndx].characterImage
-    widget.setImage("techIconHead",speciesIcon)
   end
-
+  local speciesIcon = self.speciesJson.genders[getGenderIndx(self.currentIdentity.gender)].characterImage
+  widget.setImage("techIconHead",speciesIcon)
 end
 
 function modNpc.npcType(listData, cur, curO)
@@ -1031,82 +1024,93 @@ function modNpc.UColor(listData, cur, curO)
 end
 
 
-function Generate.tab1(tabName)
-  dLog("Species HAS BEEN HIT")
-  local args = {}
+--function Generate.tab1(tabName)
+--end
+--
+--function Generate.tab2(tabName)
+--end
+--
+--function Generate.tab3(tabName)  
+--end
+--
+--function Generate.tab4(tabName) 
+--
+--end
+--
+--
+--
+--function Refine.tab1(tabName) 
+--
+--end
+--
+--function Refine.tab2(tabName)
+--
+--end
+--
+--function Refine.tab3(tabName)
+--end
+--
+--function Refine.tab4(tabName)
+--end
+--
+--function Refine.tab5(tabName)
+--end
+--
+--function Manage.tab1(tabName) 
+--
+--end
+
+--TODO -- ADD args.listype UP TOP!!!!
+function selectedTab.Species(args)
+    args = args or {}
     args.title = copy(self.speciesList)
-    args.listType = tabName
     args.currentSelection = self.currentSpecies
     args.isOverride = false
-    return args
 end
-
-function Generate.tab2(tabName)
-    local args = {currentSelection = self.currentOverride.identity.hairType or self.currentIdentity.hairType, 
-                  title = {}}
-    return getSpeciesOptions(self.currentSpecies, tabName,args ) 
-end
-
-function Generate.tab3(tabName) 
-  local args = {currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType,
-                title = {}}
-  return getSpeciesOptions(self.currentSpecies, tabName, args) 
-end
-
-function Generate.tab4(tabName) 
-  local args = {currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType,
-                title = {}}
-  return getSpeciesOptions(self.currentSpecies, tabName, args) 
-end
-
-
-
-function Refine.tab1(tabName) 
-  local args = {
-    title = {},
-    listType = tabName,
-    colors = {},
-    currentSelection = (self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives)
-  }
-  return getSpeciesOptions(self.currentSpecies, tabName, args) 
-end
-
-function Refine.tab2(tabName)
-  local args = {currentSelection = self.currentOverride.identity.hairType or self.currentIdentity.hairType}
-  return getSpeciesOptions(self.currentSpecies, tabName, args)
-end
-
-function Refine.tab3(tabName)
-  local args =  {
-    title = {},
-    listType = tabName,
-    colors = {},
-    currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType}
-  return getSpeciesOptions(self.currentSpecies, tabName, args)
-end
-
-function Refine.tab4(tabName)
-  local args = {
-    title = {},
-    listType = tabName,
-    colors = {},
-    currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType}
-  return getSpeciesOptions(self.currentSpecies, tabName, args)
-end
-
-function Refine.tab5(tabName)
-  local args = {}
-  return getSpeciesOptions(self.currentSpecies, tabName, args)
-end
-
-function Manage.tab1(tabName) 
-    local args = {}
+function selectedTab.npcType(args)
+    args = args or {}
     args.title = copy(self.npcTypeList)
-    args.listType = tabName
     args.currentSelection = self.currentType
     args.isOverride = false
-    return args
 end
+function selectedTab.Hair(args)
+    args.currentSelection = self.currentOverride.identity.hairType or self.currentIdentity.hairType 
+    args.title = {}
+end
+function selectedTab.FHair(args)
+    args.currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType
+    args.title = {}
+end
+function selectedTab.FMask(args)
+    args.currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType
+    args.title = {}
+end
+function selectedTab.HColor(args)
+  args.currentSelection = self.currentOverride.identity.hairType or self.currentIdentity.hairType
+end
+function selectedTab.FHColor(args)
+  args.title = {}
+  args.colors = {}
+  args.currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType
+end
+function selectedTab.FMColor(args)
+  args.title = {}
+  args.listType = tabName
+  args.colors = {}
+  args.currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType
+end
+function selectedTab.BColor(args)
+  args.title = {}
+  args.colors = {}
+  args.currentSelection = self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives
+end
+
+function selectedTab.UColor(args)
+  args = args or {}
+end
+
+
+
 
 
 function logENV()

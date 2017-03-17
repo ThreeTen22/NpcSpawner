@@ -66,8 +66,8 @@ function getNpcData()
       args.npcSpecies = storage.npcSpecies
       args.npcSeed = storage.npcSeed
       args.npcType = storage.npcType
-      args.npcParam = storage.npcParam
       args.npcLevel = storage.npcLevel
+      args.npcParam = storage.npcParam
   return args
 end
 

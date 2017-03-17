@@ -79,15 +79,9 @@
     }
   ],
   "categoryIconPaths": ["techIconHead","techIconBody","techIconLegs"],
-  "speciesData": {
-    "speciesDirectory": {
-      "ext": ".species",
-      "base": "/species/"
-    },
-    "additionalSpeciesList": [
-      "fenerox"
-    ]
-  },
+  "additionalSpecies": [
+    "fenerox"
+  ],
   "npcTypeList": [ 
     "nakedvillager",
     "blacksmith",
