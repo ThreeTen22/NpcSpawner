@@ -17,4 +17,4 @@
 *.RTF	 diff=astextplain
 
 #Starbound Specific
-*.object diff=asjson
+*.object diff=json
