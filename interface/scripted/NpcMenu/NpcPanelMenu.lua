@@ -874,26 +874,18 @@ function getParamsFromSpawner()
 
     if result.npcSpecies then
       self.currentSpecies = tostring( result.npcSpecies)
-      dLog("init:  getting species")
     end
 
     if result.npcType then
       self.currentType = tostring(result.npcType)
-      dLog("init:  getting type")
     end
 
     if result.npcLevel then
       self.currentLevel = tonumber(result.npcLevel) or 10
-      dLog("init:  getting level")
     end
 
     if result.npcParam then
-      self.currentOverride = copy(result.npcParam)
-      dLogJson(self.currentOverride, "init:  getting parms")
-      local pathset = self.currentOverride
-    end
-    if not self.currentOverride.identity then 
-      self.currentOverride.identity = {}
+      self.currentOverride = result.npcParam
     end
     
     if type(result.npcSeed) == "string" then 
