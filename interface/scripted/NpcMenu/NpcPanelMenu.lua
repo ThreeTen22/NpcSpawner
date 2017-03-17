@@ -33,8 +33,6 @@ function init()
     "portraitSlot19",
     "portraitSlot20"
     }
-
-  self.assetParams = config.getParameter("getAssetParams")
   self.npcTypeList = world.getObjectParameter(pane.containerEntityId(),"npcTypeList")
 
   self.gettingNpcData = nil
@@ -363,13 +361,13 @@ end
 
 function selectTab(index, option)
   dLog(option,  "    SelectTab")
-  self.returnInfo = {}
-  self.returnInfoColors = {}
+  self.returnInfo = nil
+  self.returnInfoColors = nil
   local listOption = widget.getSelectedOption(self.tabGroupWidget)
 
   local curTab = config.getParameter("tabOptions."..self.categoryWidgetData)
   local curTabName = curTab[index+2]
-  local returnInfo = self.returnInfo
+  local returnInfo = {}
   local generateInfo = {}
   curTabName = tostring(curTabName)
   returnInfo.listType = curTabName
@@ -383,14 +381,14 @@ function selectTab(index, option)
   self.genderIndx = getGenderIndx(self.currentOverride.identity.gender or self.currentIdentity.gender)
   
   if self.categoryWidgetData == "Generate" then
-    dLog(Generate[option](curTabName), "  GENERATE")
-    generateInfo = Generate[option](curTabName)
+     generateInfo = Generate[option](curTabName)
+    --dLog(Generate[option](curTabName), "  GENERATE")
   elseif self.categoryWidgetData == "Refine" then
     generateInfo = Refine[option](curTabName)
-    dLog(Refine[option](curTabName),  "REFINE  ")
+    --dLog(Refine[option](curTabName),  "REFINE  ")
   else
     generateInfo = Manage[option](curTabName)
-    dLog(Manage[option](curTabName),  "Manage  ")
+    --dLog(Manage[option](curTabName),  "Manage  ")
   end
   --returnInfo.title = copy(generateInfo.title)
   --returnInfo.currentSelection = tostring(generateInfo.currentSelection)
@@ -398,8 +396,6 @@ function selectTab(index, option)
 
   returnInfo = parseArgs(returnInfo, generateInfo)
 
-
-  self.returnInfoColors = nil
   returnInfo.species = self.currentSpecies
     --dLogJson(speciesJson, "speciesJSON: ")
 
@@ -437,7 +433,7 @@ function selectTab(index, option)
         self.returnInfoColors = nil
       end
       returnInfo.isOverride = true
-      getColorInfo(returnInfo)
+      getColorInfo(self.returnInfoColors, returnInfo)
   elseif option == "FHColor" then
       
       if compareDirectiveToColor(self.currentIdentity.facialHairDirectives, self.speciesJson.bodyColor) then
@@ -448,7 +444,7 @@ function selectTab(index, option)
         self.returnInfoColors = self.speciesJson.undyColor
       end
       returnInfo.isOverride = true
-      getColorInfo(returnInfo)
+      getColorInfo(self.returnInfoColors, returnInfo)
   elseif curTabName == "FMColor" then
       
       if compareDirectiveToColor(self.currentIdentity.facialMaskDirectives, self.speciesJson.bodyColor) then
@@ -459,23 +455,23 @@ function selectTab(index, option)
         self.returnInfoColors = self.speciesJson.undyColor
       end
       returnInfo.isOverride = true
-      getColorInfo(returnInfo)
+      getColorInfo(self.returnInfoColors, returnInfo)
   elseif curTabName == "BColor" then
       
       if #self.speciesJson.bodyColor > 1 then
         self.returnInfoColors =  self.speciesJson.bodyColor
       end
       returnInfo.isOverride = true
-      getColorInfo(returnInfo)
+      getColorInfo(self.returnInfoColors, returnInfo)
   elseif curTabName == "UColor" then
       returnInfo.isOverride = true
       if #self.speciesJson.undyColor > 1 then
         self.returnInfoColors =  self.speciesJson.undyColor
       end
       returnInfo.isOverride = true
-      getColorInfo(returnInfo)
+      getColorInfo(self.returnInfoColors, returnInfo)
   else
-      local optn  = config.getParameter("getAssetParams."..curTabName)
+      local optn  = config.getParameter("assetParams."..curTabName)
       getSpeciesAsset(self.speciesJson, self.genderIndx, self.currentSpecies, optn, returnInfo)
   end
       returnInfo.colors = self.returnInfoColors
@@ -630,15 +626,11 @@ function getSpeciesAsset(speciesJson, genderIndx, species, optn, output)
   output.hairGroup = info[oOne]
 end
 
-function getColorInfo(output)
+function getColorInfo(colors, output)
   output.title = output.title or {}
-  local colors = self.returnInfoColors
-  local firstRun = false
-  local indx = 1
   if colors then
     for i = 1, #colors do    
       table.insert(output.title,tostring(i))
-      firstRun = true
     end
   end
 end
