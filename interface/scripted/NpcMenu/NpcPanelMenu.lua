@@ -342,6 +342,7 @@ end
 function acceptBtn()
   --local identity = parseArgs(self.currentOverride.identity, self.currentIdentity)
   --self.currentOverride.identity = identity
+  self.currentOverride.identity = parseArgs(self.currentOverride.identity, copy(self.currentIdentity))
   local args = {
     npcSpecies = self.currentSpecies,
     npcSeed = self.currentSeed,
@@ -349,6 +350,7 @@ function acceptBtn()
     npcLevel = self.currentLevel,
     npcParam = self.currentOverride
   }
+
     dLogJson(args,"SENT IDENTITY", true)
     --self.sendingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "setSeedValuePanel", self.targetSize)
     self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)

@@ -64,11 +64,11 @@ end
 function getNpcData()
   dLog("Gettin NPC DATA")
   local args = {}
-      args.npcSpecies = storage.npcSpecies
-      args.npcSeed = storage.npcSeed
-      args.npcType = storage.npcType
-      args.npcLevel = storage.npcLevel
-      args.npcParam = storage.npcParam
+    args.npcSpecies = storage.npcSpecies
+    args.npcSeed = storage.npcSeed
+    args.npcType = storage.npcType
+    args.npcLevel = storage.npcLevel
+    args.npcParam = storage.npcParam
   return args
 end
 
