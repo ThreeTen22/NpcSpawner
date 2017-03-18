@@ -83,4 +83,17 @@ function lowercaseCopy(v)
   end
 end
 
+function logENV()
+  for i,v in pairs(_ENV) do
+    if type(v) == "function" then
+      sb.logInfo("%s", i)
+    elseif type(v) == "table" then
+      for j,k in pairs(v) do
+        sb.logInfo("%s.%s (%s)", i, j, type(k))
+      end
+    end
+  end
+end
+
+
 dComp["nil"] = function(input) return dLog("nil") end

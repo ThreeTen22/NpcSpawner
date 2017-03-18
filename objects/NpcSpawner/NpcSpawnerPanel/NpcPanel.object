@@ -23,6 +23,7 @@
   "frameCooldown" : 5,
   "autoCloseCooldown" : 360000,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
+  "scriptDelta" : 10,
   "smashOnBreak" : true,
   "containerCallback" : "containerCallback",
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",

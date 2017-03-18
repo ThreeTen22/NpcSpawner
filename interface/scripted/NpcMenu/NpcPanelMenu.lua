@@ -141,7 +141,6 @@ function update(dt)
       self.itemBagStorage = widget.itemGridItems("itemGrid") 
       updateNpc() 
     end
-    dLog(self.currentOverride)
   elseif self.firstRun then
     self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
     table.sort(self.speciesList)
