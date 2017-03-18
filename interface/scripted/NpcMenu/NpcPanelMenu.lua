@@ -48,10 +48,6 @@ function init()
 
   self.raceButtons = {}
 
-  --self.hairColor = {}
-  --self.bodyColor = {}
-  --self.undyColor = {}
-
   self.personalityIndex = 0
 
   self.returnInfoColors = {}
@@ -107,11 +103,6 @@ function init()
                     "legs",
                     "secondary"
                   }
-  --testFunction()
-   -- setList({list = self.speciesList,  listType = "species"})
-  --if not curO.items then curO.items = {} end
-  --if not curO.items.override then curO.items.override = config.getParameter("itemOverrideTemplate.items.override") end
-  --if not curO.items.override then dLog("Could Not get override template from world object, aborting equip"); return end
   self.itemBagStorage = widget.itemGridItems("itemGrid")
 end
 
@@ -174,40 +165,7 @@ function setItemOverride(slotName, insertPosition, itemContainer)
       end
       dLog(insertPosition, "insert pos ")
 end
------NEED TO BE SORTED --------
---[[
-function changeSpeciesGlobals(species)
-  local speciesJson = getAsset("/species/"..species..".species") or nil
 
-  if not speciesJson then dLog("getSpeciesOptions:  nil AssetFile") end
-  self.indexedSpecies = species
-  self.bodyColor = lowercaseCopy(speciesJson.bodyColor)
-  self.hairColor = lowercaseCopy(speciesJson.hairColor)
-  self.undyColor = lowercaseCopy(speciesJson.undyColor)
-
-  self.altOptionAsUndyColor = speciesJson.altOptionAsUndyColor
-  local genderName = self.currentOverride.identity.gender or self.currentIdentity.gender
-  local genderIndx = 1
-
-  if not genderName then 
-    dLog("getSpeciesOptions:  nil gender") 
-  end
-
-  if speciesJson.genders[1]["name"] == genderName then
-    genderIndx = 1
-  else
-    genderIndx = 2
-  end
-
-  local genderPath = speciesJson.genders[self.genderIndx]
-  self.hairGroup = genderPath["hairGroup"] or "hair"
-  self.facialHairGroup = genderPath["hairGroup"] or ""
-  self.facialMaskGroup = genderPath["facialHairGroup"] or ""
-  self.facialHair  = genderPath["facialHair"] or ""
-  self.facialMask = genderPath["facialMask"] or ""
-  self.characterImage = genderPath["characterImage"]
-end
---]]
 
 -----CALLBACK FUNCTIONS-------
 function spnPersonality.up()
