@@ -17,9 +17,11 @@ function init(virtual)
   
   self.panelID = findPanel()
   if not self.panelID then 
-    world.placeObject("NpcSpawnerPanel", pos) 
-    sb.logInfo("NpcSpawner: panelID Found")
+    world.placeObject("NpcSpawnerPanel", pos)
+    self.panelID = findPanel() 
   end
+
+  sb.logInfo("NpcSpawner: panelID Found")
 
   storage.uniqueId = storage.uniqueId or nil    --this object's unique id. used for giving to the spawned npc
   storage.npcSpecies = storage.npcSpecies or "human"

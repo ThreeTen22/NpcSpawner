@@ -5,6 +5,7 @@ function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
   	end
+  
     dCompare("compareTest:  ",nil,nil)
     sb.logInfo("NpcPanel: init")
     storage.npcSpecies = storage.npcSpecies or "human"

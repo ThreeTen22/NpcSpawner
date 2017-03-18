@@ -9,7 +9,6 @@ selectedTab = {}
 --Manage = {}
 
 function init()
-
   self.returnInfo = {}
   sb.logInfo("NpcPanelMenu: init")
   self.portraits = {
@@ -64,9 +63,6 @@ function init()
   self.tabData = nil
 
   self.tabGroupWidget = "rgTabs"
-  
-  self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
-  table.sort(self.speciesList)
 
   self.categoryWidget = "sgSelectCategory"
 
@@ -122,7 +118,7 @@ end
 function update(dt)
   --Cannot send entity messages during init, so will do it here
   if self.doingMainUpdate then
-    dLog("main Update")
+    --dLog("main Update")
     local needsUpdate = false
     local itemBag = widget.itemGridItems("itemGrid")
     
@@ -156,6 +152,8 @@ function update(dt)
     end
     dLog(self.currentOverride)
   elseif self.firstRun then
+    self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
+    table.sort(self.speciesList)
     self.gettingNpcData = world.sendEntityMessage(pane.containerEntityId(), "getNpcData")
     self.firstRun = false
   else
@@ -382,7 +380,7 @@ function selectTab(index, option)
 
 
   returnInfo.species = self.currentSpecies
-  
+
   if self.speciesJson["headOptionAsFacialhair"] then
     if self.speciesJson["headOptionAsFacialhair"] == true then
       returnInfo["headOptionAsFacialhair"] = self.speciesJson["headOptionAsFacialhair"]
@@ -826,7 +824,6 @@ function replaceDirectiveAtEnd(directiveBase, directiveReplace)
 end
 
 function getDirectiveAtEnd(directiveBase)
-  assert(directiveBase, "getDirectiveAtEnd:  givenDirective is null")
   local returnValue = ""
   local split = util.split(directiveBase, "?replace")
   local indx = #split
@@ -849,12 +846,14 @@ end
 
 function getParamsFromSpawner()
   dLog("checkin FOR THE DATA WTF")
-  
     self.doingMainUpdate = true
     local result = self.gettingNpcData:result()
     if type(result) ~= "table" then
      result = {} 
+    else
+      result = copy(self.gettingNpcData:result())
     end
+    dLogJson(result, "GETTIN DATA", true)
     --world.logInfo("UI: the seed value has been initialized from panel object. Changed to: " .. tostring(result))
     --self.slider.value = result
 
@@ -909,6 +908,7 @@ function getParamsFromSpawner()
     
     --script.setUpdateDelta(10)
     --self.updateIndx = self.updateIndx + 1 
+
 end
 
 function getGenderIndx(name)

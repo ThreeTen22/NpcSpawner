@@ -15,10 +15,13 @@ function dOut(input)
 end
 
 function dLogJson(input, prefix, clean)
+  if (clean and true) then clean = 1 else clean = 0 end
   if prefix ~= nil then
     sb.logInfo(prefix)
   end
-   sb.logInfo("%s", sb.printJson(input, clean or false))
+   
+   local info = sb.printJson(input,clean)
+   sb.logInfo("%s", info)
 end
 
 function dCompare(prefix, one, two)
