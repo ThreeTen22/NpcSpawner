@@ -142,7 +142,7 @@ function update(dt)
       updateNpc() 
     end
   elseif self.firstRun then
-    self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
+    self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
     table.sort(self.speciesList)
     self.gettingNpcData = world.sendEntityMessage(pane.containerEntityId(), "getNpcData")
     self.firstRun = false
@@ -300,6 +300,8 @@ function acceptBtn()
   --local identity = parseArgs(self.currentOverride.identity, self.currentIdentity)
   --self.currentOverride.identity = identity
   self.currentOverride.identity = parseArgs(self.currentOverride.identity, copy(self.currentIdentity))
+  --self.currentOverride.damageTeamType = "friendly"
+  --self.currentOverride.damageTeam = 1
   local args = {
     npcSpecies = self.currentSpecies,
     npcSeed = self.currentSeed,
