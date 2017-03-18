@@ -1,0 +1,8 @@
+{
+  "input" : [
+    { "item" : "corefragmentore", "count" : 5 },
+    { "item" : "silverbar", "count" : 5}
+  ],
+  "output" : { "item" : "NpcSpawnerPanel", "count" : 1 },
+  "groups" : [ "spawnerstation", "all" ]
+}
