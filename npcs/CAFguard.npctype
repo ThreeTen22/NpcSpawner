@@ -14,7 +14,7 @@
   "scriptConfig" : {
 
     "questGenerator" : {
-      "pools" : ["normal", "guard"],
+      "pools" : ["common", "guard"],
       "enableParticipation" : true
     },
     

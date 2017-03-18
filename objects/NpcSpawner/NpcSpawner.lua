@@ -1,8 +1,12 @@
+require "/scripts/util.lua"
+require "/scripts/npcspawnutil.lua"
+
 function init(virtual)
-  if not virtual then
-    object.setInteractive(true)
-  end
-  sb.logInfo("NpcSpawner: init")
+  --if not virtual then
+  --  object.setInteractive(true)
+  --end
+  self.needsEquipCheck = false
+  sb.logInfo("NpcSpawner: init")  
 
   --auto-place the config panel. if the panel cannot be placed, the update will catch that and destroy the spawner.
   local pos = entity.position()
@@ -13,15 +17,18 @@ function init(virtual)
   
   self.panelID = findPanel()
   if not self.panelID then 
-    world.placeObject("NpcSpawnerPanel", pos) 
-    sb.logInfo("NpcSpawner: panelID Found")
+    world.placeObject("NpcSpawnerPanel", pos)
+    self.panelID = findPanel() 
   end
+
+  sb.logInfo("NpcSpawner: panelID Found")
 
   storage.uniqueId = storage.uniqueId or nil    --this object's unique id. used for giving to the spawned npc
   storage.npcSpecies = storage.npcSpecies or "human"
-  storage.seedValue = storage.seedValue or 0
-  storage.type = storage.type or "CAFguard"
-  storage.npcParams = storage.npcParams or {}
+  storage.npcSeed = storage.npcSeed or math.random(2000)
+  storage.npcLevel = storage.npcLevel or 1
+  storage.npcType = storage.npcType or "CAFguard"
+  storage.npcParam = storage.npcParam or {}
 
   self.maxSpawnTime = 5   --time between checks to see if a new NPC should be spawned
   self.maxGearTime = 8    --time between NPC gear change refreshes
@@ -30,50 +37,55 @@ function init(virtual)
   self.weapon = nil   --we keep a seperate var for the weapon so that we can handle switching between ranged and melee npc behavior
 
   self.speciesOptions = root.assetJson("/interface/windowconfig/charcreation.config").speciesOrdering
-  self.typeOptions = config.getParameter("typeOptions")
+  self.typeOptions = config.getParameter("typeOptions", {})
+  if not self.typeOptions then
+    dLog("config.getparameter found nuthin")
+  end
 
   self.absPosition = nil
-  --self.npcParameter = util.randomFromList(config.getParameter("spawner.npcParameterOptions"))
+  --self.npcParameter = util.randomFromList(world.getObjectParameter(pane.containerEntityId(),"spawner.npcParameterOptions"))
 
   --handler (listener) for messsages from the panel object sending this spawner the species of the NPC to be spawned
 
   message.setHandler("setNpcData", function(_, _, args)
     setNpcData(args)
   end)
+  
 end
 
-function onInteraction(args)
-  return {"ScriptConsole", interactionConfig}
-end
+--function onInteraction(args)
+--  return {"ScriptConsole", interactionConfig}
+--end
+
 
 function setNpcData(args)
-  local okCheck = 0
+  dLog("NpcSpawner SetNpcData")
   if args.npcSpecies then
-    okCheck = okCheck+1
     storage.npcSpecies = args.npcSpecies
   end
   if args.npcSeed then
-    okCheck = okCheck+1
-    storage.seedValue = args.npcSeed
+    storage.npcSeed = args.npcSeed
   end
   if args.npcType then
-    okCheck = okCheck+1
-    storage.type = args.npcType
+    storage.npcType = args.npcType
   end
-  if args.npcParams then
-    storage.npcParams = args.npcParams
+  if args.npcLevel then
+    storage.npcLevel = args.npcLevel
+  end
+  if args.npcParam then
+    storage.npcParam = args.npcParam
   end
   if storage.spawned then
      killNpc()
   else
     sb.logInfo(string.format("NpcSpawner: setNpcData: one or more args was nil - okCheck: %s", okCheck))
   end
+
 end
 
 function findPanel()
-  local pos = entity.position()
-  pos[2] = pos[2] + 2
-  local objList = world.entityQuery(pos, 0)
+  local pos = object.toAbsolutePosition({0,2})
+  local objList = world.objectQuery(pos, 0, {name = "NpcSpawnerPanel"})
   for i,j in ipairs(objList) do
     if world.entityName(j) == "NpcSpawnerPanel" then return j end
   end
@@ -83,9 +95,9 @@ end
 function update(dt)
   --if we have not done so, send our uniqueId to the panel that we spawned
   --we have to do this here because it doesn't work in the init function unfortunately. we don't have an id assigned yet there apparently
-  --storage.seedValue = dt
+  --storage.npcSeed = dt
   if not storage.uniqueId then
-    storage.uniqueId = sb.makeUuid();
+    storage.uniqueId = sb.makeUuid()
     world.setUniqueId(entity.id(), storage.uniqueId)
     self.panelID = findPanel()
     if self.panelID then
@@ -93,11 +105,12 @@ function update(dt)
       world.sendEntityMessage(self.panelID, "setParentSpawner", storage.uniqueId)
     end
   end
+
   if not findPanel() then 
+    sb.logInfo("Panel Not Found")
     world.breakObject(entity.id()) 
   end
 
-  local position = object.toAbsolutePosition({ 0.0, 2.0 });
   --if we do not have a living NPC spawned, spawn a new one
   if storage.spawned == false then
     self.weapon = nil
@@ -105,18 +118,17 @@ function update(dt)
     if self.spawnTimer < 0 then
       local position = object.toAbsolutePosition({ 0.0, 2.0 });
       self.absPosition = position
-      local npcId = world.spawnNpc(position, storage.npcSpecies, storage.type, level, storage.seedValue, storage.npcParams)
-      --sb.logInfo("spawning,  seed value"..storage.seedValue)
-      -- local portrait = world.entityPortrait(npcId, "full")
-      -- for _, y in pairs(portrait) do
-      --   for a, b in pairs(y) do
-      --     world.logInfo(tostring(a) .. " -> " .. tostring(b))
-      --   end
-      -- end
+
+      local npcId = world.spawnNpc(position, storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
+
       --assign our new NPC a special unique id
       storage.spawnedID = sb.makeUuid()
       world.setUniqueId(npcId, storage.spawnedID)
+
       storage.spawned = true 
+      if self.needsEquipCheck then
+        return containerCallback
+      end
       self.spawnTimer = self.maxSpawnTime
     else
       self.spawnTimer = self.spawnTimer - dt
@@ -128,7 +140,7 @@ function update(dt)
     if storage.spawnedID and world.loadUniqueEntity(storage.spawnedID) == 0 then
       storage.spawned = false
     elseif self.checkGearTimer < 0 then
-      --setGear()
+
       self.checkGearTimer = self.maxGearTime
     end
   end
@@ -146,13 +158,26 @@ function setGear()
   local legsID = world.containerItemAt(id, 5)
 
   --function calls to the NPC character. Updates all the NPC's gear.
+  dLog("setting Gear")
   if spawnedID == 0 then return end
-  world.callScriptedEntity(spawnedID, "getWeapon", weaponID)
-  world.callScriptedEntity(spawnedID, "getAlt", altID)
-  world.callScriptedEntity(spawnedID, "getBack", backID)
-  world.callScriptedEntity(spawnedID, "getHeadArmor", headID)
-  world.callScriptedEntity(spawnedID, "getChestArmor", chestID)
-  world.callScriptedEntity(spawnedID, "getLegArmor", legsID)
+
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","primary",weaponID)
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","alt",altID)
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","back",backID)
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","backCosmetic",backID)
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","head",headID)
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","headCosmetic",chestID)
+
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","chest",chestID)
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","chestCosmetic",chestID)
+
+    world.callScriptedEntity(spawnedID, "setNpcItemSlot","legs",legsID)
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","legsCosmetic",legsID)
+
+  dLog("endSettingGear Gear")
+ -- if spawnedID then
+ --   world.callScriptedEntity(spawnedID, "npc.setDisplayNametag", true)
+ -- end
 
   -- world.callScriptedEntity(spawnedID, "logSeed")
   --this re-init stuff seems a little wonky, but needs to be done to manage combat behavior of the NPC when we are changing their weapon from ranged to melee and vice versa.
@@ -160,14 +185,14 @@ function setGear()
   if self.weapon == nil then
     if weaponID ~= nil then
       self.weapon = weaponID
-      world.callScriptedEntity(spawnedID, "reInit")
+      world.callScriptedEntity(spawnedID, "Init")
     end
   --if we DO have a weapon and there is not a new one in the chest, return
   elseif weaponID == nil then return
   --if we DO have a weapon and there IS one in the chest and they are not the same, update the weapon and re-initialize the NPC
   elseif self.weapon["name"] ~= weaponID["name"] then
     self.weapon = weaponID
-    world.callScriptedEntity(spawnedID, "reInit")
+    world.callScriptedEntity(spawnedID, "Init")
   end
 end
 
@@ -221,22 +246,24 @@ function createLife(seed)
     sb.logInfo("  ---------- THREE ----------  ")
     --local npcJSON = world.spawnNpc(storage.npcSpecies, storage.type, level, parameters)
     local spawnNPC = world.spawnNpc(position, storage.npcSpecies, storage.type, level, nil, parameters);
-    --sb.logInfo("%s", sb.printJson(spawnNPC))
-  --local npcJSONTwo = world.spawnNpc(storage.npcSpecies, storage.type, level, nil, humanoidIdentity)
-
-  --local npcJSONThree = world.spawnNpc(storage.npcSpecies, storage.type, level, nil, humanoidIdentity)
-
-    --local npcChangedJSON = root.npcVariant(position, storage.npcSpecies, storage.type, level, nil, parameters);
-    --sb.logInfo("%s", sb.printJson(npcChangedJSON))
-    --local jsoned = sb.printJson(npcJSON)--
-    --sb.logInfo("%s", jsoned) 
-    --jsoned = sb.printJson(npcChangedJSON)--
-    --local humanIdentity = sb.jsonQuery(npcJSON, "humanoidIdentity", nil)
-    --sb.logInfo("humanIdentity Info:  ")
-    --sb.logInfo("%s", sb.printJson(humanIdentity)) --
-    --local curHairDirective = sb.jsonQuery(humanIdentity, "hairDirectives", nil)
-    --sb.logInfo("curHairDir Info:  ")
-    --sb.logInfo("%s", sb.printJson(curHairDirective)) --
-      --local newNPC = world.spawnNpc(position, storage.npcSpecies, storage.type, level, humanIdentity)
     return spawnNPC
+end
+
+
+--Works!
+function spawnTestItem()
+  local itemParam = world.getObjectParameter(pane.containerEntityId(),"templateOverride",{})
+  if not itemParam then return end
+  local item = world.spawnItem("spawnerwizard", self.absPosition, 1, itemParam)
+end
+
+function containerCallback()
+  if storage.spawnedID and world.loadUniqueEntity(storage.spawnedID) ~= 0 then
+    dLog("NPC Spawner Callback")
+    setGear()
+  else
+    self.needsEquipCheck = true
+    storage.spawned = false
+    update(0)
+  end
 end

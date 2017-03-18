@@ -7,48 +7,110 @@
   "subtitle" : "Make all the npcs",
   "race" : "generic",
   "price" : 200,
-  "category" : "wire",
-
+  "category" : "storage",
+  "tooltipKind" : "container",
   "apexDescription" : "I wonder if I can order a freedom fighter.",
   "avianDescription" : "Such technology is controversial on Avos.",
   "floranDescription" : "Fassst Food?",
   "glitchDescription" : "Impressed. Such a fair system. No lords and ladies, no paltry peasants.",
   "humanDescription" : "This is the ultimate evolution of online classified ads.",
   "hylotlDescription" : "To help another being brings inner peace.",
-
-  "uiConfig" : "/interface/NpcMenu/NpcPanelMenu.config",
+  "objectType" : "container",
+  "slotCount" : 6,
+  "openSounds" : ["/sfx/objects/miningchest_open.ogg" ],
+  "interactAction" : "ScriptConsole",
+  "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
+  "frameCooldown" : 5,
+  "autoCloseCooldown" : 360000,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
-
-  "smashable" : true,
-
+  "smashOnBreak" : true,
+  "containerCallback" : "containerCallback",
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
+  "isContainer": true,
   "orientations" : [
     {
       "image" : "CAFspawnerPanel.png",
-      "imagePosition" : [-8, 0],
+      "imagePosition" : [-8, -4],
       "frames" : 1,
       "animationCycle" : 0.5,
-      
       "direction" : "left",
       "flipImages" : true,
-      "animationPosition" : [-8, 0],
+      "animationPosition" : [-8, -4],
+      "lightPosition" : [0, 3],
+      "spaceScan" : 0.1,
+      "anchors" : [ "background" ]
+    },
+    {
+      "image" : "CAFspawnerPanel.png",
+      "imagePosition" : [-8, -4],
+      "frames" : 1,
+      "animationCycle" : 0.5,
+      "direction" : "right",
+      "flipImages" : true,
+      "animationPosition" : [-8, -4],
       "lightPosition" : [0, 3],
 
       "spaceScan" : 0.1,
       "anchors" : [ "background" ]
     },
     {
-      "image" : "CAFspawnerPanel.png",
-      "imagePosition" : [-8, 0],
+      "image" : "CAFspawnerBase.png",
+      "imagePosition" : [0, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
-      
       "direction" : "right",
-      "animationPosition" : [-8, 0],
+      "animationPosition" : [0, 0],
       "lightPosition" : [0, 3],
 
       "spaceScan" : 0.1,
-      "anchors" : [ "background" ]
+      "anchors" : [ "bottom" ]
+    },
+    {
+      "image" : "CAFspawnerBase.png",
+      "imagePosition" : [0, 0],
+      "frames" : 1,
+      "animationCycle" : 0.5,
+      "direction" : "left",
+      "animationPosition" : [0, 0],
+      "lightPosition" : [0, 3],
+
+      "spaceScan" : 0.1,
+      "anchors" : [ "bottom" ]
     }
-  ]
+  ],
+  "categoryIconPaths": ["techIconHead","techIconBody","techIconLegs"],
+  "additionalSpecies": [
+    "fenerox"
+  ],
+  "npcTypeList": [ 
+    "nakedvillager",
+    "blacksmith",
+    "desertvillager",
+    "feneroxguard",
+    "feneroxvillager",
+    "follower",
+    "forestvillager",
+    "foundryguard",
+    "foundryworker",
+    "hazmatscientist",
+    "maskedguard",
+    "merchant",
+    "villageguard",
+    "villageguardcaptain",
+    "villager",
+    "wizardmerchant" 
+  ],
+  "npcTypeTags" : {
+    "feneroxvillager" : ["fenerox"],
+    "feneroxguard" : ["fenerox"]
+  },
+  "getCurDirectivesParams" : {
+    "species" : "",
+    "Hair" : "",
+    "FHair" : "",
+    "FMask" : ""
+  },
+  "typeOptions": ["Guard","Villager"],
+  "newEquipment": false,
+  "equipmentList" : [""]
 }
