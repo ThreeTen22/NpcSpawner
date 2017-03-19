@@ -313,7 +313,6 @@ function acceptBtn()
     dLogJson(args,"SENT IDENTITY", true)
     --self.sendingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "setSeedValuePanel", self.targetSize)
     self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
-
 end
 
 function selectTab(index, option)
@@ -505,7 +504,6 @@ function setList(args)
       end 
       indx = indx+1
   end
-  
 end
 
 
@@ -894,7 +892,6 @@ function modNpc.npcType(listData, cur, curO)
     self.currentType = tostring(listData.itemTitle)
 end
 
-
 function modNpc.Hair(listData, cur, curO)
   if listData.clearConfig then 
     curO["hairType"] = nil
@@ -1022,14 +1019,9 @@ function selectedTab.BColor(args)
   args.colors = {}
   args.currentSelection = self.currentOverride.identity.bodyDirectives or self.currentIdentity.bodyDirectives
 end
-
 function selectedTab.UColor(args)
   args = args or {}
 end
-
-
-
-
 
 function logENV()
   for i,v in pairs(_ENV) do
