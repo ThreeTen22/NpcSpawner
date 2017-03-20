@@ -330,7 +330,7 @@ end
 function setListInfo(categoryName)
   widget.clearListItems(self.infoList)
   if not categoryName then return end
-  local tabInfo = config.getParameter("tabOptions."..categoryName)
+  local tabInfo = config.getParameter("tabOptions."..categoryName) or {}
   local info = config.getParameter("infoDescription")
   local subInfo = info[categoryName]
   for _,v in ipairs(subInfo) do
@@ -369,7 +369,8 @@ function selectTab(index, option)
     setList(nil)
     widget.setVisible(self.techList, false)
     widget.setVisible(self.infoList, true)
-    setListInfo("Export")
+    setListInfo("ExportOptn")
+    returnInfo = nil
   else
     setListInfo(nil)
     widget.setVisible(self.techList, true)
@@ -383,11 +384,14 @@ function selectTab(index, option)
   selectedTab[listType](self.returnInfo)
   local returnInfo = self.returnInfo
   returnInfo.listType = listType
-  if returnInfo.skipTheRest then 
-    setList(returnInfo)
-    dLog(returnInfo, "selectTab End  ")
+  if returnInfo.skipTheRest then
+    if listType ~= "Export" then 
+      setList(returnInfo)
+      dLog(returnInfo, "selectTab End  ")
+    end
     return 
   end
+  dLog("contining getting tab info")
 
   if not(self.speciesJson and (self.speciesJson.kind == self.currentSpecies)) then
     self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
@@ -1133,9 +1137,14 @@ function selectedTab.Export(args)
     npcLevel = self.currentLevel,
     npcParam = self.currentOverride
   }
-  local spawner = config.getParameter("spawner")
+  local spawner = world.getObjectParameter(pane.containerEntityId(),"spawner")
   spawner.npcSpeciesOptions[1] = args.npcSpecies
   spawner.npcTypeOptions[1] = args.npcType
-  npcParameterOptions
-  string.format("'/spawnitem spawnerwizard '")
+  spawner.npcParameterOptions[1] = args.npcParam
+  local exportString = string.format("/spawnitem spawnerwizard 1 '{\"spawner\":%s,\"shortdescription\":\"%s Spawner\",\"retainObjectParametersInItem\": true}'",sb.printJson(spawner), args.npcParam.identity.name)
+  dLog("")
+  dLog("")
+  dLog(exportString)
+  dLog("")
+  dLog("")
 end
