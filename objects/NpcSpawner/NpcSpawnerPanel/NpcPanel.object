@@ -2,19 +2,20 @@
   "objectName" : "NpcSpawnerPanel",
   "tags" : ["misc"],
   "rarity" : "Common",
-  "description" : "Mold, spawn, and manage your custom npc",
-  "shortdescription" : "Spawn Some Dudes and Dudettes",
-  "subtitle" : "Make all the npcs",
+  "description" : "Place a becon down and beam in an Npc.",
+  "shortdescription" : "Make-A-NPC",
+  "subtitle" : "When they arrive, don't ask how they got there, you don't wanna know.",
   "race" : "generic",
   "price" : 200,
   "category" : "storage",
   "tooltipKind" : "container",
-  "apexDescription" : "I wonder if I can order a freedom fighter.",
-  "avianDescription" : "Such technology is controversial on Avos.",
-  "floranDescription" : "Fassst Food?",
-  "glitchDescription" : "Impressed. Such a fair system. No lords and ladies, no paltry peasants.",
-  "humanDescription" : "This is the ultimate evolution of online classified ads.",
-  "hylotlDescription" : "To help another being brings inner peace.",
+  "apexDescription" : "Never gonna give you up,",
+  "avianDescription" : "Never gonna let you down,",
+  "floranDescription" : "Never gonna run around and desert you.",
+  "glitchDescription" : "Never gonna make you cry,",
+  "humanDescription" : "Never gonna say goodbye,",
+  "hylotlDescription" : "Never gonna tell a lie and hurt you.",
+  "genericDescription" : "Have it your way.",
   "objectType" : "container",
   "slotCount" : 6,
   "openSounds" : ["/sfx/objects/miningchest_open.ogg" ],
@@ -28,9 +29,11 @@
   "containerCallback" : "containerCallback",
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
   "isContainer": true,
+  "smashable" : false,
+  "retainObjectParametersInItem" : false,
   "orientations" : [
     {
-      "image" : "CAFspawnerPanel.png",
+      "image" : "BackgroundPanel.png",
       "imagePosition" : [-8, -4],
       "frames" : 1,
       "animationCycle" : 0.5,
@@ -42,7 +45,7 @@
       "anchors" : [ "background" ]
     },
     {
-      "image" : "CAFspawnerPanel.png",
+      "image" : "BackgroundPanel.png",
       "imagePosition" : [-8, -4],
       "frames" : 1,
       "animationCycle" : 0.5,
@@ -140,7 +143,7 @@
     "survivor",
     "alpacatenant",
     "bones",
-    "colorful",
+    "colourful",
     "eyepatch",
     "flesh",
     "foundry",
@@ -175,13 +178,14 @@
     "feneroxvillager" : ["fenerox"],
     "feneroxguard" : ["fenerox"]
   },
-  "getCurDirectivesParams" : {
-    "species" : "",
-    "Hair" : "",
-    "FHair" : "",
-    "FMask" : ""
-  },
-  "typeOptions": ["Guard","Villager"],
-  "newEquipment": false,
-  "equipmentList" : [""]
+  "spawner" : {
+    "searchRadius" : 32.0,
+    "npcSpeciesOptions" : [ "ReplaceMe" ],
+    "npcTypeOptions" : [ "ReplaceMe" ],
+    "npcParameterOptions" : [
+      {
+        "level" : 1
+      }
+    ]
+  }
 }

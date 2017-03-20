@@ -95,5 +95,18 @@ function logENV()
   end
 end
 
+function hasValue(t, value)
+  for _,v in pairs(t) do
+    if v == value then return true end
+  end
+  return false
+end
+
+function hasKey(t, value)
+  for k,_ in pairs(t) do
+    if k == value then return true end
+  end
+  return false
+end
 
 dComp["nil"] = function(input) return dLog("nil") end
