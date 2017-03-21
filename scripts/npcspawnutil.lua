@@ -15,6 +15,7 @@ function dOut(input)
 end
 
 function dLogJson(input, prefix, clean)
+  if type(prefix) == "boolean" then clean = (prefix and true); prefix = "" end
   if (clean and true) then clean = 1 else clean = 0 end
   if prefix ~= nil then
     sb.logInfo(prefix)
@@ -108,5 +109,15 @@ function hasKey(t, value)
   end
   return false
 end
+
+function getUserConfig(key)
+  local config = root.getConfiguration(key)
+  if not config then
+    root.setConfiguration(key, {additionalNpcTypes = {}, additionalSpecies = {}})
+    config = root.getConfiguration(key)
+  end
+  return root.getConfiguration(key)
+end
+
 
 dComp["nil"] = function(input) return dLog("nil") end

@@ -2,8 +2,8 @@
   "objectName" : "NpcSpawnerPanel",
   "tags" : ["misc"],
   "rarity" : "Common",
-  "description" : "Place a becon down and beam in an Npc.",
-  "shortdescription" : "Make-A-NPC",
+  "description" : "Place a beacon down and beam in an Npc.",
+  "shortdescription" : "NPC Maker 3000",
   "subtitle" : "When they arrive, don't ask how they got there, you don't wanna know.",
   "race" : "generic",
   "price" : 200,
@@ -17,7 +17,7 @@
   "hylotlDescription" : "Never gonna tell a lie and hurt you.",
   "genericDescription" : "Have it your way.",
   "objectType" : "container",
-  "slotCount" : 6,
+  "slotCount" : 12,
   "openSounds" : ["/sfx/objects/miningchest_open.ogg" ],
   "interactAction" : "ScriptConsole",
   "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
@@ -82,12 +82,8 @@
       "anchors" : [ "bottom" ]
     }
   ],
-  "categoryIconPaths": ["techIconHead","techIconBody","techIconLegs"],
-  "additionalSpecies": [
-    "fenerox",
-    "shadow"
-  ],
   "npcTypeList": [ 
+    "nakedvillager",
     "airshipcaptain",
     "airshipguard",
     "airshipquartermaster",
@@ -120,7 +116,6 @@
     "maskedguard",
     "merchant",
     "miniknogvillageguard",
-    "nakedvillager",
     "novakidblacksmith",
     "prisonoutlaw",
     "protectoratecourtyardlounger",
@@ -179,7 +174,7 @@
     "feneroxguard" : ["fenerox"]
   },
   "spawner" : {
-    "searchRadius" : 32.0,
+    "searchRadius" : 10.0,
     "npcSpeciesOptions" : [ "ReplaceMe" ],
     "npcTypeOptions" : [ "ReplaceMe" ],
     "npcParameterOptions" : [
