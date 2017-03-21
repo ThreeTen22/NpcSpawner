@@ -39,7 +39,7 @@ function init()
   self.currentSeed = 0
   self.currentType = "nakedvillager"
   self.currentIdentity = {}
-  self.currentOverride = {identity = {}, initialStorage = {}}
+  self.currentOverride = {identity = {}, initialStorage = {}, scriptConfig = {}}
   self.currentLevel = 10
 
   self.raceButtons = {}
@@ -87,6 +87,10 @@ function init()
   self.itemsToAdd = {}
 
   self.equipSlot = {
+                    "primary",
+                    "secondary",
+                    "sheathedprimary",
+                    "sheathedsecondary",
                     "head",
                     "headCosmetic",
                     "chest",
@@ -98,14 +102,7 @@ function init()
                   }
                   --primary and sheathed primary are always the goto weapons, secondary is for shields.
                   --duel wielding weapons for npcs just doesnt seem to work.
-  self.weaponSlot = {
-                    "primary",
-                    "sheathedprimary",
-                    "secondary",
-                    "sheathedsecondary"
-                  }
   self.equipBagStorage = widget.itemGridItems("itemGrid")
-  self.weaponBagStorage = widget.itemGridItems("itemGrid2")
 end
 
 --uninit WORKS. Question is, can we send entity messages without worrying about memory leaks?
@@ -116,41 +113,26 @@ end
 function update(dt)
   --Cannot send entity messages during init, so will do it here
   if self.doingMainUpdate then
-    --dLog("main Update")
     local needsUpdate = false
     local itemBag = widget.itemGridItems("itemGrid")
-    for i = 1, 8 do
+
+    for i = 1, 12 do
       if not compare(self.equipBagStorage[i], itemBag[i]) then
-        --insertPosition = path(insertPosition, "items","override",1,2,1)
         if not self.currentOverride.items  then 
           self.currentOverride.items = config.getParameter("overrideContainerTemplate.items") 
-          dLog(insertPosition)
         end
+        --Add items to override item slot so they update visually.
         local insertPosition = self.currentOverride.items.override[1][2][1]
-        --dLogJson(insertPosition)
-
         setItemOverride(self.equipSlot[i],insertPosition,itemBag[i])
-        needsUpdate = true
-      end
-    end
-    itemBag = widget.itemGridItems("itemGrid2")
-    for i = 1, 4 do
-      if not compare(self.weaponBagStorage[i], itemBag[i]) then
-        --insertPosition = path(insertPosition, "items","override",1,2,1)
-        if not self.currentOverride.items  then 
-          self.currentOverride.items = config.getParameter("overrideContainerTemplate.items") 
-          dLog(insertPosition)
+
+        --Also add them to bmain's initialStorage config parameter so its baked into the npc during reloads
+        if (not path(self.currentOverride,"scriptConfig","initialStorage","itemSlots")) then 
+          setPath(self.currentOverride,"scriptConfig","initialStorage","itemSlots",{}) 
         end
-        local insertPosition = self.currentOverride.items.override[1][2][1]
-        --dLogJson(insertPosition)
-
-        setItemOverride(self.weaponSlot[i],insertPosition,itemBag[i])
+        self.currentOverride.scriptConfig.initialStorage.itemSlots[self.equipSlot[i]] = itemBag[i]  
         needsUpdate = true
       end
     end
-
-
-
 
     local curO = self.currentOverride
     --dLog("checking Path")
@@ -164,26 +146,31 @@ function update(dt)
     end     
     if needsUpdate then 
       self.equipBagStorage = widget.itemGridItems("itemGrid")
-      self.weaponBagStorage = widget.itemGridItems("itemGrid2") 
       updateNpc() 
     end
   elseif self.firstRun then
     self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-    local hasFenerox = false
-    for _,v in ipairs(self.speciesList) do
-      if v == "fenerox" then 
-        hasFenerox = true;
-        break 
+    self.gettingNpcData = world.sendEntityMessage(pane.containerEntityId(), "getNpcData")
+    appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
+    appendToListIfUnique(self.npcTypeList, self.config.additionalNpcTypes)
+    table.sort(self.speciesList)
+    local protectorate = root.npcConfig("villager")
+    local graduation = protectorate.scriptConfig.questGenerator.graduation
+    local listOfProtectorates = {}
+    if graduation and graduation.nextNpcType then
+      for _,v in ipairs(graduation.nextNpcType) do
+        local name = v[2]
+        table.insert(listOfProtectorates, tostring(name))
       end
     end
-    if not hasFenerox then table.insert(self.speciesList, "fenerox") end
-    table.sort(self.speciesList)
-    self.gettingNpcData = world.sendEntityMessage(pane.containerEntityId(), "getNpcData")
+    appendToListIfUnique(self.npcTypeList, listOfProtectorates)
+
+
     self.firstRun = false
   else
       if self.gettingNpcData:finished() then 
         getParamsFromSpawner()
-        script.setUpdateDelta(10)
+        script.setUpdateDelta(30)
       end
   end
 end
@@ -196,7 +183,7 @@ function setItemOverride(slotName, insertPosition, itemContainer)
       else
         insertPosition[slotName] = nil
       end
-      dLog(insertPosition, "insert pos ")
+      --dLog(insertPosition, "insert pos ")
 end
 
 
@@ -426,7 +413,9 @@ function selectTab(index, option)
     getColorInfo(self.returnInfoColors, returnInfo)
   else
     local optn  = config.getParameter("assetParams."..listType)
-    getSpeciesAsset(self.speciesJson, getGenderIndx(self.currentIdentity.gender), self.currentSpecies, optn, returnInfo)
+    if optn then
+      getSpeciesAsset(self.speciesJson, getGenderIndx(self.currentIdentity.gender), self.currentSpecies, optn, returnInfo)
+    end
   end
   returnInfo.colors = self.returnInfoColors
   setList(returnInfo)
@@ -687,7 +676,7 @@ function createDirective(directiveJson)
   return prefix
 end
 
-function updateNpc()
+function updateNpc(noVisual)
   local curSpecies = self.currentSpecies
   local curSeed =  self.currentSeed
   local curType = self.currentType
@@ -698,12 +687,12 @@ function updateNpc()
   local variant = root.npcVariant(curSpecies, curType, curLevel, curSeed)
 
   self.currentIdentity = copy(variant.humanoidIdentity)
-  if self.currentOverride.identity.name then
-    widget.setText("tbNameBox", self.currentOverride.identity.name)
+  if curOverride.identity and curOverride.identity.name then
+    widget.setText("tbNameBox", curOverride.identity.name)
   else
     widget.setText("tbNameBox", self.currentIdentity.name)
   end
-
+  if noVisual then return end
   
 
   --variant = root.npcVariant(args.curSpecies,args.curType, args.curLevel, args.curSeed, self.currentOverride)
@@ -866,10 +855,13 @@ end
 function modNpc.Species(listData, cur, curO)
   local curO = curO.identity
   if self.currentSpecies ~= listData.itemTitle then
+
     dLog({listData,curO},"modNPC.HitSpecies")
-    curO = {}
     self.currentSpecies = tostring(listData.itemTitle)
-    self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
+    updateNpc(true)
+    self.currentOverride.identity = nil
+    self.currentOverride.identity = {}
+    --self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
   end
   local speciesIcon = self.speciesJson.genders[getGenderIndx(self.currentIdentity.gender)].characterImage
   widget.setImage("techIconHead",speciesIcon)
@@ -970,25 +962,20 @@ function modNpc.UColor(listData, cur, curO)
   end
 end
 
---[[
-modNpc.Prsnlity currently unused.  Will still be working on this.  
-Script config overrides are a strange beast.
+----[[
 
 function modNpc.Prsnlity(listData,cur,curO)
-  self.typeConfig = root.npcConfig(self.currentType)
   if listData.clearConfig then 
-    if path(curO,"scriptConfig","personalities") then
-        curO.scriptConfig.personalities = nil
+    if path(curO,"scriptConfig","personality") then
+        curO.scriptConfig.personality = nil
     end
     return
   else
-    setPath(curO,"scriptConfig","personalities",{})
+    setPath(curO,"scriptConfig","personality",{})
   end
-  self.currentOverride.scriptConfig = copy(self.typeConfig.scriptConfig)
-  self.currentOverride.scriptConfig.personalities = copy(self.itemData)
+  self.currentOverride.scriptConfig.personality = listData.itemData
   dLogJson(curO, "curO", true)
 end
---]]
 --TODO -- ADD args.listype UP TOP!!!!
 function selectedTab.Species(args)
     args = args or {}
@@ -1092,7 +1079,7 @@ function selectedTab.Prsnlity(args)
     table.insert(args.title,prsnlity.personality)
     table.insert(args.iData,prsnlity)
   end
-  args.skipTheRest = true
+  args.isOverride = true
 end
 
 

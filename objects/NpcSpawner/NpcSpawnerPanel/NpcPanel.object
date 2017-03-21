@@ -24,6 +24,7 @@
   "frameCooldown" : 5,
   "autoCloseCooldown" : 360000,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
+  "retainScriptStorageInItem" : false,
   "scriptDelta" : 10,
   "smashOnBreak" : false,
   "containerCallback" : "containerCallback",
