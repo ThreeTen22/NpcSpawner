@@ -7,7 +7,7 @@
   "subtitle" : "When they arrive, don't ask how they got there, you don't wanna know.",
   "race" : "generic",
   "price" : 200,
-  "category" : "storage",
+  "category" : "spawner",
   "tooltipKind" : "container",
   "apexDescription" : "Never gonna give you up,",
   "avianDescription" : "Never gonna let you down,",
@@ -24,7 +24,6 @@
   "frameCooldown" : 5,
   "autoCloseCooldown" : 360000,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
-  "retainScriptStorageInItem" : false,
   "scriptDelta" : 10,
   "smashOnBreak" : false,
   "containerCallback" : "containerCallback",
@@ -32,6 +31,7 @@
   "isContainer": true,
   "smashable" : false,
   "retainObjectParametersInItem" : false,
+  "retainScriptStorageInItem" : false,
   "orientations" : [
     {
       "image" : "BackgroundPanel.png",

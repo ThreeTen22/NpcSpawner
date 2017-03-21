@@ -135,11 +135,10 @@ function update(dt)
     end
 
     local curO = self.currentOverride
-    --dLog("checking Path")
+
     if path(curO,"items","override",1,2,1) then
-      --dLog(curO,"Made Path")
+
       if isEmpty(curO.items.override[1][2][1]) then
-        --dLog("clearing Items")
         curO.items = nil
         needsUpdate = true
       end
@@ -328,10 +327,12 @@ function acceptBtn()
     npcLevel = self.currentLevel,
     npcParam = self.currentOverride
   }
-
-    dLogJson(args,"SENT IDENTITY", true)
+  --90% of the crew uniform gets overwritten, but it allows you to use custom weapons!  
+  --You can pair this with other mods that handle equiping armor
+    --args.npcParam.disableWornArmor = false
+    --dLogJson(args,"SENT IDENTITY", true)
     --self.sendingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "setSeedValuePanel", self.targetSize)
-    self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
+    world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
 end
 
 function setListInfo(categoryName, uniqueId)
@@ -341,7 +342,7 @@ function setListInfo(categoryName, uniqueId)
   local tabInfo = config.getParameter("tabOptions."..categoryName)
   local info = config.getParameter("infoDescription")
   local subInfo = info[categoryName]
-  dLogJson(subInfo, "subInfo")
+  --dLogJson(subInfo, "subInfo")
   if uniqueId then 
     for i,v in ipairs(subInfo) do
       if v.key == "uniqueID" then 
@@ -512,18 +513,14 @@ end
 
 
 function selectListItem(name, listData)
-
   local listItem = widget.getListSelected(self.techList)
-  --dLog(listItem, "listItem  ")
   if not listItem then return end
   local itemData = widget.getData(string.format("%s.%s", self.techList, listItem))
-  --dLog(itemData, "ItemData:  ")
   self.itemData = copy(itemData.itemData)
   listData.itemData = copy(itemData.itemData)
   listData.itemTitle = itemData.itemTitle
   listData.clearConfig = itemData.clearConfig
   if not listData and listData.listType then return end
-  dLogJson(listData, "LIST DATA :")
   modNpc[listData.listType](listData, self.currentIdentity, self.currentOverride)
 
   updateNpc()
@@ -643,19 +640,13 @@ function replaceDirectives(directive, directiveJson)
   if not directive and type(directive) == "nil" then return nil end
   local splitDirectives = util.split(directive,"?replace")
 
-  dLogJson(splitDirectives, "replaceDirectives: split: ")
- -- dLogJson(directiveJson, "directiveJson")
   for i,v in ipairs(splitDirectives) do
-    --dLogJson(v, "replaceDirectives: v: ")
     if not (v == "") then
         local k = string.match(v, "(%w+)=%w+")
-        --dLog(k, "key  ")
-        --dLog({directiveJson[k], directiveJson[string.upper(k)],directiveJson[string.lower(k)]}, "Testing k ")
         if directiveJson[k] or directiveJson[string.upper(k)] or directiveJson[string.lower(k)] then
             dLogJson(directiveJson[k], "matchJsonValue:")
             splitDirectives[i] = createDirective(directiveJson)
         end
-      --dLog(returnString, "returnString:  ")
     end
   end
   local returnString = ""
@@ -693,15 +684,6 @@ function updateNpc(noVisual)
     widget.setText("tbNameBox", self.currentIdentity.name)
   end
   if noVisual then return end
-  
-
-  --variant = root.npcVariant(args.curSpecies,args.curType, args.curLevel, args.curSeed, self.currentOverride)
-  --dLogJson(variant, "variantCONFIG:  ")
-  
- -- dCompare("bodyDirectives - curIden/override", self.currentIdentity.bodyDirectives, variant.humanoidIdentity.bodyDirectives)
- -- dCompare("hairDirectives - curIden/override", self.currentIdentity.hairDirectives, variant.humanoidIdentity.hairDirectives)
- -- dCompare("emoteDirectives - curIden/override", self.currentIdentity.emoteDirectives, variant.humanoidIdentity.emoteDirectives)
-
 
   local npcPort = root.npcPortrait("full", curSpecies, curType, curLevel, curSeed, curOverride)
 
@@ -787,7 +769,7 @@ function getParamsFromSpawner()
     else
       result = copy(self.gettingNpcData:result())
     end
-    dLogJson(result, "GETTIN DATA", true)
+    --dLogJson(result, "GETTIN DATA", true)
     --world.logInfo("UI: the seed value has been initialized from panel object. Changed to: " .. tostring(result))
     --self.slider.value = result
 
@@ -808,8 +790,8 @@ function getParamsFromSpawner()
 
     if result.npcParam then
       self.currentOverride = copy(result.npcParam)
-      dLogJson(self.currentOverride, "init:  getting parms")
-      local pathset = self.currentOverride
+      --dLogJson(self.currentOverride, "init:  getting parms")
+      if not self.currentOverride.scriptConfig then self.currentOverride.scriptConfig = {} end
     end
     if not self.currentOverride.identity then 
       self.currentOverride.identity = {}
@@ -861,7 +843,6 @@ function modNpc.Species(listData, cur, curO)
     updateNpc(true)
     self.currentOverride.identity = nil
     self.currentOverride.identity = {}
-    --self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
   end
   local speciesIcon = self.speciesJson.genders[getGenderIndx(self.currentIdentity.gender)].characterImage
   widget.setImage("techIconHead",speciesIcon)
@@ -1141,4 +1122,31 @@ end
       returnInfo["bodyColorAsFacialMaskSubColor"] = self.speciesJson["bodyColorAsFacialMaskSubColor"]
     end
   end
+------------------
+    local crewConfig = root.npcConfig(self.currentType)
+    local crewUniformStorage = path(args.npcParam,"scriptConfig","initialStorage","crewUniform")
+    if not crewUniformStorage then 
+      crewUniformStorage = args.npcParam
+      setPath(crewUniformStorage,"scriptConfig","initialStorage","crewUniform",{})
+      crewUniformStorage = path(args.npcParam,"scriptConfig","initialStorage","crewUniform")
+    end
+    crewUniformStorage.slots = copy(self.equipSlot)
+    crewUniformStorage.items = {}
+    for i = 1, #crewUniformStorage.slots do
+      crewUniformStorage.items[self.equipSlot[i]-] = self.equipBagStorage[i]
+    end
+    args.npcParam.scriptConfig.crew =  copy(crewConfig.scriptConfig.crew)
+    local crew = args.npcParam.scriptConfig.crew
+    if crew then
+      if not crew.uniform then crew.uniform = {} end
+      crew.unifomSlots = copy(self.equipSlot)
+      crew.uniform.slots = copy(self.equipSlot)
+      crew.uniform.items = copy(crewUniformStorage.items)
+      crew.role.uniformColorIndex = 0
+      crew.role["uniformColorIndex"] = 0
+      crew.defaultUniform = {}
+      for i = 1, #crewUniformStorage.slots do
+        crew.defaultUniform[self.equipSlot[i]-] = self.equipBagStorage[i]
+      end
+    end
 --]]
