@@ -332,7 +332,7 @@ function acceptBtn()
     --args.npcParam.disableWornArmor = false
     --dLogJson(args,"SENT IDENTITY", true)
     --self.sendingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "setSeedValuePanel", self.targetSize)
-    world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
+    self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
 end
 
 function setListInfo(categoryName, uniqueId)
@@ -840,7 +840,7 @@ function modNpc.Species(listData, cur, curO)
 
     dLog({listData,curO},"modNPC.HitSpecies")
     self.currentSpecies = tostring(listData.itemTitle)
-    updateNpc(true)
+    updateNpc()
     self.currentOverride.identity = nil
     self.currentOverride.identity = {}
   end
