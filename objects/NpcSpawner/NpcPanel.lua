@@ -116,6 +116,18 @@ function die()
   killNpc()
 end
 
+function getStorage()
+  local initStorage = config.getParameter("initialStorage", {})
+  for k,v in pairs(initStorage) do
+    storage[k] = v
+  end
+  local initGui = config.getParameter("initialGui", {})
+  for k,v in pairs(initGui) do
+    object.setConfigParameter(k,v)
+  end
+  dLogJson(initStorage, "INITIAL STORAGE")
+end
+
 function killNpc()
   self.spawnTimer = self.maxSpawnTime
   sb.logInfo("killNPC: "..sb.print(storage.spawnedID))
