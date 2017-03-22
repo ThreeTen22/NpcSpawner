@@ -57,7 +57,7 @@ function init()
   self.tabGroupWidget = "rgTabs"
   self.categoryWidget = "sgSelectCategory"
   self.categoryWidgetData = "Generate"
-  ------------
+
   ---OVERRIDE VARS----
   self.manualInput = false
   self.overrideTextBox = "tbOverrideBox"
@@ -109,15 +109,16 @@ function init()
   self.currentSeed = self.gettingInformation.npcSeed
   self.currentLevel = self.gettingInformation.npcLevel
   self.currentOverride = self.gettingInformation.npcParam or {identity = {}, scriptConfig = {}}
+  self.slotCount = 12
 end
 
---uninit WORKS. Question is, can we send entity messages without worrying about memory leaks?
+--uninit WORKS. Question is, can we send entity messages without worrying about memory leaks?  Answer: fuck entity messages.
 function update(dt)
   --Cannot send entity messages during init, so will do it here
   if self.doingMainUpdate then
-    local needsUpdate = false
+    local contentsChanged = false
     local itemBag = widget.itemGridItems("itemGrid")
-    for i = 1, 12 do
+    for i = 1, self.slotCount do
       if not compare(self.equipBagStorage[i], itemBag[i]) then
         if not (self.currentOverride.items and self.currentOverride.items.override)  then 
           self.currentOverride.items = config.getParameter("overrideContainerTemplate.items") 
@@ -131,18 +132,17 @@ function update(dt)
           setPath(currentPath,"initialStorage","itemSlots",{}) 
         end
         self.currentOverride.scriptConfig.initialStorage.itemSlots[self.equipSlot[i]] = itemBag[i]  
-        needsUpdate = true
+        contentsChanged = true
       end
     end
-    local curO = self.currentOverride.items
-    if not curO then self.currentOverride.items = {}; curO = self.currentOverride.items end
-    if path(curO,"override",1,2,1) then
-      if isEmpty(curO.items.override[1][2][1]) then
-        curO = nil
-        needsUpdate = true
+
+    if contentsChanged then 
+      --Test to see how many times a single stack item can fit into the inventory container. 
+      --Essentially a hastle-free way to check if empty.
+      if isContainerEmpty(itemBag) then
+        self.currentOverride.items = nil
+        self.currentOverride.scriptConfig.initialStorage.itemSlots = nil
       end
-    end     
-    if needsUpdate then 
       self.equipBagStorage = widget.itemGridItems("itemGrid")
       updateNpc() 
     end
@@ -168,7 +168,8 @@ function update(dt)
     widget.setVisible(self.tabGroupWidget, true)
     widget.setVisible(self.scrollArea, true)
     self.doingMainUpdate = true
-    updateNpc() 
+    updateNpc()
+    script.setUpdateDelta(20)
   end
 end
 
@@ -210,7 +211,7 @@ function finalizeOverride()
   self.overrideText = widget.getText(self.overrideTextBox)
 
   local parsedStrings = util.split(self.overrideText, " ")
-  dLogJson(parsedStrings, "ParsedStrings:  ")
+  --dLogJson(parsedStrings, "ParsedStrings:  ")
   
   parsedStrings = parseArgs(parsedStrings, {
     "nil",
@@ -327,12 +328,7 @@ function acceptBtn()
     npcLevel = self.currentLevel,
     npcParam = self.currentOverride
   }
-  --90% of the crew uniform gets overwritten, but it allows you to use custom weapons!  
-  --You can pair this with other mods that handle equiping armor
-    --args.npcParam.disableWornArmor = false
-    --dLogJson(args,"SENT IDENTITY", true)
-    --self.sendingSeedValue = world.sendEntityMessage(pane.sourceEntity(), "setSeedValuePanel", self.targetSize)
-    dLogJson(args.npcParam, "SENDING DATA")
+    dLogJson(args, "SENDING ARGS", true)
     self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
 end
 
@@ -432,13 +428,10 @@ function selectGenCategory(button, data)
   if data == "Generate" then
     widget.setVisible(self.scrollArea, true)
     widget.setSliderEnabled("sldTargetSize", true)
-    --widget.setVisible("lblBlockNameBox", false)
     widget.setVisible("spnPersonality", false)
     widget.setVisible("lblPersonality", false)
   elseif data == "Colorize" then
     widget.setVisible(self.scrollArea, true)
-    --widget.setSliderEnabled("sldTargetSize", false)
-    --widget.setVisible("lblBlockNameBox", false)
     widget.setVisible("spnPersonality", true)
     widget.setVisible("lblPersonality", true)
   elseif data == "Advanced" then
@@ -459,8 +452,6 @@ end
   --list
   --listType
 function setList(args)
-  --dLogJson(args, "setList - ARGS")
-  --table.sort(args.list)
   widget.clearListItems(self.techList)
   local indx = 1
   local displayText = nil
@@ -478,7 +469,6 @@ function setList(args)
       widget.setData(string.format("%s.%s", self.techList, defaultListItem), {listType = tostring(args.listType), clearConfig = true})
   end 
   for i,v in pairs(args.title) do
-      --dLog({i,v}, "HIT PAIR")
       local listItem = widget.addListItem(self.techList)
       if args.colors then
         displayText = tostring(indx)
@@ -682,9 +672,6 @@ function updateNpc(noVisual)
   if noVisual then return end
 
   local npcPort = root.npcPortrait("full", curSpecies, curType, curLevel, curSeed, curOverride)
-  dLogJson(self.currentOverride, "currentOverride, no local")
-  dLogJson(curOverride, "CURRENT OVERRIDE AFTER PORTRAIT")
-
   return setPortrait(npcPort)
 end
 
@@ -701,16 +688,6 @@ function setPortrait(npcPort)
     num = num+1
   end
 end
-
--------TEST FUNCTIONS-----------
---not useful in any way, used to test things
-
-function testFunction()
-    local config = root.npcConfig("villager")
-    dLogJson(config, "config:")
-end
-
-
 
 function getAsset(assetPath)
   local asset = root.assetJson(assetPath)
@@ -874,8 +851,6 @@ function modNpc.UColor(listData, cur, curO)
   end
 end
 
-----[[
-
 function modNpc.Prsnlity(listData,cur,curO)
   if listData.clearConfig then 
     if curO.scriptConfig and curO.scriptConfig.personality then
@@ -887,7 +862,7 @@ function modNpc.Prsnlity(listData,cur,curO)
     self.currentOverride.scriptConfig.personality = listData.itemData
   end
 end
---TODO -- ADD args.listype UP TOP!!!!
+
 function selectedTab.Species(args)
     args = args or {}
     args.title = copy(self.speciesList)

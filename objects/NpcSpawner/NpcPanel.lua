@@ -6,16 +6,21 @@ function init(virtual)
     	object.setInteractive(true)
   	end
     sb.logInfo("NpcPanel: init")
-    storage.npcSpecies = storage.npcSpecies or "human"
+    storage.npcSpecies = storage.npcSpecies
     storage.npcSeed = storage.npcSeed or math.random(20000)
     storage.npcLevel = storage.npcLevel or math.max(world.threatLevel(), 1)
-    storage.npcType = storage.npcType or "villager"
+    storage.npcType = storage.npcType 
     storage.npcParam = storage.npcParam
     storage.panelUniqueId = (storage.panelUniqueId or entity.uniqueId())
     storage.spawned = storage.spawned or false
     storage.spawnedID = storage.spawnedID or nil
     storage.keepStorageInfo = storage.keepStorageInfo or false
-
+    self.config = getUserConfig("npcSpawnerPlus")
+    self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
+    self.npcTypeList = config.getParameter("npcTypeList")
+    appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
+    appendToListIfUnique(self.npcTypeList, self.config.additionalNpcTypes)
+    randomItUp()
     local args = {
       npcSpecies = storage.npcSpecies,
       npcSeed = storage.npcSeed,
@@ -25,11 +30,7 @@ function init(virtual)
     }
     object.setConfigParameter("npcArgs", args)
     --if storage.keepStorageInfo then retainObjectInfo() end
-    --self.config = getUserConfig("npcSpawnerPlus")
-    --self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-    --self.npcTypeList = config.getParameter("npcTypeList")
-    --appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
-    --appendToListIfUnique(self.npcTypeList, self.config.additionalNpcTypes)
+
     
     --handler for messages coming from the spawner with the spawner's unique id
     --called from spawner object after panel is created. stores the id of the parent spawner
@@ -83,6 +84,7 @@ function update(dt)
     if self.spawnTimer < 0 then
 
       --randomItUp(self.randomize)
+      if storage.npcParam then storage.npcParam.spawnedBy = entity.position() end
       local npcId = world.spawnNpc(entity.position(), storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
 
       world.callScriptedEntity(npcId, "status.addEphemeralEffect","beamin")

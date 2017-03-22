@@ -132,5 +132,11 @@ function getUserConfig(key)
   return root.getConfiguration(key)
 end
 
+function isContainerEmpty(itemBag)
+   for k,v in pairs(itemBag) do
+    if type(v) ~= "nil" then return false end
+   end
+   return true
+end
 
 dComp["nil"] = function(input) return dLog("nil") end
