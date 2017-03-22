@@ -5,9 +5,8 @@ function init(virtual)
   	if not virtual then
     	object.setInteractive(true)
   	end
-  
-    dCompare("compareTest:  ",nil,nil)
     sb.logInfo("NpcPanel: init")
+    getStorage()
     storage.npcSpecies = storage.npcSpecies
     storage.npcSeed = storage.npcSeed
     storage.npcLevel = storage.npcLevel
@@ -16,24 +15,41 @@ function init(virtual)
     storage.panelUniqueId = (storage.panelUniqueId or entity.uniqueId())
     storage.spawned = storage.spawned or false
     storage.spawnedID = storage.spawnedID or nil
-    storage.randomize = storage.randomize or true
+    storage.randomize = storage.randomize or false
+    storage.keepStorageInfo = storage.keepStorageInfo or false
+
+    if storage.keepStorageInfo then setParams() end
+
+    self.config = getUserConfig("npcSpawnerPlus")
+    self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
+    self.npcTypeList = config.getParameter("npcTypeList")
+    appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
+    appendToListIfUnique(self.npcTypeList, self.config.additionalNpcTypes)
     
     --handler for messages coming from the spawner with the spawner's unique id
     --called from spawner object after panel is created. stores the id of the parent spawner
 
-    self.absPosition = nil
+    self.absPosition = entity.position()
+
+    self.absPosition = position
     self.spawnTimer = 1
     self.maxSpawnTime = 2
     self.needsEquipCheck = false
-    self.randomize = false
+    self.randomize = storage.randomize
     randomItUp(self.randomize)
      dLog("get NPC DATA")
     message.setHandler("getNpcData",function(_, _)
       return getNpcData()
     end)
+
     dLog("set NPC DATA")
+
     message.setHandler("setNpcData", function(_,_, args)
       setNpcData(args)
+    end)
+
+    message.setHandler("detachNpc", function(_,_)
+      detachNpc()
     end)
 
 end
@@ -48,8 +64,6 @@ function update(dt)
   if not storage.uniqueId then
     storage.uniqueId = sb.makeUuid()
     world.setUniqueId(entity.id(), storage.uniqueId)
-    local position = self.absPosition or entity.position()
-    self.absPosition = position
   end
 
 
@@ -58,7 +72,9 @@ function update(dt)
     if self.spawnTimer < 0 then
 
       randomItUp(self.randomize)
-      local npcId = world.spawnNpc(self.absPosition, storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
+      if storage.npcParam then storage.npcParam.spawnedBy = entity.position() end
+      local npcId = world.spawnNpc(entity.position(), storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
+
       world.callScriptedEntity(npcId, "status.addEphemeralEffect","beamin")
       --assign our new NPC a special unique id
       storage.spawnedID = sb.makeUuid()
@@ -67,6 +83,9 @@ function update(dt)
       if self.needsEquipCheck then
         return containerCallback
       end
+      local variant = root.npcVariant(storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
+      storage.npcParam.identity = variant.humanoidIdentity
+      dLogJson(variant, "VARIANT", true)
       self.spawnTimer = math.floor(self.maxSpawnTime)
     else
       self.spawnTimer = self.spawnTimer - dt
@@ -81,8 +100,48 @@ function update(dt)
 
 end 
 
+function setParams()
+  local id = entity.id()
+  object.setConfigParameter("shortdescription", storage.npcParam.identity.name.."'s Spawn Beacon")
+  object.setConfigParameter("description", "This deed has been attuned to a specific Npc.")
+end
+
 function die()
+  if storage.keepStorageInfo then
+    local newParam = {}
+    newParam.initStorage = {
+      npcSpecies = storage.npcSpecies,
+      npcSeed = storage.npcSeed,
+      npcLevel = storage.npcLevel,
+      npcType = storage.npcType,
+      npcParam = storage.npcParam,
+      randomize = storage.randomize or false,
+      keepStorageInfo = storage.keepStorageInfo,
+    }
+    newParam.initGui = {shortdescription = storage.npcParam.identity.name.."'s Spawn Beacon", description = "This deed has been attuned to a specific Npc."}
+    
+    for k,v in pairs(newParam.initGui) do
+      newParam.k = v
+    end
+    world.spawnItem("NpcSpawnerPanel", entity.position(), 1,newParam)
+    --object.setConfigParameter("initialStorage", initStorage)
+    --object.setConfigParameter("initialGui", initGui)
+  else
+    world.spawnItem("NpcSpawnerPanel", entity.position())
+  end
   killNpc()
+end
+
+function getStorage()
+  local initStorage = config.getParameter("initialStorage", {})
+  for k,v in pairs(initStorage) do
+    storage[k] = v
+  end
+  local initGui = config.getParameter("initialGui", {})
+  for k,v in pairs(initGui) do
+    object.setConfigParameter(k,v)
+  end
+  dLogJson(initStorage, "INITIAL STORAGE")
 end
 
 function killNpc()
@@ -94,17 +153,6 @@ function killNpc()
     world.sendEntityMessage(loadedEnitity, "recruit.beamOut")
   end
   storage.spawned = false
-end
-
-function setParentSpawner(spawnerId)
-  sb.logInfo("NpcPanel: recieved the id of the parent spawner")
-
-  if not storage.panelUniqueId then
-    storage.panelUniqueId = sb.makeUuid()
-    object.setUniqueId(storage.panelUniqueId)
-    dCompare("uniqueIds - ",entity.uniqueId(), storage.panelUniqueId)
-    dLog("regid: ", entity.id())
-  end
 end
 
 
@@ -126,12 +174,18 @@ function setNpcData(args)
   storage.npcType = args.npcType
   storage.npcLevel = args.npcLevel
   storage.npcParam = args.npcParam
+  storage.keepStorageInfo = true
 
-  local newArgs = copy(args)
+  --local newArgs = copy(args)
   --world.spawnNpc(pos, args.npcSpecies,args.npcType, args.npcSeed ,args.npcLevel,args.npcParam)
   killNpc()
 end
 
+function detachNpc()
+  storage.spawnedID = nil
+  storage.keepStorageInfo = false
+  object.smash()
+end
 
 function setGear()
   local id = entity.id()
@@ -183,26 +237,25 @@ function setGear()
 end
 
 function containerCallback()
-  if storage.spawnedID and world.loadUniqueEntity(storage.spawnedID) ~= 0 then
-    dLog("NPC Spawner Callback")
-    setGear()
-  else
-    self.needsEquipCheck = true
-    storage.spawned = false
-    --update(0)
-  end
+  --if storage.spawnedID and world.loadUniqueEntity(storage.spawnedID) ~= 0 then
+  --  dLog("NPC Spawner Callback")
+  --  setGear()
+  --else
+  --  self.needsEquipCheck = true
+  --  storage.spawned = false
+  --  update(0)
+  --end
 end
 
 function randomItUp(override)
-  if (not storage.npcLevel) or override then storage.npcLevel = math.random(10, 15) end
+  if (not storage.npcLevel) or override then storage.npcLevel = math.random(1, 10) end
   if (not storage.npcSpecies) or override then 
-    local species = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-    storage.npcSpecies = util.randomFromList(species)
+    
+    storage.npcSpecies = util.randomFromList(self.speciesList)
     storage.npcSpecies = storage.npcSpecies or "human"
   end
   if (not storage.npcType) or override then
-    local npcTypes = config.getParameter("npcTypeList")
-    storage.npcType = util.randomFromList(npcTypes)
+    storage.npcType = util.randomFromList(self.npcTypeList)
   end
   if not storage.npcSeed then
     storage.npcSeed = math.random(20000)
