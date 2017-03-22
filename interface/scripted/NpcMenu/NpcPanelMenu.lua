@@ -151,6 +151,7 @@ function update(dt)
     appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
     appendToListIfUnique(self.npcTypeList, self.config.additionalNpcTypes)
     table.sort(self.speciesList)
+    table.sort(self.npcTypeList)
     local protectorate = root.npcConfig("villager")
     local graduation = protectorate.scriptConfig.questGenerator.graduation
     local listOfProtectorates = {}
@@ -213,12 +214,8 @@ function finalizeOverride()
   local parsedStrings = util.split(self.overrideText, " ")
   --dLogJson(parsedStrings, "ParsedStrings:  ")
   
-  parsedStrings = parseArgs(parsedStrings, {
-    "nil",
-    "nil",
-    "nil",
-    "nil"
-    })
+  
+
 
   if parsedStrings[1] == "hue" and parsedStrings[2] == "hair" then
     self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives or  self.currentIdentity.hairDirectives
@@ -269,7 +266,7 @@ function finalizeOverride()
     return updateNpc()
   end
 
-
+  if 
   if parsedStrings[1] ~= "nil" then
     self.currentSpecies = parsedStrings[1]
   end
