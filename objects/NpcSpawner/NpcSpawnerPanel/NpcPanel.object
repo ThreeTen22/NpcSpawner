@@ -30,8 +30,6 @@
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
   "isContainer": true,
   "smashable" : false,
-  "retainObjectParametersInItem" : false,
-  "retainScriptStorageInItem" : false,
   "orientations" : [
     {
       "image" : "BackgroundPanel.png",
@@ -173,12 +171,6 @@
   "npcTypeTags" : {
     "feneroxvillager" : ["fenerox"],
     "feneroxguard" : ["fenerox"]
-  },
-  "initialStorage" : {
-
-  },
-  "initialGui" : {
-
   },
   "spawner" : {
     "searchRadius" : 10.0,
