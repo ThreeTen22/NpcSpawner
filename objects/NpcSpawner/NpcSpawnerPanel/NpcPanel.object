@@ -19,7 +19,6 @@
   "objectType" : "container",
   "slotCount" : 12,
   "openSounds" : ["/sfx/objects/miningchest_open.ogg" ],
-  "interactAction" : "ScriptConsole",
   "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
   "frameCooldown" : 5,
   "autoCloseCooldown" : 360000,
@@ -81,6 +80,9 @@
       "anchors" : [ "bottom" ]
     }
   ],
+  "npcArgs" : {
+
+  },
   "npcTypeList": [ 
     "nakedvillager",
     "airshipcaptain",

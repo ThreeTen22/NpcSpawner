@@ -16,6 +16,14 @@ function init(virtual)
     storage.spawnedID = storage.spawnedID or nil
     storage.keepStorageInfo = storage.keepStorageInfo or false
 
+    local args = {
+      npcSpecies = storage.npcSpecies,
+      npcSeed = storage.npcSeed,
+      npcLevel = storage.npcLevel,
+      npcType = storage.npcType,
+      npcParam = storage.npcParam
+    }
+    object.setConfigParameter("npcArgs", args)
     --if storage.keepStorageInfo then retainObjectInfo() end
     --self.config = getUserConfig("npcSpawnerPlus")
     --self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
@@ -31,7 +39,8 @@ function init(virtual)
     self.maxSpawnTime = 2
     self.needsEquipCheck = false
     self.randomize = false
-    randomItUp(self.randomize)
+    self.needToUpdateParameter = false
+    --randomItUp(self.randomize)
      --dLog("get NPC DATA")
     message.setHandler("getNpcData",function(_, _)
       return getNpcData()
@@ -48,8 +57,18 @@ function init(virtual)
 end
 
 function onInteraction(args)
-  world.spawnNpc(entity.position(), storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
+  local config = config.getParameter("uiconfig")
+  local args = {
+    npcSpecies = storage.npcSpecies,
+    npcSeed = storage.npcSeed,
+    npcLevel = storage.npcLevel,
+    npcType = storage.npcType,
+    npcParam = storage.npcParam
+  }
+  object.setConfigParameter("npcArgs", args)
+  return {"ScriptConsole", config}
 end
+
 function update(dt)
   if not storage.uniqueId then
     storage.uniqueId = sb.makeUuid()
@@ -63,7 +82,7 @@ function update(dt)
   if storage.spawned == false then
     if self.spawnTimer < 0 then
 
-      randomItUp(self.randomize)
+      --randomItUp(self.randomize)
       local npcId = world.spawnNpc(entity.position(), storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
 
       world.callScriptedEntity(npcId, "status.addEphemeralEffect","beamin")
@@ -149,6 +168,7 @@ function setNpcData(args)
   storage.npcLevel = args.npcLevel
   storage.npcParam = args.npcParam
   killNpc()
+  object.setConfigParameter("npcArgs", args)
 end
 
 function detachNpc()
