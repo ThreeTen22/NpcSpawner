@@ -9,13 +9,7 @@
   "price" : 200,
   "category" : "spawner",
   "tooltipKind" : "container",
-  "apexDescription" : "Never gonna give you up,",
-  "avianDescription" : "Never gonna let you down,",
-  "floranDescription" : "Never gonna run around and desert you.",
-  "glitchDescription" : "Never gonna make you cry,",
-  "humanDescription" : "Never gonna say goodbye,",
-  "hylotlDescription" : "Never gonna tell a lie and hurt you.",
-  "genericDescription" : "Have it your way.",
+  "genericDescription" : "Who should I spawn next?",
   "objectType" : "container",
   "slotCount" : 12,
   "openSounds" : ["/sfx/objects/miningchest_open.ogg" ],
@@ -29,6 +23,7 @@
   "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
   "isContainer": true,
   "smashable" : false,
+  "interactive" : false,
   "orientations" : [
     {
       "image" : "BackgroundPanel.png",

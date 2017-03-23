@@ -266,7 +266,6 @@ function finalizeOverride()
     return updateNpc()
   end
 
-  if 
   if parsedStrings[1] ~= "nil" then
     self.currentSpecies = parsedStrings[1]
   end
@@ -995,6 +994,12 @@ function selectedTab.Export(args)
   dLog("")
   dLog("")
 
+end
+
+function selectedTab.Override(args)
+  args.useInfoList = true
+  args.skipTheRest = true
+  args.selectedCategory = "OverrideOptn"
 end
 
 function selectedTab.Info(args)

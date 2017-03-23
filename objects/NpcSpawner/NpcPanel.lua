@@ -2,9 +2,6 @@ require "/scripts/npcspawnutil.lua"
 require "/scripts/util.lua"
 
 function init(virtual)
-  	if not virtual then
-    	object.setInteractive(true)
-  	end
     sb.logInfo("NpcPanel: init")
     storage.npcSpecies = storage.npcSpecies
     storage.npcSeed = storage.npcSeed or math.random(20000)
@@ -54,6 +51,9 @@ function init(virtual)
    -- message.setHandler("detachNpc", function(_,_)
    --   detachNpc()
    -- end)
+    if not virtual then
+      object.setInteractive(true)
+    end
 
 end
 
@@ -95,9 +95,7 @@ function update(dt)
       if self.needsEquipCheck then
         return containerCallback
       end
-      --local variant = root.npcVariant(storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
-      --dLogJson(variant, "VARIANT", true)
-      --storage.npcParam.identity = copy(variant.humanoidIdentity)
+
       self.spawnTimer = math.floor(self.maxSpawnTime)
     else
       self.spawnTimer = self.spawnTimer - dt
@@ -112,33 +110,10 @@ function update(dt)
 
 end 
 
---function retainObjectInfo()
---  local id = entity.id()
---   
---  object.setConfigParameter("retainObjectParametersInItem", true)
---  object.setConfigParameter("retainScriptStorageInItem", true)
---  object.setConfigParameter("shortdescription", storage.npcParam.identity.name.."'s Spawn Beacon")
---  object.setConfigParameter("description", "This spawner has been attuned to a specific Npc.")
---  for k,v in pairs(storage) do
---    storage[k] = v
---  end
---end
 
 function die()
   killNpc()
 end
-
---function getStorage()
---  local initStorage = config.getParameter("initialStorage", {})
---  for k,v in pairs(initStorage) do
---    storage[k] = v
---  end
---  local initGui = config.getParameter("initialGui", {})
---  for k,v in pairs(initGui) do
---    object.setConfigParameter(k,v)
---  end
---  --dLogJson(initStorage, "INITIAL STORAGE")
---end
 
 function killNpc()
   self.spawnTimer = self.maxSpawnTime
@@ -195,20 +170,9 @@ function setGear()
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","primary",weaponID)
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","alt",altID)
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","back",backID)
-    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","backCosmetic",backID)
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","head",headID)
-    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","headCosmetic",chestID)
-
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","chest",chestID)
-    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","chestCosmetic",chestID)
-
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","legs",legsID)
-    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","legsCosmetic",legsID)
-
-  dLog("endSettingGear Gear")
- -- if spawnedID then
- --   world.callScriptedEntity(spawnedID, "npc.setDisplayNametag", true)
- -- end
 
   -- world.callScriptedEntity(spawnedID, "logSeed")
   --this re-init stuff seems a little wonky, but needs to be done to manage combat behavior of the NPC when we are changing their weapon from ranged to melee and vice versa.
