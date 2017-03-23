@@ -15,6 +15,7 @@ function dOut(input)
 end
 
 function dLogJson(input, prefix, clean)
+  if type(prefix) == "boolean" then clean = (prefix and true); prefix = "" end
   if (clean and true) then clean = 1 else clean = 0 end
   if prefix ~= nil then
     sb.logInfo(prefix)
@@ -95,5 +96,47 @@ function logENV()
   end
 end
 
+function hasValue(t, value)
+  for _,v in pairs(t) do
+    if v == value then return true end
+  end
+  return false
+end
+
+function appendToListIfUnique(output, list)
+  if not list then return end
+  local itemsToAdd = {}
+  for i,v in ipairs(list) do
+    if (not hasValue(output, v)) and v ~= "" then table.insert(itemsToAdd,v) end
+  end
+  for _,v in ipairs(itemsToAdd) do
+    table.insert(output, v)
+  end
+  return itemsToAdd
+end
+
+
+function hasKey(t, value)
+  for k,_ in pairs(t) do
+    if k == value then return true end
+  end
+  return false
+end
+
+function getUserConfig(key)
+  local config = root.getConfiguration(key)
+  if not config then
+    root.setConfiguration(key, {additionalNpcTypes = jarray(), additionalSpecies = {"fenerox"}})
+    config = root.getConfiguration(key)
+  end
+  return root.getConfiguration(key)
+end
+
+function isContainerEmpty(itemBag)
+   for k,v in pairs(itemBag) do
+    if type(v) ~= "nil" then return false end
+   end
+   return true
+end
 
 dComp["nil"] = function(input) return dLog("nil") end
