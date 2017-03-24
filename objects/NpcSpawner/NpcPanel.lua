@@ -26,6 +26,7 @@ function init(virtual)
       npcParam = storage.npcParam
     }
     object.setConfigParameter("npcArgs", args)
+    
     --if storage.keepStorageInfo then retainObjectInfo() end
 
     
@@ -54,8 +55,12 @@ function init(virtual)
     if not virtual then
       object.setInteractive(true)
     end
-
+    testFunction()
 end
+
+function testFunction()
+end
+
 
 function onInteraction(args)
   local config = config.getParameter("uiconfig")
@@ -166,17 +171,15 @@ function setGear()
   --function calls to the NPC character. Updates all the NPC's gear.
   --dLog("setting Gear")
   if spawnedID == 0 then return end
-
-    world.callScriptedEntity(spawnedID, "setNpcItemSlot","primary",weaponID)
-    world.callScriptedEntity(spawnedID, "setNpcItemSlot","alt",altID)
+  --Desabled because it does not take into account sheathed weapons.
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","primary",weaponID)
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","alt",altID)
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","back",backID)
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","head",headID)
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","chest",chestID)
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","legs",legsID)
 
-  -- world.callScriptedEntity(spawnedID, "logSeed")
-  --this re-init stuff seems a little wonky, but needs to be done to manage combat behavior of the NPC when we are changing their weapon from ranged to melee and vice versa.
-  -- If we do not already have a weapon and if there IS a weapon in the chest to be switched to, set our current weapon to it and re-initialize the NPC.
+  --Weapon slots are calculated everytime the npc is created/recreated.  Therefore if a weapon conifguration is changed, 
   if self.weapon == nil then
     if weaponID ~= nil then
       self.weapon = weaponID

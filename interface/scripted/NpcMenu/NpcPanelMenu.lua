@@ -4,6 +4,10 @@ require "/scripts/npcspawnutil.lua"
 spnIdleStance = {}
 modNpc = {}
 selectedTab = {}
+override = {}
+
+
+
 
 function init()
   self.config = getUserConfig("npcSpawnerPlus")
@@ -1007,3 +1011,13 @@ function selectedTab.Info(args)
   args.skipTheRest = true
   args.selectedCategory = self.categoryWidgetData
 end
+
+function override.apply(modType, part, increm) 
+  
+end
+
+override.set = {}
+override.remove = {}
+override.insert = {}
+override.clear = {}
+
