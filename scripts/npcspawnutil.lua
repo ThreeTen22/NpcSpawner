@@ -142,6 +142,7 @@ function isContainerEmpty(itemBag)
 end
 
 function getPathStr(t, str)
+    if str == "" then return t end
     local s, _ = string.find(str, ".", 1, true)
     if not s then return t[str] end
     return jsonPath(t,str)
@@ -190,6 +191,8 @@ function formatParam(strType,...)
             returnTable.insert(returnTable,value)
         end
         return returnTable
+    else
+      return tostring(params[1])
     end
 end
 

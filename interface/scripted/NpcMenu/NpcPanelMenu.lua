@@ -113,10 +113,13 @@ function init()
   self.currentOverride = self.gettingInformation.npcParam or {identity = {}, scriptConfig = {}}
   self.slotCount = 12
   self.targetSize = self.currentSeed
+  dLog(self.currentSeed,"currentSEED")
+  self.targetSize = tonumber(self.targetSize) or 0
 
   widget.setSliderRange("sldTargetSize",0, self.worldSize)
   widget.setSliderEnabled("sldTargetSize", true)
   widget.setSliderValue("sldTargetSize",self.targetSize)
+  widget.setText("lblSliderAmount", "Seed:  "..tostring(self.targetSize))
 end
 
 --uninit WORKS. Question is, can we send entity messages without worrying about memory leaks?  Answer: fuck entity messages.
@@ -967,11 +970,11 @@ function override.apply(curO, cur, applyParam, part, increm)
     if not partDirectives then dLog("faulty part given") return end
     local wrapper = {}
     for _,v in ipairs(partDirectives) do
-        local subPath = config.getParameter("overrideConfig.path."..v)
-        local curSubTable = getPathStr(curO, subPath)
-        if not curSubTable[v] then curSubTable[v] = copy(cur)[v] end
-        if curSubTable[v] == "" then dLog("directive doesn't exist") return end
-        local directive = curSubTable[v]
+        local applyPath = config.getParameter("overrideConfig.path."..v)
+        local applyPathTable = getPathStr(curO, applyPath)
+        if not applyPathTable[v] then applyPathTable[v] = copy(cur)[v] end
+        if applyPathTable[v] == "" then dLog("directive doesn't exist") return end
+        local directive = applyPathTable[v]
         local b, _, value = string.find(directive, applyParams[1])
         if not b then 
             directive = directive..applyParams[2]
@@ -981,7 +984,7 @@ function override.apply(curO, cur, applyParam, part, increm)
             value = tostring(math.floor(tonumber(value) + tonumber(increm)))
         end
         wrapper["1"] = value
-        curSubTable[v] = string.gsub(directive,"<(.)>",wrapper,1)
+        applyPathTable[v] = string.gsub(directive,"<(.)>",wrapper,1)
     end    
 end
 
@@ -993,22 +996,22 @@ function override.remove(curO, _, applyParam, part)
   local partDirectives = config.getParameter("overrideConfig.bodyDirectives."..part)
   if not partDirectives then dLog("faulty part given") return end
   for _,v in ipairs(partDirectives) do
-      local subPath = config.getParameter("overrideConfig.path."..v)
-      local curSubTable = getPathStr(curO, subPath)
-      if not curSubTable[v] or curSubTable[v] == "" then return end
-      local directive = curSubTable[v]
-      curSubTable[v] = string.gsub(directive,applyParams[1],applyParams[2],1)
+      local removePath = config.getParameter("overrideConfig.path."..v)
+      local applyPathTable = getPathStr(curO, removePath)
+      if not applyPathTable[v] or applyPathTable[v] == "" then return end
+      local directive = applyPathTable[v]
+      applyPathTable[v] = string.gsub(directive,applyParams[1],applyParams[2],1)
   end    
 end
 
 function override.set(curO, cur, setParam, ...)
     local setParam = config.getParameter("overrideConfig.setParams."..setParam)
-    if not setParam then dLog("Cannot find parameter") end
+    if not setParam then dLog("Cannot find parameter") return end
     local setPath = config.getParameter("overrideConfig.path."..setParam[1])
-    if not setPath then dLog("cannot find path to parameter") end
+    if not setPath then dLog("cannot find path to parameter") return end
     local setPathTable = getPathStr(curO, setPath)
     if not setPathTable then 
-        setPathTable = setPathStr(curO,setPath,{}) 
+      setPathTable = setPathStr(curO,setPath,{})
     end
     local formattedParam = formatParam(setParam[2], ...)
     if not formattedParam then dLog("formatted incorrectly") return end

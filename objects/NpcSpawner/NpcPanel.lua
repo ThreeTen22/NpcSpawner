@@ -4,7 +4,7 @@ require "/scripts/util.lua"
 function init(virtual)
     dLog("NpcPanel: init")
     storage.npcSpecies = storage.npcSpecies
-    storage.npcSeed = storage.npcSeed or math.random(20000)
+    storage.npcSeed = storage.npcSeed or math.random(0,20000)
     storage.npcLevel = storage.npcLevel or math.max(world.threatLevel(), 1)
     storage.npcType = storage.npcType 
     storage.npcParam = storage.npcParam
@@ -14,18 +14,17 @@ function init(virtual)
     storage.keepStorageInfo = storage.keepStorageInfo or false
     self.config = getUserConfig("npcSpawnerPlus")
     self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-    self.npcTypeList = config.getParameter("npcTypeList")
+    self.npcTypeList = copy(self.config.npcTypeList)
     appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
-    appendToListIfUnique(self.npcTypeList, self.config.additionalNpcTypes)
     randomItUp()
-    --local args = {
-    --  npcSpecies = storage.npcSpecies,
-    --  npcSeed = storage.npcSeed,
-    --  npcLevel = storage.npcLevel,
-    --  npcType = storage.npcType,
-    --  npcParam = storage.npcParam
-    --}
-    --object.setConfigParameter("npcArgs", args)
+    local args = {
+      npcSpecies = storage.npcSpecies,
+      npcSeed = storage.npcSeed,
+      npcLevel = storage.npcLevel,
+      npcType = storage.npcType,
+      npcParam = storage.npcParam
+    }
+    object.setConfigParameter("npcArgs", args)
     
     --if storage.keepStorageInfo then retainObjectInfo() end
 
@@ -60,18 +59,13 @@ end
 
 
 
-function onInteraction(args)
-  local config = config.getParameter("uiconfig")
-  local args = {
-    npcSpecies = storage.npcSpecies,
-    npcSeed = storage.npcSeed,
-    npcLevel = storage.npcLevel,
-    npcType = storage.npcType,
-    npcParam = storage.npcParam
-  }
-  object.setConfigParameter("npcArgs", args)
-  return {"ScriptConsole", config}
-end
+--function onInteraction(args)
+--  dLog("TEST !@ IS THIS HITTING?")
+--  local config = config.getParameter("uiconfig")
+--  dLogJson(args,"ON INTERACTION",true)
+--  object.setConfigParameter("npcArgs", args)
+--  return {"ScriptConsole", config}
+--end
 
 function update(dt)
   if not storage.uniqueId then
