@@ -7,7 +7,6 @@ selectedTab = {}
 override = {}
 
 function init()
-  self.config = getUserConfig("npcSpawnerPlus")
   self.returnInfo = {}
   dLog("NpcPanelMenu: init")
   self.portraits = {
@@ -32,7 +31,6 @@ function init()
     "portraitSlot19",
     "portraitSlot20"
   }
-  self.npcTypeList = copy(self.config.npcTypeList)
 
 
   self.personalityIndex = 0
@@ -130,10 +128,16 @@ function update(dt)
     end
   elseif self.firstRun then
     self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-    appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
+    local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config")
+    local userConfig = getUserConfig("npcSpawnerPlus")
+    
+    local mSpeciesConfig = mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
+    self.speciesList = mergeUnique(self.speciesList, mSpeciesConfig)
+
+    self.npcTypeList = mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
+   
     table.sort(self.speciesList)
     table.sort(self.npcTypeList)
-    self.config = nil
     local protectorate = root.npcConfig("villager")
     local graduation = protectorate.scriptConfig.questGenerator.graduation
     local listOfProtectorates = {}

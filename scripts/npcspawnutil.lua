@@ -115,6 +115,21 @@ function appendToListIfUnique(output, list)
   return itemsToAdd
 end
 
+function mergeUnique(t1, t2)
+if not t2 or #t2 < 1 then return t1 end
+local merged = util.mergeLists(t1,t2)
+local hash = {}
+local res = {}
+
+  for _,v in ipairs(merged) do
+     if (not hash[v]) then
+         res[#res+1] = v -- you could print here instead of saving to result table if you wanted
+         hash[v] = true
+     end
+  end
+  return res
+end
+
 
 function hasKey(t, value)
   for k,_ in pairs(t) do
@@ -126,9 +141,7 @@ end
 function getUserConfig(key)
   local config = root.getConfiguration(key)
   if not config then
-    local defaults = root.assetJson("/interface/scripted/NpcMenu/modConfig.config")
-    dLogJson(defaults, "DEFAULTS")
-    root.setConfiguration(key, defaults)
+    root.setConfiguration(key, {additionalSpecies = jarray(), additionalNpcTypes = jarray()})
     config = root.getConfiguration(key)
   end
   return root.getConfiguration(key)
