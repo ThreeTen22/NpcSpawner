@@ -86,6 +86,7 @@ function update(dt)
 
       world.callScriptedEntity(npcId, "status.addEphemeralEffect","beamin")
       --assign our new NPC a special unique id
+      logVariant()
       storage.spawnedID = sb.makeUuid()
       world.setUniqueId(npcId, storage.spawnedID)
       storage.spawned = true 
@@ -106,6 +107,11 @@ function update(dt)
   end
 
 end 
+
+function logVariant()
+  local variant = root.npcVariant(storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
+  --dLogJson(variant, "spawnedVariant", true)
+end
 
 
 function die()

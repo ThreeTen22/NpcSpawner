@@ -1,20 +1,15 @@
 require "/scripts/util.lua"
 require "/scripts/npcspawnutil.lua"
 
-
-
 spnIdleStance = {}
 modNpc = {}
 selectedTab = {}
 override = {}
 
-
-
-
 function init()
   self.config = getUserConfig("npcSpawnerPlus")
   self.returnInfo = {}
-  sb.logInfo("NpcPanelMenu: init")
+  dLog("NpcPanelMenu: init")
   self.portraits = {
     "portraitSlot01",
     "portraitSlot02",
@@ -38,21 +33,11 @@ function init()
     "portraitSlot20"
   }
   self.npcTypeList = copy(self.config.npcTypeList)
-  self.gettingNpcData = nil
-  self.sendingData = nil
 
-  self.currentSpecies = "penguin"
-  self.currentSeed = 0
-  self.currentType = "nakedvillager"
-  self.currentIdentity = {}
-  self.currentOverride = {identity = {}, scriptConfig = {}}
-  self.currentLevel = 10
-
-  self.raceButtons = {}
 
   self.personalityIndex = 0
 
-  self.returnInfoColors = {}
+  self.returnInfoColors = nil
 
   --LIST VARS--
   self.scrollArea = "techScrollArea"
@@ -65,28 +50,15 @@ function init()
   self.categoryWidgetData = "Generate"
 
   ---OVERRIDE VARS----
-  self.manualInput = false
   self.overrideTextBox = "tbOverrideBox"
   self.overrideText = ""
 
-
-  self.worldSize = 20000
-  self.currentSize = 0
-  self.targetSize = 0
-  self.minTargetSize = 0
-  self.targetSizeIncrement = 1
-
-  self.maxStepSize = self.worldSize
-  -- updateGUI()
-  self.portraitNeedsUpdate = false
-  --logReport(testTwo)
+  self.maxSliderValue = 20000
 
   self.doingMainUpdate = false
   self.firstRun = true
   self.itemData = nil
-
-
-  self.itemsToAdd = {}
+  self.searchLength = 0
 
   self.equipSlot = {
                     "primary",
@@ -106,20 +78,19 @@ function init()
                   --duel wielding weapons for npcs doesn't work.
   self.equipBagStorage = widget.itemGridItems("itemGrid")
   self.gettingInformation = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
-  self.currentSpecies = self.gettingInformation.npcSpecies
-  self.currentType = self.gettingInformation.npcType
-  self.currentSeed = self.gettingInformation.npcSeed
-  self.currentLevel = self.gettingInformation.npcLevel
+  self.currentSpecies = self.gettingInformation.npcSpecies or "penguin"
+  self.currentType = self.gettingInformation.npcType or "follower"
+  self.currentSeed = self.gettingInformation.npcSeed or math.random(0, self.maxSliderValue)
+  self.currentLevel = self.gettingInformation.npcLevel or math.random(1, world.threatLevel())
   self.currentOverride = self.gettingInformation.npcParam or {identity = {}, scriptConfig = {}}
   self.slotCount = 12
-  self.targetSize = self.currentSeed
-  dLog(self.currentSeed,"currentSEED")
-  self.targetSize = tonumber(self.targetSize) or 0
+  self.sliderValue = tonumber(self.currentSeed) or 0
 
-  widget.setSliderRange("sldTargetSize",0, self.worldSize)
-  widget.setSliderEnabled("sldTargetSize", true)
-  widget.setSliderValue("sldTargetSize",self.targetSize)
-  widget.setText("lblSliderAmount", "Seed:  "..tostring(self.targetSize))
+  widget.setSliderRange("sldSeedValue",0, self.maxSliderValue)
+  widget.setSliderEnabled("sldSeedValue", true)
+  widget.setSliderValue("sldSeedValue",self.sliderValue)
+  widget.setText("lblSliderValue", "Seed:  "..tostring(self.sliderValue))
+  updateNpc(true)
 end
 
 --uninit WORKS. Question is, can we send entity messages without worrying about memory leaks?  Answer: fuck entity messages.
@@ -133,6 +104,7 @@ function update(dt)
         if not (self.currentOverride.items and self.currentOverride.items.override)  then 
           self.currentOverride.items = config.getParameter("overrideContainerTemplate.items") 
         end
+        dLogJson(itemBag[i], "itemBagCont:",true)
         --Add items to override item slot so they update visually.
         local insertPosition = self.currentOverride.items.override[1][2][1]
         setItemOverride(self.equipSlot[i],insertPosition,itemBag[i])
@@ -217,9 +189,9 @@ end
 
 
 --callback
-function finalizeOverride()
+function onOverrideEnter()
   dLog("FinalizingOverride")
-  self.overrideText = widget.getText(self.overrideTextBox)
+  self.overrideText = string.lower(widget.getText(self.overrideTextBox))
 
   local parsedStrings = util.split(self.overrideText, " ")
   dLogJson(parsedStrings, "ParsedStrings:  ")
@@ -230,10 +202,20 @@ function finalizeOverride()
     override[parsedStrings[1]](self.currentOverride,self.currentIdentity, parsedStrings[2], parsedStrings[3], parsedStrings[4])
     return updateNpc()
   end
-
-  self.manualInput = true
  
   return updateNpc()
+end
+
+--Callback
+function onSeachBoxKeyPress()
+  local text = widget.getText("tbSearchBox")
+  local args = widget.getData(string.format("%s", self.techList))
+  dLog("OnKeyPress")
+  if string.len(text) == self.searchLength then return end
+  self.searchLength = string.len(text)
+  if text == "" then text = nil end
+  args.filter = text
+  return setList(args)
 end
 
 --Callback
@@ -253,13 +235,11 @@ function setNpcName()
 end
 
 --Callback
-function updateTargetSize()
+function updateSeedValue()
   if not self.doingMainUpdate then return end
-  --self.currentOverride.identity = {}
-  self.manualInput = false
-  self.targetSize = widget.getSliderValue("sldTargetSize")
-  self.currentSeed = self.targetSize
-  widget.setText("lblSliderAmount", "Seed:  "..tostring(self.targetSize))
+  self.sliderValue = widget.getSliderValue("sldSeedValue")
+  self.currentSeed = self.sliderValue
+  widget.setText("lblSliderValue", "Seed:  "..tostring(self.sliderValue))
   updateNpc()
 end
 
@@ -273,7 +253,6 @@ function acceptBtn()
     npcLevel = self.currentLevel,
     npcParam = self.currentOverride
   }
-    dLogJson(args, "SENDING ARGS", true)
     self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
 end
 
@@ -328,26 +307,34 @@ function selectTab(index, option)
   end
 
   updateSpecies()
+  self.returnInfo.listType = listType
   selectedTab[listType](self.returnInfo)
+
+
   local returnInfo = self.returnInfo
+
   if returnInfo.useInfoList then
     setList(nil)
     widget.setVisible(self.techList, false)
     widget.setVisible(self.infoList, true)
+    widget.setVisible("tbSearchBox", false)
+    widget.setVisible("tbOverrideBox", true)
     setListInfo(returnInfo.selectedCategory, self.uniqueExportId)
     self.uniqueExportId = nil
+    return
   else
     setListInfo(nil)
     widget.setVisible(self.techList, true)
     widget.setVisible(self.infoList, false)
+    widget.setVisible("tbSearchBox", true)
+    widget.setVisible("tbOverrideBox", false)
   end
   
   
-  if returnInfo.skipTheRest then return end
+  if returnInfo.skipTheRest then setList(returnInfo); return end
+
   dLog("contining getting tab info")
-  returnInfo.listType = listType
   local genderPath = self.speciesJson.genders
-  returnInfo.species = self.currentSpecies
 
   if returnInfo.colors then
     getColorInfo(self.returnInfoColors, returnInfo)
@@ -369,7 +356,7 @@ function selectGenCategory(button, data)
   local tabData = widget.getSelectedData(self.tabGroupWidget)
   if data == "Generate" then
     widget.setVisible(self.scrollArea, true)
-    widget.setSliderEnabled("sldTargetSize", true)
+    widget.setSliderEnabled("sldSeedValue", true)
     widget.setVisible("spnPersonality", false)
     widget.setVisible("lblPersonality", false)
   elseif data == "Colorize" then
@@ -377,7 +364,7 @@ function selectGenCategory(button, data)
     widget.setVisible("spnPersonality", true)
     widget.setVisible("lblPersonality", true)
   elseif data == "Advanced" then
-    widget.setSliderEnabled("sldTargetSize", false)
+    widget.setSliderEnabled("sldSeedValue", false)
     widget.setVisible("lblBlockNameBox", false)
     widget.setVisible("spnPersonality", false)
     widget.setVisible("lblPersonality", false)
@@ -395,57 +382,83 @@ end
   --listType
 function setList(args)
   widget.clearListItems(self.techList)
-  local indx = 1
+  local indx = 0
   local displayText = nil
   local iTitle = nil
   local iData = nil
+  local selectedItem = nil
   if not args then dLog("no args found") return end
 
-  
-  widget.setData(string.format("%s", self.techList), args)
+  args.widgets = args.widgets or {}
 
   if (args.isOverride) and (args.currentSelection ~= "") then
     args.clearConfig = true
     local defaultListItem = widget.addListItem(self.techList)
-      widget.setText(string.format("%s.%s.techName", self.techList, defaultListItem), "Remove Overrides")
+      widget.setText(string.format("%s.%s.title", self.techList, defaultListItem), "Remove Overrides")
       widget.setData(string.format("%s.%s", self.techList, defaultListItem), {listType = tostring(args.listType), clearConfig = true})
   end 
+  local s = nil
   for i,v in pairs(args.title) do
-      local listItem = widget.addListItem(self.techList)
+      indx = indx+1
+      local continue = true
+      local v = v
       if args.colors then
-        displayText = tostring(indx)
-        iTitle = tostring(indx)
-        iData = args.colors[indx]
-        local _,hexId = next(iData)
-        if hexId then
-          displayText = "^#"..hexId..";"..displayText
+        v = indx
+      end
+      if args.filter then 
+        s,_ = string.find(v, args.filter, 1, true)
+        if s ~= 1 then 
+          continue = false
+        end
+      end
+    if continue then
+      displayText = tostring(v)
+      iTitle = tostring(v)
+      local listItem = widget.addListItem(self.techList)
+      
+      local hexId = nil
+      if args.colors then
+        local hexIndx = 0
+        iData = args.colors[v] or {}
+        for k,v in pairs(iData) do
+          hexIndx = hexIndx+1
+          hexId = tostring(v)
+          if hexIndx == 3 then break end
         end
       else
-        displayText = tostring(v) 
-        iTitle = tostring(v)
-        if args.iData then
-          iData = args.iData[i] or v
+        if args.iData and args.iData[v] then
+          iData = args.iData[v]
         else
           iData = v
         end
-        if iIcon then
-          widget.setImage(string.format("%s.%s.techIcon", self.techList, listItem), iIcon)
-        end
+      end
+      if hexId then
+        args.iIcon[v] = string.format("/interface/statuses/darken.png?setcolor=%s",hexId)
+        displayText = "^#"..hexId..";"..tostring(v)
+      end
+      if args.iIcon and args.iIcon[v] then
+        local iIcon = args.iIcon[v]
+        widget.setImage(string.format("%s.%s.techIcon", self.techList, listItem), iIcon)
       end
 
-      widget.setText(string.format("%s.%s.techName", self.techList, listItem), displayText)
+      args.widgets[iTitle] = listItem
+      widget.setText(string.format("%s.%s.title", self.techList, listItem), displayText)
       widget.setData(string.format("%s.%s", self.techList, listItem), {itemTitle=iTitle , itemData = iData})
 
       if v == args.currentSelection then 
-        sb.logInfo("setList:  entered setListSelected")
-        widget.setListSelected(self.techList, listItem)
+       selectedItem = tostring(listItem)
       end 
-      indx = indx+1
+    end
+  end
+  widget.setData(string.format("%s", self.techList), args)
+  if selectedItem then  
+    sb.logInfo("setList:  entered setListSelected")
+    widget.setListSelected(self.techList, selectedItem)
   end
 end
 
 
-function selectListItem(name, listData)
+function onSelectItem(name, listData)
   local listItem = widget.getListSelected(self.techList)
   if not listItem then return end
   local itemData = widget.getData(string.format("%s.%s", self.techList, listItem))
@@ -485,18 +498,15 @@ function getSpeciesAsset(speciesJson, genderIndx, species, optn, output)
   local info = {}
   local oOne = tostring(optn[1])
   local oTwo = tostring(optn[2])
-  dCompare("oOne - oTwo", oOne, oTwo)
-
  
   info[oOne] = genderPath[oOne] or optn[3]
   info[oTwo] = genderPath[oTwo]
 
   for _,v in ipairs(info[oTwo]) do
     table.insert(title, v)
-    table.insert(imgPath, string.format("/humanoid/%s/%s/%s.png",species,info[oOne],v))
   end
   output.title = title
-  output.imgPath = imgPath
+  output.iIcon = output.iIcon or imgPath
   output.hairGroup = info[oOne]
 end
 
@@ -524,18 +534,6 @@ function changeTabLabels(tabs, option)
       indx = indx+1
     end
   end
-end
-
-function getArgs()
-  local args = {
-      curSpecies = self.currentSpecies,
-      curSeed =  self.currentSeed,
-      curType = self.currentType,
-      curLevel = self.currentLevel,
-      curId = self.currentIdentity, 
-      curOverride = self.currentOverride
-    }
-  return args
 end
 
 function setIdleStance(index)
@@ -694,7 +692,6 @@ end
 function modNpc.Species(listData, cur, curO)
   local curO = curO.identity
   if self.currentSpecies ~= listData.itemTitle then
-  
     dLog({listData,curO},"modNPC.HitSpecies")
     self.currentSpecies = tostring(listData.itemTitle)
     updateNpc(true)
@@ -811,35 +808,49 @@ function modNpc.Prsnlity(listData,cur,curO)
 end
 
 function selectedTab.Species(args)
-    args = args or {}
-    args.title = copy(self.speciesList)
-    args.currentSelection = self.currentSpecies
-    args.isOverride = false
+  args = args or {}
+  args.title = copy(self.speciesList)
+  args.currentSelection = self.currentSpecies
+  args.isOverride = false
+  args.skipTheRest = true
+  args.iIcon = {}
+  --JSON indx starts at 0,  lua starts at 1.  RIP
+  local genderIndx = getGenderIndx(self.currentIdentity.gender)-1
+  for _,v in ipairs(self.speciesList) do
+    local jsonPath = string.format("/species/%s.species:genders.%s.characterImage",v, tostring(genderIndx))
+    dLog(jsonPath, "JSON PATH")
+    local image = root.assetJson(jsonPath)
+    args.iIcon[v] = image
+  end
 end
 function selectedTab.NpcType(args)
-    args = args or {}
-    args.title = copy(self.npcTypeList)
-    args.currentSelection = self.currentType
-    args.isOverride = false
+  args = args or {}
+  args.title = copy(self.npcTypeList)
+  args.currentSelection = self.currentType
+  args.isOverride = false
+  args.skipTheRest = true
+  args.iIcon = {}
+
 end
 function selectedTab.Hair(args)
-    args.currentSelection = self.currentOverride.identity.hairType or self.currentIdentity.hairType 
-    args.title = {}
-    args.isOverride = true
+  args.currentSelection = self.currentOverride.identity.hairType or self.currentIdentity.hairType 
+  args.title = {}
+  args.isOverride = true
 end
 function selectedTab.FHair(args)
-    args.currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType
-    args.title = {}
-    args.isOverride = true
+  args.currentSelection = self.currentOverride.identity.facialHairType or self.currentIdentity.facialHairType
+  args.title = {}
+  args.isOverride = true
 end
 function selectedTab.FMask(args)
-    args.currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType
-    args.title = {}
-    args.isOverride = true
+  args.currentSelection = self.currentOverride.identity.facialMaskType or self.currentIdentity.facialMaskType
+  args.title = {}
+  args.isOverride = true
 end
 function selectedTab.HColor(args)
   args.title = {}
   args.colors = {}
+  args.iIcon = {}
   if compareDirectiveToColor(self.currentIdentity.hairDirectives, self.speciesJson.bodyColor) then
     self.returnInfoColors = self.speciesJson.bodyColor
   elseif compareDirectiveToColor(self.currentIdentity.hairDirectives, self.speciesJson.hairColor) then
@@ -854,6 +865,7 @@ end
 function selectedTab.FHColor(args)
   args.title = {}
   args.colors = {}
+  args.iIcon = {}
   if compareDirectiveToColor(self.currentIdentity.facialHairDirectives, self.speciesJson.bodyColor) then
     self.returnInfoColors = self.speciesJson.bodyColor
   elseif compareDirectiveToColor(self.currentIdentity.facialHairDirectives, self.speciesJson.hairColor) then
@@ -868,6 +880,7 @@ end
 function selectedTab.FMColor(args)
   args.title = {}
   args.colors = {}
+  args.iIcon = {}
   if compareDirectiveToColor(self.currentIdentity.facialMaskDirectives, self.speciesJson.bodyColor) then
     self.returnInfoColors = self.speciesJson.bodyColor
   elseif compareDirectiveToColor(self.currentIdentity.facialMaskDirectives, self.speciesJson.hairColor) then
@@ -882,6 +895,7 @@ end
 function selectedTab.BColor(args)
   args.title = {}
   args.colors = {}
+  args.iIcon = {}
   if #self.speciesJson.bodyColor > 1 then
     self.returnInfoColors = self.speciesJson.bodyColor
   else
@@ -892,6 +906,7 @@ end
 function selectedTab.UColor(args)
   args.title = {}
   args.colors = {}
+  args.iIcon = {}
   if #self.speciesJson.undyColor > 1 then
     self.returnInfoColors =  self.speciesJson.undyColor
   else
@@ -914,7 +929,6 @@ function selectedTab.Prsnlity(args)
   end
   args.isOverride = true
 end
-
 
 function selectedTab.Export(args)
   args.useInfoList = true
@@ -944,7 +958,6 @@ function selectedTab.Export(args)
   dLog("Search ID:  "..string.lower(key).."\n\n"..exportString.."\n\n")
   dLog("")
   dLog("")
-
 end
 
 function selectedTab.Override(args)
@@ -958,8 +971,6 @@ function selectedTab.Info(args)
   args.skipTheRest = true
   args.selectedCategory = self.categoryWidgetData
 end
-
-
 
 
 function override.apply(curO, cur, applyParam, part, increm)
