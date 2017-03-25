@@ -126,7 +126,7 @@ end
 function getUserConfig(key)
   local config = root.getConfiguration(key)
   if not config then
-    local defaults = sb.assetJson("/interface/scripted/NpcMenu")
+    local defaults = sb.assetJson("/interface/scripted/NpcMenu/modConfig.config")
     root.setConfiguration(key, })
     config = root.getConfiguration(key)
   end

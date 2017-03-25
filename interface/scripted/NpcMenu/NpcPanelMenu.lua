@@ -103,7 +103,7 @@ function init()
                     "backCosmetic"
                   }
                   --primary and sheathed primary are always the goto weapons, secondary is for shields.
-                  --duel wielding weapons for npcs just doesnt seem to work.
+                  --duel wielding weapons for npcs doesn't work.
   self.equipBagStorage = widget.itemGridItems("itemGrid")
   self.gettingInformation = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
   self.currentSpecies = self.gettingInformation.npcSpecies
@@ -281,7 +281,6 @@ function setListInfo(categoryName, uniqueId)
   local tabInfo = config.getParameter("tabOptions."..categoryName)
   local info = config.getParameter("infoDescription")
   local subInfo = info[categoryName]
-  --dLogJson(subInfo, "subInfo")
   if uniqueId then 
     for i,v in ipairs(subInfo) do
       if v.key == "uniqueID" then 
@@ -1004,15 +1003,15 @@ end
 
 function override.set(curO, cur, setParam, ...)
     local setParam = config.getParameter("overrideConfig.setParams."..setParam)
-    if not setParam then print("Cannot find parameter") end
+    if not setParam then dLog("Cannot find parameter") end
     local setPath = config.getParameter("overrideConfig.path."..setParam[1])
-    if not setPath then print("cannot find path to parameter") end
+    if not setPath then dLog("cannot find path to parameter") end
     local setPathTable = getPathStr(curO, setPath)
     if not setPathTable then 
         setPathTable = setPathStr(curO,setPath,{}) 
     end
     local formattedParam = formatParam(setParam[2], ...)
-    if not formattedParam then print("formatted incorrectly") return end
+    if not formattedParam then dLog("formatted incorrectly") return end
     setPathTable[setParam[1]] = formattedParam
 end
 
