@@ -1,7 +1,7 @@
 require "/scripts/util.lua"
 require "/scripts/npcspawnutil.lua"
 
-logENV()
+
 
 spnIdleStance = {}
 modNpc = {}
@@ -37,7 +37,7 @@ function init()
     "portraitSlot19",
     "portraitSlot20"
   }
-  self.npcTypeList = config.getParameter("npcTypeList")
+  self.npcTypeList = copy(self.config.npcTypeList)
   self.gettingNpcData = nil
   self.sendingData = nil
 
@@ -156,9 +156,9 @@ function update(dt)
   elseif self.firstRun then
     self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
     appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
-    appendToListIfUnique(self.npcTypeList, self.config.additionalNpcTypes)
     table.sort(self.speciesList)
     table.sort(self.npcTypeList)
+    self.config = nil
     local protectorate = root.npcConfig("villager")
     local graduation = protectorate.scriptConfig.questGenerator.graduation
     local listOfProtectorates = {}
@@ -1014,10 +1014,6 @@ function override.set(curO, cur, setParam, ...)
     if not formattedParam then dLog("formatted incorrectly") return end
     setPathTable[setParam[1]] = formattedParam
 end
-
-
-
-
 
 function override.detach()
   world.sendEntityMessage(pane.containerEntityId(), "detachNpc")
