@@ -2,7 +2,7 @@ require "/scripts/npcspawnutil.lua"
 require "/scripts/util.lua"
 
 function init(virtual)
-    sb.logInfo("NpcPanel: init")
+    dLog("NpcPanel: init")
     storage.npcSpecies = storage.npcSpecies
     storage.npcSeed = storage.npcSeed or math.random(20000)
     storage.npcLevel = storage.npcLevel or math.max(world.threatLevel(), 1)
@@ -18,14 +18,14 @@ function init(virtual)
     appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
     appendToListIfUnique(self.npcTypeList, self.config.additionalNpcTypes)
     randomItUp()
-    local args = {
-      npcSpecies = storage.npcSpecies,
-      npcSeed = storage.npcSeed,
-      npcLevel = storage.npcLevel,
-      npcType = storage.npcType,
-      npcParam = storage.npcParam
-    }
-    object.setConfigParameter("npcArgs", args)
+    --local args = {
+    --  npcSpecies = storage.npcSpecies,
+    --  npcSeed = storage.npcSeed,
+    --  npcLevel = storage.npcLevel,
+    --  npcType = storage.npcType,
+    --  npcParam = storage.npcParam
+    --}
+    --object.setConfigParameter("npcArgs", args)
     
     --if storage.keepStorageInfo then retainObjectInfo() end
 
@@ -49,17 +49,15 @@ function init(virtual)
       setNpcData(args)
     end)
 
-   -- message.setHandler("detachNpc", function(_,_)
-   --   detachNpc()
-   -- end)
+    message.setHandler("detachNpc", function(_,_)
+      detachNpc()
+    end)
     if not virtual then
       object.setInteractive(true)
     end
-    testFunction()
 end
 
-function testFunction()
-end
+
 
 
 function onInteraction(args)
