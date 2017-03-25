@@ -2,12 +2,9 @@ require "/scripts/npcspawnutil.lua"
 require "/scripts/util.lua"
 
 function init(virtual)
-  	if not virtual then
-    	object.setInteractive(true)
-  	end
-    sb.logInfo("NpcPanel: init")
+    dLog("NpcPanel: init")
     storage.npcSpecies = storage.npcSpecies
-    storage.npcSeed = storage.npcSeed or math.random(20000)
+    storage.npcSeed = storage.npcSeed or math.random(0,20000)
     storage.npcLevel = storage.npcLevel or math.max(world.threatLevel(), 1)
     storage.npcType = storage.npcType 
     storage.npcParam = storage.npcParam
@@ -17,9 +14,8 @@ function init(virtual)
     storage.keepStorageInfo = storage.keepStorageInfo or false
     self.config = getUserConfig("npcSpawnerPlus")
     self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-    self.npcTypeList = config.getParameter("npcTypeList")
+    self.npcTypeList = copy(self.config.npcTypeList)
     appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
-    appendToListIfUnique(self.npcTypeList, self.config.additionalNpcTypes)
     randomItUp()
     local args = {
       npcSpecies = storage.npcSpecies,
@@ -29,6 +25,7 @@ function init(virtual)
       npcParam = storage.npcParam
     }
     object.setConfigParameter("npcArgs", args)
+    
     --if storage.keepStorageInfo then retainObjectInfo() end
 
     
@@ -51,24 +48,24 @@ function init(virtual)
       setNpcData(args)
     end)
 
-   -- message.setHandler("detachNpc", function(_,_)
-   --   detachNpc()
-   -- end)
-
+    message.setHandler("detachNpc", function(_,_)
+      detachNpc()
+    end)
+    if not virtual then
+      object.setInteractive(true)
+    end
 end
 
-function onInteraction(args)
-  local config = config.getParameter("uiconfig")
-  local args = {
-    npcSpecies = storage.npcSpecies,
-    npcSeed = storage.npcSeed,
-    npcLevel = storage.npcLevel,
-    npcType = storage.npcType,
-    npcParam = storage.npcParam
-  }
-  object.setConfigParameter("npcArgs", args)
-  return {"ScriptConsole", config}
-end
+
+
+
+--function onInteraction(args)
+--  dLog("TEST !@ IS THIS HITTING?")
+--  local config = config.getParameter("uiconfig")
+--  dLogJson(args,"ON INTERACTION",true)
+--  object.setConfigParameter("npcArgs", args)
+--  return {"ScriptConsole", config}
+--end
 
 function update(dt)
   if not storage.uniqueId then
@@ -95,9 +92,7 @@ function update(dt)
       if self.needsEquipCheck then
         return containerCallback
       end
-      --local variant = root.npcVariant(storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
-      --dLogJson(variant, "VARIANT", true)
-      --storage.npcParam.identity = copy(variant.humanoidIdentity)
+
       self.spawnTimer = math.floor(self.maxSpawnTime)
     else
       self.spawnTimer = self.spawnTimer - dt
@@ -112,33 +107,10 @@ function update(dt)
 
 end 
 
---function retainObjectInfo()
---  local id = entity.id()
---   
---  object.setConfigParameter("retainObjectParametersInItem", true)
---  object.setConfigParameter("retainScriptStorageInItem", true)
---  object.setConfigParameter("shortdescription", storage.npcParam.identity.name.."'s Spawn Beacon")
---  object.setConfigParameter("description", "This spawner has been attuned to a specific Npc.")
---  for k,v in pairs(storage) do
---    storage[k] = v
---  end
---end
 
 function die()
   killNpc()
 end
-
---function getStorage()
---  local initStorage = config.getParameter("initialStorage", {})
---  for k,v in pairs(initStorage) do
---    storage[k] = v
---  end
---  local initGui = config.getParameter("initialGui", {})
---  for k,v in pairs(initGui) do
---    object.setConfigParameter(k,v)
---  end
---  --dLogJson(initStorage, "INITIAL STORAGE")
---end
 
 function killNpc()
   self.spawnTimer = self.maxSpawnTime
@@ -191,28 +163,15 @@ function setGear()
   --function calls to the NPC character. Updates all the NPC's gear.
   --dLog("setting Gear")
   if spawnedID == 0 then return end
-
-    world.callScriptedEntity(spawnedID, "setNpcItemSlot","primary",weaponID)
-    world.callScriptedEntity(spawnedID, "setNpcItemSlot","alt",altID)
+  --Desabled because it does not take into account sheathed weapons.
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","primary",weaponID)
+    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","alt",altID)
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","back",backID)
-    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","backCosmetic",backID)
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","head",headID)
-    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","headCosmetic",chestID)
-
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","chest",chestID)
-    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","chestCosmetic",chestID)
-
     world.callScriptedEntity(spawnedID, "setNpcItemSlot","legs",legsID)
-    --world.callScriptedEntity(spawnedID, "setNpcItemSlot","legsCosmetic",legsID)
 
-  dLog("endSettingGear Gear")
- -- if spawnedID then
- --   world.callScriptedEntity(spawnedID, "npc.setDisplayNametag", true)
- -- end
-
-  -- world.callScriptedEntity(spawnedID, "logSeed")
-  --this re-init stuff seems a little wonky, but needs to be done to manage combat behavior of the NPC when we are changing their weapon from ranged to melee and vice versa.
-  -- If we do not already have a weapon and if there IS a weapon in the chest to be switched to, set our current weapon to it and re-initialize the NPC.
+  --Weapon slots are calculated everytime the npc is created/recreated.  Therefore if a weapon conifguration is changed, 
   if self.weapon == nil then
     if weaponID ~= nil then
       self.weapon = weaponID

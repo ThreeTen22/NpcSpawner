@@ -126,7 +126,9 @@ end
 function getUserConfig(key)
   local config = root.getConfiguration(key)
   if not config then
-    root.setConfiguration(key, {additionalNpcTypes = jarray(), additionalSpecies = {"fenerox"}})
+    local defaults = root.assetJson("/interface/scripted/NpcMenu/modConfig.config")
+    dLogJson(defaults, "DEFAULTS")
+    root.setConfiguration(key, defaults)
     config = root.getConfiguration(key)
   end
   return root.getConfiguration(key)
@@ -138,5 +140,61 @@ function isContainerEmpty(itemBag)
    end
    return true
 end
+
+function getPathStr(t, str)
+    if str == "" then return t end
+    local s, _ = string.find(str, ".", 1, true)
+    if not s then return t[str] end
+    return jsonPath(t,str)
+end
+
+function setPathStr(t, pathString, value)
+    local s, _ = string.find(str, ".", 1, true)
+    if not s then t[str] = value return end
+    jsonSetPath(t, pathString,value)
+end
+
+function toBool(value)
+    if value then
+      if value == "true" then return true end
+      if value == "false" then return false end 
+    end
+    return nil
+end
+
+
+function formatParam(strType,...)
+    local params = {...}
+    if #params == 0 then return nil end
+    if strType == "boolean" then 
+        local value = toBool(params[1])
+        return value
+    elseif strType == "integer" then
+        local value = tonumber(params[1])
+        if not value then return nil end
+        return math.floor(value)
+    elseif strType == "float" or strType == "double" then
+        local value = tonumber(params[1])
+        if not value then return nil end
+        return value*1.0
+    elseif strType == "array" then
+        local returnTable = {}
+        local value = ""
+        for _,v in ipairs(params) do
+            if tonumber(v) then
+                value = tonumber(v)
+            elseif toBool(v) then
+                value = toBool(v)
+            else
+                value = v
+            end
+            returnTable.insert(returnTable,value)
+        end
+        return returnTable
+    else
+      return tostring(params[1])
+    end
+end
+
 
 dComp["nil"] = function(input) return dLog("nil") end

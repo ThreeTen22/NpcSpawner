@@ -1,9 +1,15 @@
 require "/scripts/util.lua"
 require "/scripts/npcspawnutil.lua"
 
+
+
 spnIdleStance = {}
 modNpc = {}
 selectedTab = {}
+override = {}
+
+
+
 
 function init()
   self.config = getUserConfig("npcSpawnerPlus")
@@ -30,8 +36,8 @@ function init()
     "portraitSlot18",
     "portraitSlot19",
     "portraitSlot20"
-    }
-  self.npcTypeList = world.getObjectParameter(pane.containerEntityId(),"npcTypeList")
+  }
+  self.npcTypeList = copy(self.config.npcTypeList)
   self.gettingNpcData = nil
   self.sendingData = nil
 
@@ -79,10 +85,6 @@ function init()
   self.firstRun = true
   self.itemData = nil
 
-  widget.setSliderRange("sldTargetSize",0, self.worldSize)
-  widget.setSliderEnabled("sldTargetSize", true)
-  widget.setSliderValue("sldTargetSize",self.targetSize)
-  local currentRatio = self.currentSize / self.worldSize
 
   self.itemsToAdd = {}
 
@@ -101,7 +103,7 @@ function init()
                     "backCosmetic"
                   }
                   --primary and sheathed primary are always the goto weapons, secondary is for shields.
-                  --duel wielding weapons for npcs just doesnt seem to work.
+                  --duel wielding weapons for npcs doesn't work.
   self.equipBagStorage = widget.itemGridItems("itemGrid")
   self.gettingInformation = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
   self.currentSpecies = self.gettingInformation.npcSpecies
@@ -110,6 +112,14 @@ function init()
   self.currentLevel = self.gettingInformation.npcLevel
   self.currentOverride = self.gettingInformation.npcParam or {identity = {}, scriptConfig = {}}
   self.slotCount = 12
+  self.targetSize = self.currentSeed
+  dLog(self.currentSeed,"currentSEED")
+  self.targetSize = tonumber(self.targetSize) or 0
+
+  widget.setSliderRange("sldTargetSize",0, self.worldSize)
+  widget.setSliderEnabled("sldTargetSize", true)
+  widget.setSliderValue("sldTargetSize",self.targetSize)
+  widget.setText("lblSliderAmount", "Seed:  "..tostring(self.targetSize))
 end
 
 --uninit WORKS. Question is, can we send entity messages without worrying about memory leaks?  Answer: fuck entity messages.
@@ -149,9 +159,9 @@ function update(dt)
   elseif self.firstRun then
     self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
     appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
-    appendToListIfUnique(self.npcTypeList, self.config.additionalNpcTypes)
     table.sort(self.speciesList)
     table.sort(self.npcTypeList)
+    self.config = nil
     local protectorate = root.npcConfig("villager")
     local graduation = protectorate.scriptConfig.questGenerator.graduation
     local listOfProtectorates = {}
@@ -212,75 +222,13 @@ function finalizeOverride()
   self.overrideText = widget.getText(self.overrideTextBox)
 
   local parsedStrings = util.split(self.overrideText, " ")
-  --dLogJson(parsedStrings, "ParsedStrings:  ")
+  dLogJson(parsedStrings, "ParsedStrings:  ")
   
   
-
-
-  if parsedStrings[1] == "hue" and parsedStrings[2] == "hair" then
-    self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives or  self.currentIdentity.hairDirectives
-    self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives.."?hueshift="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
+  if override[parsedStrings[1]] then
+    dLog("entered override Check")
+    override[parsedStrings[1]](self.currentOverride,self.currentIdentity, parsedStrings[2], parsedStrings[3], parsedStrings[4])
     return updateNpc()
-  end
-
-  if parsedStrings[1] == "hue" and parsedStrings[2] == "body" then
-    self.currentOverride.identity.bodyDirectives = self.currentOverride.identity.bodyDirectives or  self.currentIdentity.bodyDirectives
-    self.currentOverride.identity.bodyDirectives = self.currentOverride.identity.bodyDirectives.."?hueshift="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc()
-  end
-
-  if parsedStrings[1] == "hue" and parsedStrings[2] == "emote" then
-    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives or  self.currentIdentity.emoteDirectives
-    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives.."?hueshift="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc()
-  end
-
-  if parsedStrings[1] == "sat" and parsedStrings[2] == "hair" then
-    self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives or  self.currentIdentity.hairDirectives
-    self.currentOverride.identity.hairDirectives = self.currentOverride.identity.hairDirectives.."?saturation="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc()
-  end
-
-  if parsedStrings[1] == "sat" and parsedStrings[2] == "body" then
-    self.currentOverride.identity.bodyDirectives = self.currentOverride.identity.bodyDirectives or  self.currentIdentity.bodyDirectives
-    self.currentOverride.identity.bodyDirectives = self.currentOverride.identity.bodyDirectives.."?saturation="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc()
-  end
-
-  if parsedStrings[1] == "sat" and parsedStrings[2] == "emote" then
-    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives or  self.currentIdentity.emoteDirectives
-    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives.."?saturation="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc()
-  end
-
-  if parsedStrings[1] == "sat" and parsedStrings[2] == "emote" then
-    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives or  self.currentIdentity.emoteDirectives
-    self.currentOverride.identity.emoteDirectives = self.currentOverride.identity.emoteDirectives.."?saturation="..parsedStrings[3]
-    widget.setText(self.overrideTextBox, parsedStrings[1].." "..parsedStrings[2].." ")
-    return updateNpc()
-  end
-
-  if 
-  if parsedStrings[1] ~= "nil" then
-    self.currentSpecies = parsedStrings[1]
-  end
-
-  if parsedStrings[2] ~= "nil" then
-    self.currentType = parsedStrings[2]
-  end
-
-  if parsedStrings[3] ~= "nil" then
-    self.currentLevel = parsedStrings[3]
-  end
-
-  if parsedStrings[4] ~= "nil" then
-    self.currentSeed = parsedStrings[4]
   end
 
   self.manualInput = true
@@ -336,7 +284,6 @@ function setListInfo(categoryName, uniqueId)
   local tabInfo = config.getParameter("tabOptions."..categoryName)
   local info = config.getParameter("infoDescription")
   local subInfo = info[categoryName]
-  --dLogJson(subInfo, "subInfo")
   if uniqueId then 
     for i,v in ipairs(subInfo) do
       if v.key == "uniqueID" then 
@@ -380,9 +327,7 @@ function selectTab(index, option)
     return setList(nil) 
   end
 
-  if not(self.speciesJson and (self.speciesJson.kind == self.currentSpecies)) then
-    self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
-  end
+  updateSpecies()
   selectedTab[listType](self.returnInfo)
   local returnInfo = self.returnInfo
   if returnInfo.useInfoList then
@@ -731,7 +676,11 @@ function getDirectiveAtEnd(directiveBase)
   return table
 end
 
-
+function updateSpecies()
+    if not(self.speciesJson and (self.speciesJson.kind == self.currentSpecies)) then
+    self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
+  end
+end
 
 function getGenderIndx(name)
   local genderIndx
@@ -739,6 +688,8 @@ function getGenderIndx(name)
     if v.name == name then return i end
   end
 end
+
+
 ------CHANGE NPC FUNCTIONS---------
 function modNpc.Species(listData, cur, curO)
   local curO = curO.identity
@@ -749,6 +700,7 @@ function modNpc.Species(listData, cur, curO)
     updateNpc(true)
     self.currentOverride.identity = {}
   end
+  updateSpecies()
   local speciesIcon = self.speciesJson.genders[getGenderIndx(self.currentIdentity.gender)].characterImage
   widget.setImage("techIconHead",speciesIcon)
 end
@@ -782,10 +734,8 @@ function modNpc.FMask(listData, cur, curO)
   local curO = curO.identity
   if listData.clearConfig then 
     dLog("listData.fMask : clearConfig:  entered ClearConfig")
-    --curO["facialHairGroup"] = nil
     curO["facialMaskType"] = nil
   else
-    --curO.facialHairGroup = listData.facialHairGroup
     curO.facialMaskType = listData.itemTitle
   end
 end
@@ -997,8 +947,78 @@ function selectedTab.Export(args)
 
 end
 
+function selectedTab.Override(args)
+  args.useInfoList = true
+  args.skipTheRest = true
+  args.selectedCategory = "OverrideOptn"
+end
+
 function selectedTab.Info(args)
   args.useInfoList = true
   args.skipTheRest = true
   args.selectedCategory = self.categoryWidgetData
 end
+
+
+
+
+function override.apply(curO, cur, applyParam, part, increm)
+    dLog("entering override.apply")
+    local applyParams = config.getParameter("overrideConfig.applyParams."..applyParam)
+     if not applyParams then dLog("faulty params given") return end
+    local partDirectives = config.getParameter("overrideConfig.bodyDirectives."..part)
+    if not partDirectives then dLog("faulty part given") return end
+    local wrapper = {}
+    for _,v in ipairs(partDirectives) do
+        local applyPath = config.getParameter("overrideConfig.path."..v)
+        local applyPathTable = getPathStr(curO, applyPath)
+        if not applyPathTable[v] then applyPathTable[v] = copy(cur)[v] end
+        if applyPathTable[v] == "" then dLog("directive doesn't exist") return end
+        local directive = applyPathTable[v]
+        local b, _, value = string.find(directive, applyParams[1])
+        if not b then 
+            directive = directive..applyParams[2]
+            value = increm
+        else
+            directive = string.gsub(directive,applyParams[1],applyParams[2],1)
+            value = tostring(math.floor(tonumber(value) + tonumber(increm)))
+        end
+        wrapper["1"] = value
+        applyPathTable[v] = string.gsub(directive,"<(.)>",wrapper,1)
+    end    
+end
+
+function override.remove(curO, _, applyParam, part)
+  dLog("entering override.remvoe")
+  local applyParams = config.getParameter("overrideConfig.applyParams."..applyParam)
+  if not applyParams then dLog("faulty params given") return end
+  applyParams[2] = ""
+  local partDirectives = config.getParameter("overrideConfig.bodyDirectives."..part)
+  if not partDirectives then dLog("faulty part given") return end
+  for _,v in ipairs(partDirectives) do
+      local removePath = config.getParameter("overrideConfig.path."..v)
+      local applyPathTable = getPathStr(curO, removePath)
+      if not applyPathTable[v] or applyPathTable[v] == "" then return end
+      local directive = applyPathTable[v]
+      applyPathTable[v] = string.gsub(directive,applyParams[1],applyParams[2],1)
+  end    
+end
+
+function override.set(curO, cur, setParam, ...)
+    local setParam = config.getParameter("overrideConfig.setParams."..setParam)
+    if not setParam then dLog("Cannot find parameter") return end
+    local setPath = config.getParameter("overrideConfig.path."..setParam[1])
+    if not setPath then dLog("cannot find path to parameter") return end
+    local setPathTable = getPathStr(curO, setPath)
+    if not setPathTable then 
+      setPathTable = setPathStr(curO,setPath,{})
+    end
+    local formattedParam = formatParam(setParam[2], ...)
+    if not formattedParam then dLog("formatted incorrectly") return end
+    setPathTable[setParam[1]] = formattedParam
+end
+
+function override.detach()
+  world.sendEntityMessage(pane.containerEntityId(), "detachNpc")
+end
+
