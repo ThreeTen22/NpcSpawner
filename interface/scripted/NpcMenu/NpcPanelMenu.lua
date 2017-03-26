@@ -886,29 +886,29 @@ function selectedTab.NpcType(args)
   args.isOverride = false
   args.skipTheRest = true
   args.iIcon = {}
-  args.iIcon = world.getProperty(self.npcTypeStorage, {})
-
+  local worldStorage = world.getProperty(self.npcTypeStorage, {})
   local updateToWorld = false
   local typeParams = config.getParameter("npcTypeParams")
-  local hIcon = config.getParameter("npcTypeParams.hostile.icon")
-  local gIcon = config.getParameter("npcTypeParams.guard.icon") 
-  local mIcon = config.getParameter("npcTypeParams.merchant.icon")
-  local cIcon = config.getParameter("npcTypeParams.crew.icon")
-  local vIcon = config.getParameter("npcTypeParams.villager.icon")
+  local hIcon = root.jsonQuery(typeParams,"hostile.icon")
+  local gIcon = root.jsonQuery(typeParams,"guard.icon") 
+  local mIcon = root.jsonQuery(typeParams,"merchant.icon")
+  local cIcon = root.jsonQuery(typeParams,"crew.icon")
+  local vIcon = root.jsonQuery(typeParams,"villager.icon")
 
   for _,v in ipairs(self.npcTypeList) do
-    if not args.iIcon[v] then
+    if not worldStorage.iIcon[v] then
       local npcConfig = root.npcConfig(v)
-      if checkIfNpcIs(v, npcConfig, "hostile") then args.iIcon[v] = hIcon; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, "guard") then args.iIcon[v] = gIcon ; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, "merchant") then args.iIcon[v] = mIcon ; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, "crew") then args.iIcon[v] = cIcon; updateToWorld = true;
+      if checkIfNpcIs(v, npcConfig, "hostile") then worldStorage.iIcon[v] = hIcon; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, "guard") then worldStorage.iIcon[v] = gIcon ; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, "merchant") then worldStorage.iIcon[v] = mIcon ; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, "crew") then worldStorage.iIcon[v] = cIcon; updateToWorld = true;
       else  
-        args.iIcon[v] = vIcon
+        worldStorage.iIcon[v] = vIcon
       end
     end
   end
   if updateToWorld then
+    args.skyTime = world.skyTime()
     world.setProperty(self.npcTypeStorage, args.iIcon)
   end  
 end
@@ -1134,7 +1134,7 @@ function override.detach()
   return true
 end
 
-function override.clearworldstorage()
+function override.clearCache()
   world.setProperty(self.npcTypeStorage, "null")
   world.setProperty(self.npcTypeStorage, jobject())
   return true
