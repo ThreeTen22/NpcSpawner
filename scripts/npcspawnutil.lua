@@ -26,7 +26,7 @@ function dLogJson(input, prefix, clean)
 end
 
 function dCompare(prefix, one, two)
-  
+
   dComp[type(one)](one) 
   dComp[type(two)](two) 
 end
@@ -120,7 +120,6 @@ if not t2 or #t2 < 1 then return t1 end
 local merged = util.mergeLists(t1,t2)
 local hash = {}
 local res = {}
-
   for _,v in ipairs(merged) do
      if (not hash[v]) then
          res[#res+1] = v -- you could print here instead of saving to result table if you wanted

@@ -20,8 +20,18 @@ function init()
 
   table.sort(self.speciesList)
   table.sort(self.npcTypeList)
+
+  local protectorate = root.npcConfig("villager")
+  
+  local listOfProtectorates = {}
+  local lotsOfNpcs = sb.jsonQuery(protectorate, "scriptConfig.questGenerator.graduation.nextNpcType")
+  
+  for _,v in ipairs(lotsOfNpcs) do
+    local name = v[2]
+    table.insert(listOfProtectorates, tostring(name))
+  end
+  self.npcTypeList = mergeUnique(self.npcTypeList, listOfProtectorates)
   self.returnInfo = {}
-  dLog("NpcPanelMenu: init")
   
 
 
@@ -38,7 +48,7 @@ function init()
   self.tabGroupWidget = "rgTabs"
   self.categoryWidget = "sgSelectCategory"
   self.categoryWidgetData = "Generate"
-
+  self.nameBox = "tbNameBox"
   ---OVERRIDE VARS----
   self.overrideTextBox = "tbOverrideBox"
   self.overrideText = ""
@@ -120,16 +130,6 @@ function update(dt)
       updateNpc() 
     end
   elseif self.firstRun then
-    local protectorate = root.npcConfig("villager")
-    local graduation = protectorate.scriptConfig.questGenerator.graduation
-    local listOfProtectorates = {}
-    if graduation and graduation.nextNpcType then
-      for _,v in ipairs(graduation.nextNpcType) do
-        local name = v[2]
-        table.insert(listOfProtectorates, tostring(name))
-      end
-    end
-    mergeUnique(self.npcTypeList, listOfProtectorates)
     self.firstRun = false
   else
     widget.setSelectedOption(self.categoryWidget, -1)
@@ -186,16 +186,19 @@ function spnIdleStance.down()
   return 
 end
 
-function updateOverrideText(dt)
+function updateOverrideText(tbName)
   local timer = 0
+  local name = tbName
+  local dt = script.updateDt()
   while timer < self.colorChangeTime do
+
     timer = math.min(timer + dt, self.colorChangeTime)
     local ratio = timer/self.colorChangeTime
     local count = 0
     for i,v in ipairs(self.curOverrideColor) do
       self.curOverrideColor[i] = math.min(interp.sin(ratio,v,255),255) 
     end
-    widget.setFontColor(self.overrideTextBox, self.curOverrideColor)
+    widget.setFontColor(name, self.curOverrideColor)
     coroutine.yield()
   end
   script.setUpdateDelta(20)
@@ -215,7 +218,9 @@ function onOverrideEnter()
   end
   widget.setText(self.overrideTextBox, self.overrideText)
 
-
+  while self.tbOverrideColorRoutine do
+    self.tbOverrideColorRoutine()
+  end
 
   local parsedStrings = util.split(self.overrideText, " ")
   
@@ -229,12 +234,14 @@ function onOverrideEnter()
     self.curOverrideColor = copy(self.tbGreenColor)
     script.setUpdateDelta(3)
     self.tbOverrideColorRoutine = coroutine.wrap(updateOverrideText)
+    self.tbOverrideColorRoutine(self.overrideTextBox)
     return updateNpc()
   else
     widget.setFontColor(self.overrideTextBox, self.tbRedColor)
     self.curOverrideColor = copy(self.tbRedColor)
     script.setUpdateDelta(3)
     self.tbOverrideColorRoutine = coroutine.wrap(updateOverrideText)
+    self.tbOverrideColorRoutine(self.overrideTextBox)
   end
 end
 
@@ -255,7 +262,11 @@ end
 --Callback
 
 function setNpcName()
-  local text = widget.getText("tbNameBox")
+  while self.tbOverrideColorRoutine do
+    self.tbOverrideColorRoutine()
+  end
+
+  local text = widget.getText(self.nameBox)
   if text == "" then
     --get seed name
     local newText = self.currentIdentity.name
@@ -263,10 +274,17 @@ function setNpcName()
       self.currentOverride.identity.name = newText
     end
     newText = newText or "DEMO"
-    widget.setText("tbNameBox", newText)
+    widget.setText(self.nameBox, newText)
   else
     self.currentOverride.identity.name = text
   end
+
+  widget.setFontColor(self.nameBox, self.tbGreenColor)
+  self.curOverrideColor = copy(self.tbGreenColor)
+  script.setUpdateDelta(3)
+  self.tbOverrideColorRoutine = coroutine.wrap(updateOverrideText)
+  self.tbOverrideColorRoutine(self.nameBox)
+
 end
 
 --Callback
@@ -643,9 +661,9 @@ function updateNpc(noVisual)
 
   self.currentIdentity = copy(variant.humanoidIdentity)
   if curOverride.identity and curOverride.identity.name then
-    widget.setText("tbNameBox", curOverride.identity.name)
+    widget.setText(self.nameBox, curOverride.identity.name)
   else
-    widget.setText("tbNameBox", self.currentIdentity.name)
+    widget.setText(self.nameBox, self.currentIdentity.name)
   end
   if noVisual then return end
 
@@ -867,25 +885,34 @@ function selectedTab.NpcType(args)
   self.curSelectedTitle = self.currentType
   args.isOverride = false
   args.skipTheRest = true
-  args.iIcon = world.getObjectParameter(pane.containerEntityId(),"npcTypeStorage", {})
-  local updateToObject = false
+  --world.setProperty("npcTypeStorage", jobject())
+  args.iIcon = {}
+  args.iIcon = world.getProperty("npcTypeStorage", {})
+
+  local updateToWorld = false
+  local typeParams = config.getParameter("npcTypeParams")
   for _,v in ipairs(self.npcTypeList) do
     if not args.iIcon[v] then
       local npcConfig = root.npcConfig(v)
-      if checkIfNpcIs(v, npcConfig, "hostile") then args.iIcon[v] = config.getParameter("npcTypeParams.hostile.icon")
-      elseif checkIfNpcIs(v, npcConfig, "hostile") then return end
+      if checkIfNpcIs(v, npcConfig, "hostile") then args.iIcon[v] = config.getParameter("npcTypeParams.hostile.icon"); updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, "guard") then args.iIcon[v] = config.getParameter("npcTypeParams.guard.icon") ; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, "merchant") then args.iIcon[v] = config.getParameter("npcTypeParams.merchant.icon") ; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, "crew") then args.iIcon[v] = config.getParameter("npcTypeParams.crew.icon"); updateToWorld = true;
+      end
     end
+  end
+  if updateToWorld then
+    world.setProperty("npcTypeStorage", args.iIcon)
   end  
 end
 
-function checkIfNpcIs(v, npcConfig, type)
-  local typeParams = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck",type))
-    
+function checkIfNpcIs(v, npcConfig,type)
+    local typeParams = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck",type))
     for k,v2 in pairs(typeParams) do
       local value = npcConfig[k] or sb.jsonQuery(npcConfig, k)
-      if value ~= v2 then return false end
+      if (value and v2) then return true end
     end
-    return true
+    return false
 end
 
 function selectedTab.Hair(args)
@@ -1012,7 +1039,7 @@ function selectedTab.Export(args)
   spawner.npcParameterOptions[1] = args.npcParam
   local exportString = string.format("/spawnitem spawnerwizard 1 '{\"shortdescription\":\"%s Spawner\",\"retainObjectParametersInItem\": true, \"level\":%s,\"spawner\":%s}'", args.npcParam.identity.name, args.currentLevel, sb.printJson(spawner))
   local config = getUserConfig("npcSpawnerPlus")
-  local name = widget.getText("tbNameBox")
+  local name = widget.getText(self.nameBox)
   local species = self.currentSpecies
   local gender = self.currentIdentity.gender
   local key = string.format("%s%s%s", name,species,gender)
@@ -1100,7 +1127,6 @@ function override.detach()
   return true
 end
 
-function testCall()
-
+function uninit()
+  self.tbOverrideColorRoutine = nil
 end
-
