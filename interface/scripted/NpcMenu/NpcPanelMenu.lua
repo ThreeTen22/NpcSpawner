@@ -58,8 +58,8 @@ function init()
   self.doingMainUpdate = false
   self.firstRun = true
   self.filterText = ""
+  self.npcTypeStorage = "npcTypeStorage"  
 
-  
                   --primary and sheathed primary are always the goto weapons, secondary is for shields.
                   --duel wielding weapons for npcs doesn't work.
   self.equipBagStorage = widget.itemGridItems("itemGrid")
@@ -885,24 +885,31 @@ function selectedTab.NpcType(args)
   self.curSelectedTitle = self.currentType
   args.isOverride = false
   args.skipTheRest = true
-  --world.setProperty("npcTypeStorage", jobject())
   args.iIcon = {}
-  args.iIcon = world.getProperty("npcTypeStorage", {})
+  args.iIcon = world.getProperty(self.npcTypeStorage, {})
 
   local updateToWorld = false
   local typeParams = config.getParameter("npcTypeParams")
+  local hIcon = config.getParameter("npcTypeParams.hostile.icon")
+  local gIcon = config.getParameter("npcTypeParams.guard.icon") 
+  local mIcon = config.getParameter("npcTypeParams.merchant.icon")
+  local cIcon = config.getParameter("npcTypeParams.crew.icon")
+  local vIcon = config.getParameter("npcTypeParams.villager.icon")
+
   for _,v in ipairs(self.npcTypeList) do
     if not args.iIcon[v] then
       local npcConfig = root.npcConfig(v)
-      if checkIfNpcIs(v, npcConfig, "hostile") then args.iIcon[v] = config.getParameter("npcTypeParams.hostile.icon"); updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, "guard") then args.iIcon[v] = config.getParameter("npcTypeParams.guard.icon") ; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, "merchant") then args.iIcon[v] = config.getParameter("npcTypeParams.merchant.icon") ; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, "crew") then args.iIcon[v] = config.getParameter("npcTypeParams.crew.icon"); updateToWorld = true;
+      if checkIfNpcIs(v, npcConfig, "hostile") then args.iIcon[v] = hIcon; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, "guard") then args.iIcon[v] = gIcon ; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, "merchant") then args.iIcon[v] = mIcon ; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, "crew") then args.iIcon[v] = cIcon; updateToWorld = true;
+      else  
+        args.iIcon[v] = vIcon
       end
     end
   end
   if updateToWorld then
-    world.setProperty("npcTypeStorage", args.iIcon)
+    world.setProperty(self.npcTypeStorage, args.iIcon)
   end  
 end
 
@@ -1124,6 +1131,12 @@ end
 
 function override.detach()
   world.sendEntityMessage(pane.containerEntityId(), "detachNpc")
+  return true
+end
+
+function override.clearworldstorage()
+  world.setProperty(self.npcTypeStorage, "null")
+  world.setProperty(self.npcTypeStorage, jobject())
   return true
 end
 

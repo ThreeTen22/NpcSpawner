@@ -43,7 +43,7 @@
       "frames" : 1,
       "animationCycle" : 0.5,
       "direction" : "right",
-      "flipImages" : true,
+      "flipImages" : false,
       "animationPosition" : [-8, -4],
       "lightPosition" : [0, 3],
 
@@ -51,7 +51,7 @@
       "anchors" : [ "background" ]
     },
     {
-      "image" : "CAFspawnerBase.png",
+      "image" : "arkdestinationteleporter.png",
       "imagePosition" : [0, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
@@ -63,7 +63,7 @@
       "anchors" : [ "bottom" ]
     },
     {
-      "image" : "CAFspawnerBase.png",
+      "image" : "arkdestinationteleporter.png",
       "imagePosition" : [0, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
