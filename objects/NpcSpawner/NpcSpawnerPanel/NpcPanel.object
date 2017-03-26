@@ -17,7 +17,7 @@
   "frameCooldown" : 5,
   "autoCloseCooldown" : 360000,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
-  "scriptDelta" : 10,
+  "scriptDelta" : 0,
   "smashOnBreak" : false,
   "containerCallback" : "containerCallback",
   "inventoryIcon" : "/interface/techupgradeicon.png",
@@ -79,9 +79,8 @@
 
   },
 
-  "npcTypeTags" : {
-    "feneroxvillager" : ["fenerox"],
-    "feneroxguard" : ["fenerox"]
+  "npcTypeStorage" : {
+
   },
   "spawner" : {
     "searchRadius" : 10.0,

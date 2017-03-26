@@ -5,7 +5,7 @@ function dLog(item, prefix)
   if type(item) ~= "string" then
     sb.logInfo(prefix.."  "..dOut(item))
   else 
-    sb.logInfo(prefix.."  "..item)
+    sb.logInfo("%s",prefix.."  "..item)
   end
 end
 
@@ -26,7 +26,7 @@ function dLogJson(input, prefix, clean)
 end
 
 function dCompare(prefix, one, two)
-  sb.logInfo(prefix)
+  
   dComp[type(one)](one) 
   dComp[type(two)](two) 
 end
@@ -43,7 +43,7 @@ function dComp.number(input)
   return dLog(input, "number")
 end
 
-function dComp.bool(input)
+function dComp.boolean(input)
   return dLog(input, "bool: ")
 end
 
@@ -209,5 +209,11 @@ function formatParam(strType,...)
     end
 end
 
+function toHex(v)
+  return string.format("%02x", math.min(math.floor(v),255))
+end
 
+--toHex(v*tonumber(color:sub(0,2),16))..toHex(v*tonumber(color:sub(3,4),16))..toHex(v*tonumber(color:sub(5,6),16))
+dComp["thread"] = function(input) dLog(input) end
+dComp["function"] = function(input) sb.logInfo("%s", input) end
 dComp["nil"] = function(input) return dLog("nil") end

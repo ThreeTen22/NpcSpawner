@@ -12,10 +12,12 @@ function init(virtual)
     storage.spawned = storage.spawned or false
     storage.spawnedID = storage.spawnedID or nil
     storage.keepStorageInfo = storage.keepStorageInfo or false
-    self.config = getUserConfig("npcSpawnerPlus")
     self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-    self.npcTypeList = copy(self.config.npcTypeList)
-    appendToListIfUnique(self.speciesList, self.config.additionalSpecies)
+    local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config")
+    local userConfig = getUserConfig("npcSpawnerPlus")
+    local mSpeciesConfig = mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
+    self.speciesList = mergeUnique(self.speciesList, mSpeciesConfig)
+    self.npcTypeList = mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
     randomItUp()
     local args = {
       npcSpecies = storage.npcSpecies,
@@ -206,7 +208,6 @@ end
 function randomItUp(override)
   if (not storage.npcLevel) or override then storage.npcLevel = math.random(1, 10) end
   if (not storage.npcSpecies) or override then 
-    
     storage.npcSpecies = util.randomFromList(self.speciesList)
     storage.npcSpecies = storage.npcSpecies or "human"
   end
