@@ -11,8 +11,11 @@ function init()
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
   local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config")
   local userConfig = getUserConfig("npcSpawnerPlus")
-  self.equipSlot = shallowCopy(baseConfig.equipSlot)
-  self.portraits = shallowCopy(baseConfig.portraits)
+  self.equipSlot = baseConfig.equipSlot
+  self.portraits = baseConfig.portraits
+
+  dLogJson(self.portraits,"portraits",true)
+  dLogJson(self.equipSlot,"slots",true)
 
   local mSpeciesConfig = mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
   self.speciesList = mergeUnique(self.speciesList, mSpeciesConfig)
@@ -33,11 +36,17 @@ function init()
   self.npcTypeList = mergeUnique(self.npcTypeList, listOfProtectorates)
   self.returnInfo = {}
   
-
+  self.getSpeciesPath = function(species, path)
+                             path = path or "/species/";
+                             return tostring(path..species..".species")
+                        end
 
   self.personalityIndex = 0
 
   self.returnInfoColors = nil
+  --UI VARS--
+  self.sldMain = "sldMainSlider"
+
 
   --LIST VARS--
   self.scrollArea = "techScrollArea"
@@ -84,9 +93,9 @@ function init()
   self.slotCount = 12
   self.sliderValue = tonumber(self.currentSeed) or 0
 
-  widget.setSliderRange("sldSeedValue",0, self.maxSliderValue)
-  widget.setSliderEnabled("sldSeedValue", true)
-  widget.setSliderValue("sldSeedValue",self.sliderValue)
+  widget.setSliderRange(self.sldMain,0, self.maxSliderValue)
+  widget.setSliderEnabled(self.sldMain, true)
+  widget.setSliderValue(self.sldMain,self.sliderValue)
   widget.setText("lblSliderValue", "Seed:  "..tostring(self.sliderValue))
   self.mockdt = 0.33
   self.mockTimer = 0
@@ -110,11 +119,11 @@ function update(dt)
         local insertPosition = self.currentOverride.items.override[1][2][1]
         setItemOverride(self.equipSlot[i],insertPosition,itemBag[i])
         --Also add them to bmain's initialStorage config parameter so its baked into the npc during reloads
-        local currentPath = self.currentOverride.scriptConfig
-        if (not path(currentPath,"initialStorage","itemSlots")) then 
-          setPath(currentPath,"initialStorage","itemSlots",{}) 
-        end
-        self.currentOverride.scriptConfig.initialStorage.itemSlots[self.equipSlot[i]] = itemBag[i]  
+        --local currentPath = self.currentOverride.scriptConfig
+        --if (not path(currentPath,"initialStorage","itemSlots")) then 
+        --  setPath(currentPath,"initialStorage","itemSlots",{}) 
+        --end
+        --self.currentOverride.scriptConfig.initialStorage.itemSlots[self.equipSlot[i]] = itemBag[i]  
         contentsChanged = true
       end
     end
@@ -159,6 +168,7 @@ function setItemOverride(slotName, insertPosition, itemContainer)
       if itemContainer then 
         if type(itemContainer) == "table" then
             if string.find(itemContainer.name, "capturepod",1,true) then
+              itemContainer.name = "npcpetcapturepod"
               itemContainer = "npcpetcapturepod"
             end
         else
@@ -293,9 +303,9 @@ function setNpcName()
 end
 
 --Callback
-function updateSeedValue()
+function onSliderChange()
   if not self.doingMainUpdate then return end
-  self.sliderValue = widget.getSliderValue("sldSeedValue")
+  self.sliderValue = widget.getSliderValue(self.sldMain)
   self.currentSeed = self.sliderValue
   widget.setText("lblSliderValue", "Seed:  "..tostring(self.sliderValue))
   updateNpc()
@@ -414,7 +424,7 @@ function selectGenCategory(button, data)
   local tabData = widget.getSelectedData(self.tabGroupWidget)
   if data == "Generate" then
     widget.setVisible(self.scrollArea, true)
-    widget.setSliderEnabled("sldSeedValue", true)
+    widget.setSliderEnabled(self.sldMain, true)
     widget.setVisible("spnPersonality", false)
     widget.setVisible("lblPersonality", false)
   elseif data == "Colorize" then
@@ -422,7 +432,7 @@ function selectGenCategory(button, data)
     widget.setVisible("spnPersonality", true)
     widget.setVisible("lblPersonality", true)
   elseif data == "Advanced" then
-    widget.setSliderEnabled("sldSeedValue", false)
+    widget.setSliderEnabled(self.sldMain, false)
     widget.setVisible("lblBlockNameBox", false)
     widget.setVisible("spnPersonality", false)
     widget.setVisible("lblPersonality", false)
@@ -609,7 +619,6 @@ function setIdleStance(index)
     identity.personalityArmIdle = personality[2]
     identity.personalityArmOffset = personality[4]
   else
-    widget.setText("lblPersonality", "No Override")
     clearPersonality()
   end
 end
@@ -622,6 +631,7 @@ function clearPersonality()
     identity.personalityArmIdle = nil
     identity.personalityArmOffset = nil
   end
+    widget.setText("lblIdleStance", "No Override")
 end
 
 function replaceDirectives(directive, directiveJson)
@@ -673,7 +683,7 @@ function updateNpc(noVisual)
   if noVisual then return end
 
   local npcPort = root.npcPortrait("full", curSpecies, curType, curLevel, curSeed, curOverride)
-  dLogJson(curOverride, "whsa", false)
+  --dLogJson(curOverride, "whsa", false)
   return setPortrait(npcPort)
 end
 
@@ -692,8 +702,7 @@ function setPortrait(npcPort)
 end
 
 function getAsset(assetPath)
-  local asset = root.assetJson(assetPath)
-  return asset
+  return root.assetJson(assetPath)
 end
 
 -------MAIN LIST FUNCTIONS-----------
@@ -1153,6 +1162,29 @@ function override.clearCache()
   world.setProperty(self.npcTypeStorage, nil)
   --world.setProperty(self.npcTypeStorage, jobject())
   return true
+end
+
+function override.output(_, _, configType, label, path)
+  if configType == "npctype" then
+    local errorStr = "cannot get npcConfig: \"%s\""
+    local success, npcConfig = pcall(function(lbl) return root.npcConfig(lbl) end, label)
+    
+    if path then
+      npcConfig = sb.jsonQuery(npcConfig, path)
+    end
+    dLogJson(npcConfig)
+    return (success and true)
+  
+  elseif configType == "species" then
+    local assetPath =  self.getSpeciesPath(label)
+    local errorStr = "cannot get asset using path: \"%s\""
+    local success, speciesFile =  pcall(getAsset(assetPath), assetPath)
+    
+    dLogJson(speciesFile)
+    return (success and true)
+  end
+
+  return false
 end
 
 function uninit()

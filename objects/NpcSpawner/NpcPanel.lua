@@ -82,7 +82,7 @@ function update(dt)
     if self.spawnTimer < 0 then
 
       --randomItUp(self.randomize)
-      if storage.npcParam then storage.npcParam.spawnedBy = entity.position() end
+      if storage.npcParam and storage.npcParam.scriptConfig then storage.npcParam.scriptConfig.spawnedBy = entity.position() end
       local npcId = world.spawnNpc(entity.position(), storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
 
       world.callScriptedEntity(npcId, "status.addEphemeralEffect","beamin")

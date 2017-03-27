@@ -20,7 +20,6 @@ function dLogJson(input, prefix, clean)
   if prefix ~= nil then
     sb.logInfo(prefix)
   end
-   
    local info = sb.printJson(input,clean)
    sb.logInfo("%s", info)
 end
