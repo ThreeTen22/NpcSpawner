@@ -899,11 +899,6 @@ function selectedTab.NpcType(args)
   end
   
   local typeParams = config.getParameter("npcTypeParams")
-  local hIcon = root.jsonQuery(typeParams,"hostile.icon")
-  local gIcon = root.jsonQuery(typeParams,"guard.icon") 
-  local mIcon = root.jsonQuery(typeParams,"merchant.icon")
-  local cIcon = root.jsonQuery(typeParams,"crew.icon")
-  local vIcon = root.jsonQuery(typeParams,"villager.icon")
   local hIcon = sb.jsonQuery(typeParams,"hostile.icon")
   local gIcon = sb.jsonQuery(typeParams,"guard.icon") 
   local mIcon = sb.jsonQuery(typeParams,"merchant.icon")
@@ -924,8 +919,6 @@ function selectedTab.NpcType(args)
   end
   args.iIcon = shallowCopy(worldStorage.iIcon)
   if updateToWorld then
-    args.skyTime = world.skyTime()
-    world.setProperty(self.npcTypeStorage, args.iIcon)
     worldStorage.skyTime = world.time()
     world.setProperty(self.npcTypeStorage, worldStorage)
   end  
@@ -1153,8 +1146,6 @@ function override.detach()
 end
 
 function override.clearCache()
-  world.setProperty(self.npcTypeStorage, "null")
-  world.setProperty(self.npcTypeStorage, jobject())
   world.setProperty(self.npcTypeStorage, nil)
   --world.setProperty(self.npcTypeStorage, jobject())
   return true
