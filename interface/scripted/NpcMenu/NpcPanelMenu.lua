@@ -70,7 +70,7 @@ function init()
   self.currentLevel = self.gettingInformation.npcLevel or math.random(1, world.threatLevel())
   self.currentSpecies = self.gettingInformation.npcSpecies or "penguin"
 
-  self.tbOverrideColorRoutine = nil
+  self.tbFeedbackColorRoutine = nil
   self.tbGreenColor = {0,255,0}
   self.tbRedColor = {255,0,0}
 
@@ -144,7 +144,7 @@ end
 
 function notTime(dt)
   if dt < self.mockdt then
-    self.tbOverrideColorRoutine(dt)
+    self.tbFeedbackColorRoutine(dt)
     self.mockTimer = self.mockTimer + dt
     if self.mockTimer < self.mockdt then 
       return true
@@ -191,7 +191,7 @@ function spnIdleStance.down()
   return 
 end
 
-function updateOverrideText(tbName)
+function interpTextColor(tbName)
   local timer = 0
   local name = tbName
   local dt = script.updateDt()
@@ -207,7 +207,7 @@ function updateOverrideText(tbName)
     coroutine.yield()
   end
   script.setUpdateDelta(20)
-  self.tbOverrideColorRoutine = nil
+  self.tbFeedbackColorRoutine = nil
 end
 
 --callback
@@ -223,8 +223,8 @@ function onOverrideEnter()
   end
   widget.setText(self.overrideTextBox, self.overrideText)
 
-  while self.tbOverrideColorRoutine do
-    self.tbOverrideColorRoutine()
+  while self.tbFeedbackColorRoutine do
+    self.tbFeedbackColorRoutine()
   end
 
   local parsedStrings = util.split(self.overrideText, " ")
@@ -238,15 +238,15 @@ function onOverrideEnter()
     widget.setFontColor(self.overrideTextBox, self.tbGreenColor)
     self.curOverrideColor = copy(self.tbGreenColor)
     script.setUpdateDelta(3)
-    self.tbOverrideColorRoutine = coroutine.wrap(updateOverrideText)
-    self.tbOverrideColorRoutine(self.overrideTextBox)
+    self.tbFeedbackColorRoutine = coroutine.wrap(interpTextColor)
+    self.tbFeedbackColorRoutine(self.overrideTextBox)
     return updateNpc()
   else
     widget.setFontColor(self.overrideTextBox, self.tbRedColor)
     self.curOverrideColor = copy(self.tbRedColor)
     script.setUpdateDelta(3)
-    self.tbOverrideColorRoutine = coroutine.wrap(updateOverrideText)
-    self.tbOverrideColorRoutine(self.overrideTextBox)
+    self.tbFeedbackColorRoutine = coroutine.wrap(interpTextColor)
+    self.tbFeedbackColorRoutine(self.overrideTextBox)
   end
 end
 
@@ -267,8 +267,8 @@ end
 --Callback
 
 function setNpcName()
-  while self.tbOverrideColorRoutine do
-    self.tbOverrideColorRoutine()
+  while self.tbFeedbackColorRoutine do
+    self.tbFeedbackColorRoutine()
   end
 
   local text = widget.getText(self.nameBox)
@@ -287,8 +287,8 @@ function setNpcName()
   widget.setFontColor(self.nameBox, self.tbGreenColor)
   self.curOverrideColor = copy(self.tbGreenColor)
   script.setUpdateDelta(3)
-  self.tbOverrideColorRoutine = coroutine.wrap(updateOverrideText)
-  self.tbOverrideColorRoutine(self.nameBox)
+  self.tbFeedbackColorRoutine = coroutine.wrap(interpTextColor)
+  self.tbFeedbackColorRoutine(self.nameBox)
 
 end
 
@@ -1156,5 +1156,5 @@ function override.clearCache()
 end
 
 function uninit()
-  self.tbOverrideColorRoutine = nil
+  self.tbFeedbackColorRoutine = nil
 end
