@@ -27,32 +27,32 @@
   "orientations" : [
     {
       "image" : "BackgroundPanel.png",
-      "imagePosition" : [-8, -4],
+      "imagePosition" : [-8, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
       "direction" : "left",
       "flipImages" : true,
-      "animationPosition" : [-8, -4],
+      "animationPosition" : [-8, 0],
       "lightPosition" : [0, 3],
       "spaceScan" : 0.1,
       "anchors" : [ "background" ]
     },
     {
       "image" : "BackgroundPanel.png",
-      "imagePosition" : [-8, -4],
+      "imagePosition" : [-8, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
       "direction" : "right",
       "flipImages" : false,
-      "animationPosition" : [-8, -4],
+      "animationPosition" : [-8, 0],
       "lightPosition" : [0, 3],
 
       "spaceScan" : 0.1,
       "anchors" : [ "background" ]
     },
     {
-      "image" : "arkdestinationteleporter.png",
-      "imagePosition" : [0, 0],
+      "image" : "hologramprojector.png?scalebicubic=0.51",
+      "imagePosition" : [0, 1],
       "frames" : 1,
       "animationCycle" : 0.5,
       "direction" : "right",
@@ -63,8 +63,8 @@
       "anchors" : [ "bottom" ]
     },
     {
-      "image" : "arkdestinationteleporter.png",
-      "imagePosition" : [0, 0],
+      "image" : "hologramprojector.png?scalebicubic=0.51",
+      "imagePosition" : [0, 1],
       "frames" : 1,
       "animationCycle" : 0.5,
       "direction" : "left",

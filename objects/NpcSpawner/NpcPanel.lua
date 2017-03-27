@@ -112,7 +112,7 @@ end
 
 function logVariant()
   local variant = root.npcVariant(storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
-  --dLogJson(variant, "spawnedVariant", true)
+  dLogJson(variant, "spawnedVariant", true)
 end
 
 

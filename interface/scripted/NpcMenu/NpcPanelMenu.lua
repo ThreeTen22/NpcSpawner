@@ -887,13 +887,28 @@ function selectedTab.NpcType(args)
   args.skipTheRest = true
   args.iIcon = {}
   local worldStorage = world.getProperty(self.npcTypeStorage, {})
+  local worldStorage = world.getProperty(self.npcTypeStorage)
+  if not (worldStorage and worldStorage.iIcon) then worldStorage = {iIcon = {}, skyTime = world.time()} end
+
   local updateToWorld = false
+  --TODO:  CHANGE THIS SO THAT A REASONABLE AMOUNT OF TIME HAS PASSED.
+    --IDEALLY IT WOULD BE NICE IF I COULD GET A HASH OF LOADED ASSETS SO I CAN QUICKLY DETECT CHANGES.  
+    --MAYBE HASH THE NPCTYPE LIST
+  if worldStorage.skyTime and worldStorage.skyTime + 86400 < world.time() then
+    override.clearCache()
+  end
+  
   local typeParams = config.getParameter("npcTypeParams")
   local hIcon = root.jsonQuery(typeParams,"hostile.icon")
   local gIcon = root.jsonQuery(typeParams,"guard.icon") 
   local mIcon = root.jsonQuery(typeParams,"merchant.icon")
   local cIcon = root.jsonQuery(typeParams,"crew.icon")
   local vIcon = root.jsonQuery(typeParams,"villager.icon")
+  local hIcon = sb.jsonQuery(typeParams,"hostile.icon")
+  local gIcon = sb.jsonQuery(typeParams,"guard.icon") 
+  local mIcon = sb.jsonQuery(typeParams,"merchant.icon")
+  local cIcon = sb.jsonQuery(typeParams,"crew.icon")
+  local vIcon = sb.jsonQuery(typeParams,"villager.icon")
 
   for _,v in ipairs(self.npcTypeList) do
     if not worldStorage.iIcon[v] then
@@ -907,9 +922,12 @@ function selectedTab.NpcType(args)
       end
     end
   end
+  args.iIcon = shallowCopy(worldStorage.iIcon)
   if updateToWorld then
     args.skyTime = world.skyTime()
     world.setProperty(self.npcTypeStorage, args.iIcon)
+    worldStorage.skyTime = world.time()
+    world.setProperty(self.npcTypeStorage, worldStorage)
   end  
 end
 
@@ -1137,6 +1155,8 @@ end
 function override.clearCache()
   world.setProperty(self.npcTypeStorage, "null")
   world.setProperty(self.npcTypeStorage, jobject())
+  world.setProperty(self.npcTypeStorage, nil)
+  --world.setProperty(self.npcTypeStorage, jobject())
   return true
 end
 
