@@ -157,9 +157,14 @@ end
 
 function setItemOverride(slotName, insertPosition, itemContainer)
       if itemContainer then 
-        local slotContainer = config.getParameter("itemContainerTemplate.item[1]")
-        itemContainer.count = nil
-        insertPosition[slotName] = {itemContainer}
+        if type(itemContainer) == "table" then
+            if string.find(itemContainer.name, "capturepod",1,true) then
+              itemContainer = "npcpetcapturepod"
+            end
+        else
+          itemContainer.count = nil
+          insertPosition[slotName] = {itemContainer}
+        end
       else
         insertPosition[slotName] = nil
       end
@@ -886,7 +891,6 @@ function selectedTab.NpcType(args)
   args.isOverride = false
   args.skipTheRest = true
   args.iIcon = {}
-  local worldStorage = world.getProperty(self.npcTypeStorage, {})
   local worldStorage = world.getProperty(self.npcTypeStorage)
   if not (worldStorage and worldStorage.iIcon) then worldStorage = {iIcon = {}, skyTime = world.time()} end
 

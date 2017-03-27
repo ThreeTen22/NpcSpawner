@@ -30,7 +30,6 @@ function init(virtual)
     
     --if storage.keepStorageInfo then retainObjectInfo() end
 
-    
     --handler for messages coming from the spawner with the spawner's unique id
     --called from spawner object after panel is created. stores the id of the parent spawner
 
