@@ -20,7 +20,7 @@
   "scriptDelta" : 30,
   "smashOnBreak" : false,
   "containerCallback" : "containerCallback",
-  "inventoryIcon" : "/interface/techupgradeicon.png",
+  "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
   "isContainer": true,
   "smashable" : false,
   "interactive" : false,
