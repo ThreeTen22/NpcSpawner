@@ -15,14 +15,21 @@ function dOut(input)
 end
 
 function dLogJson(input, prefix, clean)
-  if type(prefix) == "boolean" then clean = (prefix and true); prefix = "" end
-  if (clean and true) then clean = 1 else clean = 0 end
-  if prefix ~= nil then
-    sb.logInfo(prefix)
+  local str = "\n"
+  if toBool(clean) or toBool(prefix) then clean = 1 else clean = 0 end
+  if prefix ~= "true" and prefix ~= "false" and prefix then
+    str = prefix..str
   end
-   local info = sb.printJson(input,clean)
-   sb.logInfo("%s", info)
+   local info = sb.printJson(input, clean)
+   sb.logInfo("%s", str..info)
 end
+
+function dPrintJson(input)
+  local info = sb.printJson(input,1)
+  sb.logInfo(info)
+  return info
+end
+
 
 function dCompare(prefix, one, two)
 
@@ -102,18 +109,6 @@ function hasValue(t, value)
   return false
 end
 
-function appendToListIfUnique(output, list)
-  if not list then return end
-  local itemsToAdd = {}
-  for i,v in ipairs(list) do
-    if (not hasValue(output, v)) and v ~= "" then table.insert(itemsToAdd,v) end
-  end
-  for _,v in ipairs(itemsToAdd) do
-    table.insert(output, v)
-  end
-  return itemsToAdd
-end
-
 function mergeUnique(t1, t2)
 if not t2 or #t2 < 1 then return t1 end
 local merged = util.mergeLists(t1,t2)
@@ -121,7 +116,7 @@ local hash = {}
 local res = {}
   for _,v in ipairs(merged) do
      if (not hash[v]) then
-         res[#res+1] = v -- you could print here instead of saving to result table if you wanted
+         res[#res+1] = v
          hash[v] = true
      end
   end
@@ -147,7 +142,7 @@ end
 
 function isContainerEmpty(itemBag)
    for k,v in pairs(itemBag) do
-    if type(v) ~= "nil" then return false end
+    if v then return false end
    end
    return true
 end
@@ -172,7 +167,6 @@ function toBool(value)
     end
     return nil
 end
-
 
 function formatParam(strType,...)
     local params = {...}

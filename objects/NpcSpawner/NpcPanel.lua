@@ -2,7 +2,7 @@ require "/scripts/npcspawnutil.lua"
 require "/scripts/util.lua"
 
 function init(virtual)
-    dLog("NpcPanel: init")
+    dLog(virtual ,"NpcPanel: init")
     storage.npcSpecies = storage.npcSpecies
     storage.npcSeed = storage.npcSeed or math.random(0,20000)
     storage.npcLevel = storage.npcLevel or math.max(world.threatLevel(), 1)
@@ -52,13 +52,14 @@ function init(virtual)
     message.setHandler("detachNpc", function(_,_)
       detachNpc()
     end)
+
+    message.setHandler("sayMessage", function(_,_, args)
+      sayMessage()
+    end)
     if not virtual then
       object.setInteractive(true)
     end
 end
-
-
-
 
 --function onInteraction(args)
 --  dLog("TEST !@ IS THIS HITTING?")

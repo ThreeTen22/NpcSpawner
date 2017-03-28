@@ -52,6 +52,7 @@ function init()
   self.scrollArea = "techScrollArea"
   self.techList = "techScrollArea.techList"
   self.infoList = "techScrollArea.infoList"
+  self.infoLabel = "techScrollArea.lblOverrideConsole"
 
   self.tabData = nil
   self.tabGroupWidget = "rgTabs"
@@ -90,6 +91,7 @@ function init()
 
   updateNpc(true)
   modNpc.Species({iTitle = self.currentSpecies}, self.currentIdentity, self.currentOverride)
+  --if #self.currentOverride.identity < 1 or jcount(self.currentOverride.identity) < 1 then self.currentOverride.identity = copy(self.currentIdentity)
   self.slotCount = 12
   self.sliderValue = tonumber(self.currentSeed) or 0
 
@@ -117,13 +119,19 @@ function update(dt)
         dLogJson(itemBag[i], "itemBagCont:",true)
         --Add items to override item slot so they update visually.
         local insertPosition = self.currentOverride.items.override[1][2][1]
-        setItemOverride(self.equipSlot[i],insertPosition,itemBag[i])
+        setItemOverride(self.equipSlot[i],insertPosition, itemBag[i])
+
         --Also add them to bmain's initialStorage config parameter so its baked into the npc during reloads
-        --local currentPath = self.currentOverride.scriptConfig
-        --if (not path(currentPath,"initialStorage","itemSlots")) then 
-        --  setPath(currentPath,"initialStorage","itemSlots",{}) 
+          --Will not do for npcCapturePods.  Something strange is up with them.  
+          --If you get it normally then its fine but if you try and get it as an override it will just throw pokeballs all day.
+
+        --if type(insertPosition[1]) ~= "string" then
+          local currentPath = self.currentOverride.scriptConfig
+          if (not path(currentPath,"initialStorage","itemSlots")) then 
+            setPath(currentPath,"initialStorage","itemSlots",{}) 
+          end
+          self.currentOverride.scriptConfig.initialStorage.itemSlots[self.equipSlot[i]] = itemBag[i]
         --end
-        --self.currentOverride.scriptConfig.initialStorage.itemSlots[self.equipSlot[i]] = itemBag[i]  
         contentsChanged = true
       end
     end
@@ -165,20 +173,23 @@ function notTime(dt)
 end
 
 function setItemOverride(slotName, insertPosition, itemContainer)
-      if itemContainer then 
-        if type(itemContainer) == "table" then
-            if string.find(itemContainer.name, "capturepod",1,true) then
-              itemContainer.name = "npcpetcapturepod"
-              itemContainer = "npcpetcapturepod"
-            end
-        else
-          itemContainer.count = nil
-          insertPosition[slotName] = {itemContainer}
+  if itemContainer then 
+    if type(itemContainer) == "table" then
+        if string.find(itemContainer.name, "capturepod",1,true) then
+          --itemContainer = {}
+          --itemContainer.name = {"npcpetcapturepod"}
+          itemContainer = "npcpetcapturepod"
+          insertPosition[slotName] = nil
+          return
         end
-      else
-        insertPosition[slotName] = nil
+      if type(itemContainer) ~= "string" then
+        itemContainer.count = nil
       end
-      --dLog(insertPosition, "insert pos ")
+      insertPosition[slotName] = {itemContainer}
+    end
+  else
+    insertPosition[slotName] = nil
+  end
 end
 
 
@@ -223,7 +234,7 @@ end
 --callback
 function onOverrideEnter()
   dLog("FinalizingOverride")
-  self.overrideText = string.lower(widget.getText(self.overrideTextBox))
+  self.overrideText = widget.getText(self.overrideTextBox)
   self.overrideText = string.gsub(self.overrideText, "  "," ",1, true)
   while self.overrideText[#self.overrideText] == " " do
     self.overrideText[#self.overrideText] = ""
@@ -231,13 +242,18 @@ function onOverrideEnter()
   while self.overrideText[1] == " " do
     self.overrideText[1] = ""
   end
-  widget.setText(self.overrideTextBox, self.overrideText)
+  local parsedStrings = util.split(self.overrideText, " ")
+  --widget.setText(self.overrideTextBox, self.overrideText)
 
   while self.tbFeedbackColorRoutine do
     self.tbFeedbackColorRoutine()
   end
 
-  local parsedStrings = util.split(self.overrideText, " ")
+  if not(string.lower(parsedStrings[1]) == "output") then  
+    for i,v in ipairs(parsedStrings) do
+        parsedStrings[i] = string.lower(v)
+    end
+  end
   
   local wasSuccessful = nil
   if override[parsedStrings[1]] then
@@ -264,12 +280,13 @@ end
 function onSeachBoxKeyPress(tbLabel)
   local text = widget.getText(tbLabel)
   
-  dLog("onSeachBoxKeyPress")
-  dLogJson(args, "args")
+  dLog(text, "onSeachBoxKeyPress")
+
   if text == self.filterText then return end
+  self.filterText = text
   local args = widget.getData(string.format("%s", self.techList))
-  
-  --if text == "" then text = nil end
+  dLog("keypress passed")
+  if text == "" then text = nil end
   args.filter = text
   return setList(args)
 end
@@ -314,6 +331,7 @@ end
 function acceptBtn()
   self.currentOverride.identity = parseArgs(self.currentOverride.identity, self.currentIdentity)
   setNpcName()
+  update(0)
   local args = {
     npcSpecies = self.currentSpecies,
     npcSeed = self.currentSeed,
@@ -366,6 +384,8 @@ function selectTab(index, option)
   self.returnInfo = {}
   self.returnInfoColors = nil
   self.curSelectedTitle = nil
+  widget.setText(self.infoLabel, "")
+  widget.setData(self.infoLabel, "")
   local listOption = widget.getSelectedOption(self.tabGroupWidget)
 
   local curTabs = config.getParameter("tabOptions."..self.categoryWidgetData)
@@ -388,6 +408,7 @@ function selectTab(index, option)
     widget.setVisible(self.infoList, true)
     widget.setVisible("tbSearchBox", false)
     widget.setVisible("tbOverrideBox", true)
+    widget.setText(self.infoLabel, "")
     setListInfo(returnInfo.selectedCategory, self.uniqueExportId)
     self.uniqueExportId = nil
     return
@@ -397,6 +418,7 @@ function selectTab(index, option)
     widget.setVisible(self.infoList, false)
     widget.setVisible("tbSearchBox", true)
     widget.setVisible("tbOverrideBox", false)
+    widget.setText(self.infoLabel, "")
   end
   
   
@@ -908,7 +930,7 @@ function selectedTab.NpcType(args)
     --IDEALLY IT WOULD BE NICE IF I COULD GET A HASH OF LOADED ASSETS SO I CAN QUICKLY DETECT CHANGES.  
     --MAYBE HASH THE NPCTYPE LIST
   if worldStorage.skyTime and worldStorage.skyTime + 86400 < world.time() then
-    override.clearCache()
+    override.clearcache()
   end
   
   local typeParams = config.getParameter("npcTypeParams")
@@ -1158,33 +1180,64 @@ function override.detach()
   return true
 end
 
-function override.clearCache()
+function override.clearcache()
   world.setProperty(self.npcTypeStorage, nil)
   --world.setProperty(self.npcTypeStorage, jobject())
   return true
 end
 
-function override.output(_, _, configType, label, path)
-  if configType == "npctype" then
-    local errorStr = "cannot get npcConfig: \"%s\""
-    local success, npcConfig = pcall(function(lbl) return root.npcConfig(lbl) end, label)
-    
-    if path then
-      npcConfig = sb.jsonQuery(npcConfig, path)
+function override.output(curO, _, configType, label, jsonPath)
+ 
+  local output = nil
+  local success = false
+  local prefix = ""
+  local replaceSelf = compare(label, "self")
+  local errorStr = nil
+  if configType == "override" then
+    output = curO or {}
+    success = true
+    if jsonPath then
+      jsonPath = label.."."..jsonPath
+    else
+      jsonPath = label
     end
-    dLogJson(npcConfig)
-    return (success and true)
-  
   elseif configType == "species" then
+    if replaceSelf then label = self.currentSpecies end
     local assetPath =  self.getSpeciesPath(label)
-    local errorStr = "cannot get asset using path: \"%s\""
-    local success, speciesFile =  pcall(getAsset(assetPath), assetPath)
-    
-    dLogJson(speciesFile)
-    return (success and true)
+    errorStr = "cannot get asset using path: %s"
+    success, output =  pcall(getAsset, assetPath)
+  elseif configType == "npctype" then
+    if replaceSelf then label = self.currentType end
+    errorStr = "cannot get npcConfig: %s"
+    success, output = pcall(root.npcConfig, label)
   end
 
-  return false
+
+  if jsonPath then
+      output = sb.jsonQuery(output, jsonPath, output[label]) or output
+      success = (output and true)
+  end
+
+  if (not success) and errorStr then
+    if jsonPath then
+      jsonPath = "."..jsonPath
+    else
+      jsonPath = ""
+    end
+
+    output = string.format(errorStr, label..jsonPath)
+  end
+
+  output = dPrintJson(output)
+  
+
+  local oldText = widget.getData(self.infoLabel) or ""
+
+  output = string.format("%s\n%s  was successful? %s\n->",oldText, prefix, success)..output
+  widget.setText(self.infoLabel, output)
+  widget.setData(self.infoLabel, output)
+  
+  return success
 end
 
 function uninit()
