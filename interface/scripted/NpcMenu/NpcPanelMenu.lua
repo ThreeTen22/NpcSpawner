@@ -27,7 +27,7 @@ function init()
   local protectorate = root.npcConfig("villager")
   
   local listOfProtectorates = {}
-  local lotsOfNpcs = sb.jsonQuery(protectorate, "scriptConfig.questGenerator.graduation.nextNpcType")
+  local lotsOfNpcs = jsonPath(protectorate, "scriptConfig.questGenerator.graduation.nextNpcType")
   
   for _,v in ipairs(lotsOfNpcs) do
     local name = v[2]
@@ -934,19 +934,24 @@ function selectedTab.NpcType(args)
   end
   
   local typeParams = config.getParameter("npcTypeParams")
-  local hIcon = sb.jsonQuery(typeParams,"hostile.icon")
-  local gIcon = sb.jsonQuery(typeParams,"guard.icon") 
-  local mIcon = sb.jsonQuery(typeParams,"merchant.icon")
-  local cIcon = sb.jsonQuery(typeParams,"crew.icon")
-  local vIcon = sb.jsonQuery(typeParams,"villager.icon")
+  local hIcon = jsonPath(typeParams,"hostile.icon")
+  local gIcon = jsonPath(typeParams,"guard.icon") 
+  local mIcon = jsonPath(typeParams,"merchant.icon")
+  local cIcon = jsonPath(typeParams,"crew.icon")
+  local vIcon = jsonPath(typeParams,"villager.icon")
+  local hostile = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","hostile"))
+  local guard = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","guard"))
+  local merchant = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","merchant"))
+  local crew = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","crew"))
 
+  local npcConfig = nil
   for _,v in ipairs(self.npcTypeList) do
     if not worldStorage.iIcon[v] then
-      local npcConfig = root.npcConfig(v)
-      if checkIfNpcIs(v, npcConfig, "hostile") then worldStorage.iIcon[v] = hIcon; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, "guard") then worldStorage.iIcon[v] = gIcon ; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, "merchant") then worldStorage.iIcon[v] = mIcon ; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, "crew") then worldStorage.iIcon[v] = cIcon; updateToWorld = true;
+     npcConfig = root.npcConfig(v)
+      if checkIfNpcIs(v, npcConfig, hostile) then worldStorage.iIcon[v] = hIcon; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, guard) then worldStorage.iIcon[v] = gIcon ; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, merchant) then worldStorage.iIcon[v] = mIcon ; updateToWorld = true;
+      elseif checkIfNpcIs(v, npcConfig, crew) then worldStorage.iIcon[v] = cIcon; updateToWorld = true;
       else  
         worldStorage.iIcon[v] = vIcon
       end
@@ -959,10 +964,9 @@ function selectedTab.NpcType(args)
   end  
 end
 
-function checkIfNpcIs(v, npcConfig,type)
-    local typeParams = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck",type))
+function checkIfNpcIs(v, npcConfig,typeParams)
     for k,v2 in pairs(typeParams) do
-      local value = npcConfig[k] or sb.jsonQuery(npcConfig, k)
+      local value = jsonPath(npcConfig, k)
       if (value and v2) then return true end
     end
     return false
