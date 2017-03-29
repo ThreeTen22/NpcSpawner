@@ -13,12 +13,13 @@ function init(virtual)
     storage.spawnedID = storage.spawnedID or nil
     storage.keepStorageInfo = storage.keepStorageInfo or false
     self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-    local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config")
+    local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
     local userConfig = getUserConfig("npcSpawnerPlus")
     local mSpeciesConfig = mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
     self.speciesList = mergeUnique(self.speciesList, mSpeciesConfig)
     self.npcTypeList = mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
     randomItUp()
+    
     local args = {
       npcSpecies = storage.npcSpecies,
       npcSeed = storage.npcSeed,
@@ -83,6 +84,11 @@ function update(dt)
     if self.spawnTimer < 0 then
 
       --randomItUp(self.randomize)
+      dLog(storage.npcSpecies)
+      dLog(storage.npcType)
+      dLog(storage.npcLevel)
+      dLog(storage.npcSeed)
+      dLog(storage.npcParam)
       if storage.npcParam and storage.npcParam.scriptConfig then storage.npcParam.scriptConfig.spawnedBy = entity.position() end
       local npcId = world.spawnNpc(entity.position(), storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
 

@@ -3,9 +3,9 @@ dComp = {}
 function dLog(item, prefix)
   if not prefix then prefix = "" end
   if type(item) ~= "string" then
-    sb.logInfo(prefix.."  "..dOut(item))
+    sb.logInfo("%s",prefix.."  "..dOut(item))
   else 
-    sb.logInfo("%s",prefix.."  "..item)
+    sb.logInfo("%s",prefix.."  "..dOut(item))
   end
 end
 
@@ -26,7 +26,7 @@ end
 
 function dPrintJson(input)
   local info = sb.printJson(input,1)
-  sb.logInfo(info)
+  sb.logInfo("%s",info)
   return info
 end
 
@@ -149,12 +149,10 @@ end
 
 function getPathStr(t, str)
     if str == "" then return t end
-    local s, _ = string.find(str, ".", 1, true)
-    if not s then return t[str] end
-    return jsonPath(t,str)
+    return jsonPath(t,str) or t[str]
 end
 
-function setPathStr(t, pathString, value)
+function setPathStr(t, str, value)
     local s, _ = string.find(str, ".", 1, true)
     if not s then t[str] = value return end
     jsonSetPath(t, pathString,value)

@@ -3,13 +3,15 @@ require "/scripts/npcspawnutil.lua"
 require "/scripts/interp.lua"
 
 spnIdleStance = {}
+spnSldParamBase = {}
+spnSldParamDetail = {}
 modNpc = {}
 selectedTab = {}
 override = {}
 
 function init()
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-  local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config")
+  local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
   local userConfig = getUserConfig("npcSpawnerPlus")
   self.equipSlot = baseConfig.equipSlot
   self.portraits = baseConfig.portraits
@@ -63,7 +65,8 @@ function init()
   self.overrideTextBox = "tbOverrideBox"
   self.overrideText = ""
 
-  self.maxSliderValue = 20000
+  self.minSldValue = 0
+  self.maxSldValue = 20000
 
   self.doingMainUpdate = false
   self.firstRun = true
@@ -73,13 +76,14 @@ function init()
                   --primary and sheathed primary are always the goto weapons, secondary is for shields.
                   --duel wielding weapons for npcs doesn't work.
   self.equipBagStorage = widget.itemGridItems("itemGrid")
-  self.gettingInformation = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
-  self.currentOverride = self.gettingInformation.npcParam or {identity = {}, scriptConfig = {}}
-  self.currentType = self.gettingInformation.npcType or "follower"
-  self.currentSeed = self.gettingInformation.npcSeed or math.random(0, self.maxSliderValue)
-  self.currentLevel = self.gettingInformation.npcLevel or math.random(1, world.threatLevel())
-  self.currentSpecies = self.gettingInformation.npcSpecies or "penguin"
+  self.gettingInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
+  self.currentOverride = self.gettingInfo.npcParam or {identity = {}, scriptConfig = {}}
+  self.currentType = self.gettingInfo.npcType or "follower"
+  self.currentSeed = self.gettingInfo.npcSeed or math.random(0, self.maxSldValue)
+  self.currentLevel = self.gettingInfo.npcLevel or math.random(1, world.threatLevel())
+  self.currentSpecies = self.gettingInfo.npcSpecies or "penguin"
 
+  self.currentIdentity = {}
   self.tbFeedbackColorRoutine = nil
   self.tbGreenColor = {0,255,0}
   self.tbRedColor = {255,0,0}
@@ -95,12 +99,24 @@ function init()
   self.slotCount = 12
   self.sliderValue = tonumber(self.currentSeed) or 0
 
-  widget.setSliderRange(self.sldMain,0, self.maxSliderValue)
+  widget.setSliderRange(self.sldMain,self.minSldValue, self.maxSldValue)
   widget.setSliderEnabled(self.sldMain, true)
   widget.setSliderValue(self.sldMain,self.sliderValue)
   widget.setText("lblSliderValue", "Seed:  "..tostring(self.sliderValue))
   self.mockdt = 0.33
   self.mockTimer = 0
+  
+  --used for slider
+  self.setSeedValue = function(value) 
+        self.currentSeed = tonumber(value) 
+  end
+  self.setOverride = function(value, applyType, gsubTable, removeOnZero) 
+      if removeOnZero then
+        applyDirective(self.currentIdentity, self.currentOverride, value, applyType, gsubTable) 
+      else
+        removeDirective(self.currentIdentity, self.currentOverride,  applyType, gsubTable) 
+      end
+  end
   script.setUpdateDelta(3)
 end
 
@@ -122,7 +138,7 @@ function update(dt)
         setItemOverride(self.equipSlot[i],insertPosition, itemBag[i])
 
         --Also add them to bmain's initialStorage config parameter so its baked into the npc during reloads
-          --Will not do for npcCapturePods.  Something strange is up with them.  
+          --Will not do it for capturepods.  Something strange is up with them.  
           --If you get it normally then its fine but if you try and get it as an override it will just throw pokeballs all day.
 
         --if type(insertPosition[1]) ~= "string" then
@@ -322,13 +338,14 @@ end
 --Callback
 function onSliderChange()
   if not self.doingMainUpdate then return end
-  self.sliderValue = widget.getSliderValue(self.sldMain)
-  self.currentSeed = self.sliderValue
-  widget.setText("lblSliderValue", "Seed:  "..tostring(self.sliderValue))
+  local data = widget.getData(self.sldMain)
+  local value = widget.getSliderValue(self.sldMain)
+
   updateNpc()
 end
 
 function acceptBtn()
+  self.currentOverride.identity = self.currentOverride.identity or {} 
   self.currentOverride.identity = parseArgs(self.currentOverride.identity, self.currentIdentity)
   setNpcName()
   update(0)
@@ -373,6 +390,7 @@ function setListInfo(categoryName, uniqueId, infoOverride)
       widget.setText(string.format("%s.%s.%s",self.infoList, listItem,"value"), tabDesc)
     elseif type(tabDesc) == "table" then
       for k,v in pairs(tabDesc) do
+        local listItem = widget.addListItem(self.infoList)
         widget.setText(string.format("%s.%s.%s",self.infoList, listItem,k), v)
       end
     end
@@ -400,16 +418,14 @@ function selectTab(index, option)
   selectedTab[listType](self.returnInfo)
 
 
-  local returnInfo = self.returnInfo
-
-  if returnInfo.useInfoList then
+  if self.returnInfo.useInfoList then
     setList(nil)
     widget.setVisible(self.techList, false)
     widget.setVisible(self.infoList, true)
     widget.setVisible("tbSearchBox", false)
     widget.setVisible("tbOverrideBox", true)
     widget.setText(self.infoLabel, "")
-    setListInfo(returnInfo.selectedCategory, self.uniqueExportId)
+    setListInfo(self.returnInfo.selectedCategory, self.uniqueExportId)
     self.uniqueExportId = nil
     return
   else
@@ -422,11 +438,11 @@ function selectTab(index, option)
   end
   
   
-  if returnInfo.skipTheRest then setList(returnInfo); return end
+  if self.returnInfo.skipTheRest then setList(self.returnInfo); return end
 
   dLog("contining getting tab info")
 
-  if returnInfo.colors then
+  if self.returnInfo.colors then
     getColorInfo(self.returnInfoColors, returnInfo)
   else
     local optn  = config.getParameter("assetParams."..listType)
@@ -1139,7 +1155,7 @@ function override.apply(curO, cur, applyParam, part, increm)
             value = increm
         else
             directive = string.gsub(directive,applyParams[1],applyParams[2],1)
-            value = tostring(math.floor(tonumber(value) + tonumber(increm)))
+            value = tostring(math.floor(tonumber(increm)))
         end
         wrapper["1"] = value
         applyPathTable[v] = string.gsub(directive,"<(.)>",wrapper,1)
@@ -1244,6 +1260,140 @@ function override.output(curO, _, configType, label, jsonPath)
   return success
 end
 
+function applyDirective(cur, curO, value, applyPath, gsubTable)
+local directive = sb.jsonQuery(curO, applyPath)
+if not directive then 
+  local directiveName = util.split(applyPath,".")[2]
+  directive = sb.jsonQuery(cur, directiveName) 
+end
+--local directive = directivePath
+--if not directive then setJsonPath(curO,applyPath, "")
+--[[
+dLog(cur, "cur")
+dLog(curO,"curO")
+dLog(applyPath, "path")
+dLog(directive, "direc")
+dLog(gsubTable[1], "gsub")
+--]]
+local b = string.find(directive, gsubTable[1])
+  if not b then 
+      directive = directive..gsubTable[2]
+  else
+      directive = string.gsub(directive,gsubTable[1],gsubTable[2],1)
+  end
+
+  directive = string.gsub(directive,"<(.)>",value,1)
+  jsonSetPath(curO, applyPath,directive)
+end
+
+function getDirectiveValue(cur, curO, applyPath, gsubTable)
+local directive = jsonPath(curO, applyPath)
+if not directive then 
+  local directiveName = util.split(applyPath,".")[2]
+  directive = sb.jsonQuery(cur, directiveName) or ""
+end
+  dLog(applyPath, "getPATH:")
+  local b, _, value = string.find(directive, gsubTable[1])
+  if not value then return end
+  return value
+end
+
+
+function removeDirective(cur, curO, value, applyPath, gsubTable)
+  local directive = path(curO, applyPath)
+  if not directive then return end
+
+  local b, _, value = string.find(directive, gsubTable[1])
+  if not b then return end
+  directive = string.gsub(directive,gsubTable[1],"",1)
+
+  jsonSetPath(curO, applyPath, directive)
+end
+
 function uninit()
   self.tbFeedbackColorRoutine = nil
 end
+
+function onMainSliderChange()
+  if not self.doingMainUpdate then return end
+  if self.updatingSlider then return end
+  local data = widget.getData(self.sldMain)
+  local value = widget.getSliderValue(self.sldMain)
+  self[data.funcName](value, data.path, data.gsubTable, data.removeOnZero)
+
+  --Need to get value again because it may have changed
+  value = widget.getSliderValue(self.sldMain)
+  widget.setText(data.valueId, string.format(data.valueText, value))
+  updateNpc()
+end
+
+function spnSldParamBase.up()
+  local data = widget.getData("spnSldParamBase")
+  data.index = util.wrap(data.index+1, 1,data.maxIndx)
+  updateSldData(data)
+  
+  spnSldParamBase.updateOwnData(data)
+  widget.setData(data.selfName, data)
+end
+
+function spnSldParamBase.down()
+    local data = widget.getData("spnSldParamBase")
+  data.index = util.wrap(data.index-1, 1,data.maxIndx)
+  updateSldData(data)
+  
+  spnSldParamBase.updateOwnData(data)
+  widget.setData(data.selfName, data)
+end
+
+function spnSldParamBase.updateOwnData(data)
+  local param = data.params[data.index]
+  local newSldData =  widget.getData(data.sldName)
+  --local sldParam = data.sldParams[data.indx]
+  --dLogJson(sldParam, "sld Params")
+  widget.setText(data.lblName, param.titleText)
+  widget.setVisible(data.spnDetailName, param.detailVisible)
+  widget.setFontColor(data.lblDetailName, param.detailFontColor)
+  local value = 0
+  if param.titleText ~= "Seed" then
+    value = getDirectiveValue(self.currentIdentity, self.currentOverride, newSldData.path, newSldData.gsubTable)
+    value = tonumber(value) or 0
+  else
+    value = self.currentSeed
+  end
+
+  self.updatingSlider = true
+  widget.setSliderRange(data.sldName, param.minSldValue, param.maxSldValue, 1)
+  self.updatingSlider = false
+  widget.setSliderValue(data.sldName, value)
+end
+
+function spnSldParamDetail.up()
+  local data = widget.getData("spnSldParamDetail")
+  data.index = util.wrap(data.index+1, 1,data.maxIndx)
+  updateSldData(data)
+  spnSldParamDetail.updateOwnData(data)
+  widget.setData(data.selfName, data)
+end
+
+function spnSldParamDetail.down()
+  local data = widget.getData("spnSldParamDetail")
+  data.index = util.wrap(data.index-1, 1,data.maxIndx)
+  updateSldData(data)
+  spnSldParamDetail.updateOwnData(data)
+  widget.setData(data.selfName, data)
+end
+
+function spnSldParamDetail.updateOwnData(data)
+  local text = data.params[data.index]
+  widget.setText(data.lblName, text)
+end
+
+function updateSldData(data)
+  local sldData = widget.getData(data.sldName)
+  local newSldData = data.sldParams[data.index]
+  --dLog(newSldData, "before: updateSldData")
+  sldData = parseArgs(newSldData, sldData)
+  --dLog(sldData, "after: updateSldData")
+  widget.setData(data.sldName, sldData)
+end
+
