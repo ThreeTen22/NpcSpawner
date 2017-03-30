@@ -128,32 +128,35 @@ function update(dt)
         if not (self.currentOverride.items and self.currentOverride.items.override)  then 
           self.currentOverride.items = config.getParameter("overrideContainerTemplate.items") 
         end
-        dLogJson(itemBag[i], "itemBagCont:",true)
+        local itemBagCopy = copy(itemBag[i])
         --Add items to override item slot so they update visually.
         local insertPosition = self.currentOverride.items.override[1][2][1]
         setItemOverride(self.equipSlot[i],insertPosition, itemBag[i])
 
-        --Also add them to bmain's initialStorage config parameter so its baked into the npc during reloads
-          --Will not do it for capturepods.  Something strange is up with them.  
-          --If you get it normally then its fine but if you try and get it as an override it will just throw pokeballs all day.
+        --Also add them to bmain's initialStorage config parameter so its baked into the npc during reloads.
 
         --if type(insertPosition[1]) ~= "string" then
           local currentPath = self.currentOverride.scriptConfig
           if (not path(currentPath,"initialStorage","itemSlots")) then 
             setPath(currentPath,"initialStorage","itemSlots",{}) 
           end
-          self.currentOverride.scriptConfig.initialStorage.itemSlots[self.equipSlot[i]] = itemBag[i]
+          local itemSlots = self.currentOverride.scriptConfig.initialStorage.itemSlots
+          itemSlots[self.equipSlot[i]] = itemBagCopy
+          if itemSlots[self.equipSlot[i]] and itemSlots[self.equipSlot[i]].name == "capturepod" then 
+            itemSlots[self.equipSlot[i]].name = "npcpetcapturepod" 
+            itemSlots[self.equipSlot[i]].count = 10
+          end
         --end
         contentsChanged = true
       end
     end
 
     if contentsChanged then 
-      --Test to see how many times a single stack item can fit into the inventory container. 
-      --Essentially a hastle-free way to check if empty.
       if isContainerEmpty(itemBag) then
         self.currentOverride.items = nil
-        self.currentOverride.scriptConfig.initialStorage.itemSlots = nil
+        if self.currentOverride.scriptConfig then
+          self.currentOverride.scriptConfig.initialStorage = nil
+        end
       end
       self.equipBagStorage = widget.itemGridItems("itemGrid")
       updateNpc() 
@@ -191,7 +194,7 @@ function setItemOverride(slotName, insertPosition, itemContainer)
           --itemContainer = {}
           --itemContainer.name = {"npcpetcapturepod"}
           itemContainer = "npcpetcapturepod"
-          insertPosition[slotName] = nil
+          insertPosition[slotName] = {itemContainer}
           return
         end
       if type(itemContainer) ~= "string" then
@@ -715,7 +718,7 @@ function updateNpc(noVisual)
     widget.setText(self.nameBox, self.currentIdentity.name)
   end
   if noVisual then return end
-
+  sb.setLogMap("curOverride", "%s",sb.printJson(curOverride or {},1))
   local npcPort = root.npcPortrait("full", curSpecies, curType, curLevel, curSeed, curOverride)
   --dLogJson(curOverride, "whsa", false)
   return setPortrait(npcPort)
