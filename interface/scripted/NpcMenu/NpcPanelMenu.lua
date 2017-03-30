@@ -1,6 +1,4 @@
-require "/scripts/util.lua"
 require "/scripts/npcspawnutil.lua"
-require "/scripts/interp.lua"
 
 spnIdleStance = {}
 spnSldParamBase = {}
@@ -110,8 +108,9 @@ function init()
   self.setSeedValue = function(value) 
         self.currentSeed = tonumber(value) 
   end
-  self.setOverride = function(value, applyType, gsubTable, removeOnZero) 
-      applyDirective(self.currentIdentity, self.currentOverride, value, applyType, gsubTable) 
+  self.setOverride = function(value, data) 
+      --local data = widget.getData(self.sldMain)
+      applyDirective(self.currentIdentity, self.currentOverride, value, data)
   end
   script.setUpdateDelta(3)
 end
@@ -263,17 +262,23 @@ function onOverrideEnter()
   while self.tbFeedbackColorRoutine do
     self.tbFeedbackColorRoutine()
   end
+  local wasSuccessful = nil
+  parsedStrings[1] = string.lower(parsedStrings[1])
 
-  if not(string.lower(parsedStrings[1]) == "output") then  
+  if parsedStrings[2] then
+    parsedStrings[2] = string.lower(parsedStrings[2])
+  end
+
+  if not(parsedStrings[1] == "output") then  
     for i,v in ipairs(parsedStrings) do
         parsedStrings[i] = string.lower(v)
     end
   end
   
-  local wasSuccessful = nil
+  
   if override[parsedStrings[1]] then
     dLog("entered override Check")
-    wasSuccessful = override[parsedStrings[1]](self.currentOverride,self.currentIdentity, parsedStrings[2], parsedStrings[3], parsedStrings[4])
+    wasSuccessful, errorMsg = override[parsedStrings[1]](self.currentOverride,self.currentIdentity,table.unpack(parsedStrings,2))
   end
   if wasSuccessful then
     widget.setFontColor(self.overrideTextBox, self.tbGreenColor)
@@ -289,13 +294,16 @@ function onOverrideEnter()
     self.tbFeedbackColorRoutine = coroutine.wrap(interpTextColor)
     self.tbFeedbackColorRoutine(self.overrideTextBox)
   end
+  if not wasSuccessful then
+    override.outputStr(errorMsg)
+  end
 end
 
 --Callback
 function onSeachBoxKeyPress(tbLabel)
   local text = widget.getText(tbLabel)
   
-  dLog(text, "onSeachBoxKeyPress")
+  --dLog(text, "onSeachBoxKeyPress")
 
   if text == self.filterText then return end
   self.filterText = text
@@ -360,7 +368,7 @@ end
 
 function setListInfo(categoryName, uniqueId, infoOverride)
   widget.clearListItems(self.infoList)
-  dLog(categoryName, "catName")
+  --dLog(categoryName, "catName")
   if not categoryName then return end
   local tabInfo = config.getParameter("tabOptions."..categoryName)
   local info = infoOverride or root.assetJson("/interface/scripted/NpcMenu/modConfig.config:infoDescription")
@@ -380,7 +388,7 @@ function setListInfo(categoryName, uniqueId, infoOverride)
       widget.setText(string.format("%s.%s.%s", self.infoList, listItem, k), ve)
     end
   end
-  dLog(tabInfo, "TAB INFO:  ")
+  --dLog(tabInfo, "TAB INFO:  ")
   for i,v in ipairs(tabInfo) do
     local tabDesc = info[v]
     if type(tabDesc) == "string" and tabDesc ~= "" then
@@ -397,7 +405,7 @@ function setListInfo(categoryName, uniqueId, infoOverride)
 end
 
 function selectTab(index, option)
-  dLog(option,  "    SelectTab") 
+  --dLog(option,  "    SelectTab") 
   self.returnInfo = {}
   self.returnInfoColors = nil
   self.curSelectedTitle = nil
@@ -439,7 +447,7 @@ function selectTab(index, option)
   
   if self.returnInfo.skipTheRest then setList(self.returnInfo); return end
 
-  dLog("contining getting tab info")
+  --dLog("contining getting tab info")
 
   if self.returnInfo.colors then
     getColorInfo(self.returnInfoColors, self.returnInfo)
@@ -454,7 +462,7 @@ function selectTab(index, option)
 end
 
 function selectGenCategory(button, data)
-  dLog("selectGenCategory")
+  --dLog("selectGenCategory")
   self.categoryWidgetData = data
   local tabNames = {"lblTab01","lblTab02","lblTab03","lblTab04","lblTab05","lblTab06"}
   local indx = widget.getSelectedOption(self.tabGroupWidget)
@@ -475,7 +483,7 @@ function selectGenCategory(button, data)
     widget.setVisible("lblPersonality", false)
   end
   changeTabLabels(tabNames, data)
-  dLog(data, "selectGenCategory - selectedOption:  ")
+  --dLog(data, "selectGenCategory - selectedOption:  ")
   if indx and tabData then
     selectTab(indx, tabData)
     return 
@@ -492,7 +500,9 @@ function setList(args)
   local iTitle = nil
   local iData = nil
   local selectedItem = nil
-  if not args then dLog("no args found") return end
+  if not args then --dLog("no args found") 
+    return 
+  end
 
   --args.widgets = args.widgets or {}
 
@@ -564,7 +574,7 @@ end
 
 
 function onSelectItem(name, listData)
-  dLog("onSelectItem")
+  --dLog("onSelectItem")
   local listItem = widget.getListSelected(self.techList)
   if not listItem then return end
   local itemData = widget.getData(string.format("%s.%s", self.techList, listItem))
@@ -591,8 +601,8 @@ function compareDirectiveToColor(directive, json)
   local k,v  = next(set)
   k = string.lower(k)
   v = string.lower(v)
-  dLog(k, "MATCHING TEST")
-  dLog(string.match(directive,tostring(k).."="), "result ")
+  --dLog(k, "MATCHING TEST")
+  --dLog(string.match(directive,tostring(k).."="), "result ")
   return string.match(directive,tostring(k).."=")
 end
 
@@ -824,7 +834,7 @@ end
 function modNpc.FHair(listData, cur, curO)
   local curO = curO.identity
   if listData.clearConfig then 
-    dLog("listData.fhair : clearConfig:  entered ClearConfig")
+    --dLog("listData.fhair : clearConfig:  entered ClearConfig")
     --curO["facialHairGroup"] = nil
     curO["facialHairType"] = nil
   else
@@ -836,7 +846,7 @@ end
 function modNpc.FMask(listData, cur, curO)
   local curO = curO.identity
   if listData.clearConfig then 
-    dLog("listData.fMask : clearConfig:  entered ClearConfig")
+    --dLog("listData.fMask : clearConfig:  entered ClearConfig")
     curO["facialMaskType"] = nil
   else
     curO.facialMaskType = listData.iTitle
@@ -845,8 +855,8 @@ end
 
 function modNpc.HColor(listData, cur, curO)
   local curO = curO.identity
-  dLog(cur.hairDirectives, "enterd HColor  ")
-  dLog(listData.iData, "ItemData  ")
+  --dLog(cur.hairDirectives, "enterd HColor  ")
+  --dLog(listData.iData, "ItemData  ")
   if cur.hairDirectives == "" then return end
   if listData.clearConfig then
     curO["hairDirectives"] = nil
@@ -877,7 +887,7 @@ end
 
 function modNpc.BColor(listData, cur, curO)
   local curO = curO.identity
-  dLog("enterd BColor")
+  --dLog("enterd BColor")
   if listData.clearConfig then
     curO["bodyDirectives"] = nil
     curO["emoteDirectives"] = nil
@@ -924,7 +934,7 @@ function selectedTab.Species(args)
   local genderIndx = getGenderIndx(self.currentIdentity.gender)-1
   for _,v in ipairs(self.speciesList) do
     local jsonPath = string.format("/species/%s.species:genders.%s.characterImage",v, tostring(genderIndx))
-    dLog(jsonPath, "JSON PATH")
+    --dLog(jsonPath, "JSON PATH")
     local image = root.assetJson(jsonPath)
     args.iIcon[v] = image
   end
@@ -1085,9 +1095,9 @@ function selectedTab.Prsnlity(args)
   args.iData = {}
   for _,v in ipairs(self.typeConfig.scriptConfig.personalities) do
     local prsnlity = v[2]
-    dLog(prsnlity.personality, "Prsnlity:  ")
+    --dLog(prsnlity.personality, "Prsnlity:  ")
     table.insert(args.title,prsnlity.personality)
-    table.insert(args.iData,prsnlity)
+    args.iData[prsnlity.personality] = prsnlity
   end
   args.isOverride = true
 end
@@ -1134,62 +1144,24 @@ function selectedTab.Info(args)
   args.selectedCategory = self.categoryWidgetData
 end
 
-
-function override.apply(curO, cur, applyParam, part, increm)
-    dLog("entering override.apply")
-    local applyParams = config.getParameter("overrideConfig.applyParams."..applyParam)
-     if not applyParams then dLog("faulty params given") return end
-    local partDirectives = config.getParameter("overrideConfig.bodyDirectives."..part)
-    if not partDirectives then dLog("faulty part given") return end
-    local wrapper = {}
-    for _,v in ipairs(partDirectives) do
-        local applyPath = config.getParameter("overrideConfig.path."..v)
-        local applyPathTable = getPathStr(curO, applyPath)
-        if not applyPathTable[v] then applyPathTable[v] = copy(cur)[v] end
-        if applyPathTable[v] == "" then dLog("directive doesn't exist") return end
-        local directive = applyPathTable[v]
-        local b, _, value = string.find(directive, applyParams[1])
-        if not b then 
-            directive = directive..applyParams[2]
-            value = increm
-        else
-            directive = string.gsub(directive,applyParams[1],applyParams[2],1)
-            value = tostring(math.floor(tonumber(increm)))
-        end
-        wrapper["1"] = value
-        applyPathTable[v] = string.gsub(directive,"<(.)>",wrapper,1)
-    end
-    return true    
+function selectedTab.Detach(args)
+  args.useInfoList = true
+  args.skipTheRest = true
+  args.selectedCategory = "DetachOptn"
 end
 
-function override.remove(curO, _, applyParam, part)
-  dLog("entering override.remvoe")
-  local applyParams = config.getParameter("overrideConfig.applyParams."..applyParam)
-  if not applyParams then dLog("faulty params given") return end
-  applyParams[2] = ""
-  local partDirectives = config.getParameter("overrideConfig.bodyDirectives."..part)
-  if not partDirectives then dLog("faulty part given") return end
-  for _,v in ipairs(partDirectives) do
-      local removePath = config.getParameter("overrideConfig.path."..v)
-      local applyPathTable = getPathStr(curO, removePath)
-      if not applyPathTable[v] or applyPathTable[v] == "" then return end
-      local directive = applyPathTable[v]
-      applyPathTable[v] = string.gsub(directive,applyParams[1],applyParams[2],1)
-  end  
-  return true  
-end
-
-function override.set(curO, cur, setParam, ...)
-    local setParam = config.getParameter("overrideConfig.setParams."..setParam)
-    if not setParam then dLog("Cannot find parameter") return end
+function override.set(curO, cur, setParams, ...)
+    local setParam = config.getParameter("overrideConfig.setParams."..setParams)
+    if not setParam then dLog("Cannot find parameter") return false, "Cannot find parameter:"..setParams.." spelling error?" end
     local setPath = config.getParameter("overrideConfig.path."..setParam[1])
-    if not setPath then dLog("cannot find path to parameter") return end
+    if not setPath then dLog("cannot find path to parameter") return false, "cannot find path to parameter" end
     local setPathTable = getPathStr(curO, setPath)
     if not setPathTable then 
       setPathTable = setPathStr(curO,setPath,{})
     end
+    --dLog(setPathTable)
     local formattedParam = formatParam(setParam[2], ...)
-    if not formattedParam then dLog("formatted incorrectly") return end
+    if type(formattedParam) == "nil" then dLog("formatted incorrectly") return false, ("value given incorrectly formatted: Expect: "..setParam[2]) end
     setPathTable[setParam[1]] = formattedParam
     return true
 end
@@ -1199,9 +1171,56 @@ function override.detach()
   return true
 end
 
+function override.insert(_,_,name, ...)
+  local userConfig = nil
+  local key = nil
+  local list = {...}
+  local successes = {}
+  local failures = {}
+  local selfTable = nil
+  if name == "additionalspecies" then
+    key = "npcSpawnerPlus.additionalSpecies"
+
+    for i,v in ipairs(list) do
+      local path = self.getSpeciesPath(v)
+      local success = pcall(getAsset, path)
+      if success then
+        table.insert(successes, v)
+      else
+        table.insert(failures, v)
+      end
+    end
+  elseif name == "additionalnpctypes" then
+    key = "npcSpawnerPlus.additionalNpcTypes"
+
+    for i,v in ipairs(list) do
+      local success = pcall(root.npcConfig, v)
+      if success then
+        table.insert(successes, v)
+      else
+        table.insert(failures, v)
+      end
+    end
+  else
+    return false, "listName not given"
+  end
+  for i,v in ipairs(successes) do
+    override.outputStr("Added "..v)
+  end
+  for i,v in ipairs(failures) do
+    override.outputStr("Failed to add "..(v or "-"))
+  end
+  override.outputStr("re-open the panel to see the updated changes")
+  userConfig = root.getConfigurationPath(key)
+  --dLog(userConfig,"userConfig:")
+  userConfig = mergeUnique(userConfig, successes)
+  --dLog(userConfig,"userConfig:")
+  root.setConfigurationPath(key, userConfig)
+  return true
+end
+
 function override.clearcache()
   world.setProperty(self.npcTypeStorage, nil)
-  --world.setProperty(self.npcTypeStorage, jobject())
   return true
 end
 
@@ -1229,8 +1248,9 @@ function override.output(curO, _, configType, label, jsonPath)
     if replaceSelf then label = self.currentType end
     errorStr = "cannot get npcConfig: %s"
     success, output = pcall(root.npcConfig, label)
+  else
+    return false, "could not understand: "..(configType or "2nd parameter")
   end
-
 
   if jsonPath then
       output = sb.jsonQuery(output, jsonPath, output[label]) or output
@@ -1259,50 +1279,54 @@ function override.output(curO, _, configType, label, jsonPath)
   return success
 end
 
-function applyDirective(cur, curO, value, applyPath, gsubTable)
-local directive = sb.jsonQuery(curO, applyPath)
-if not directive then 
-  local directiveName = util.split(applyPath,".")[2]
-  directive = sb.jsonQuery(cur, directiveName) 
+function override.outputStr(str)
+  widget.clearListItems(self.infoList)
+  local oldText = widget.getData(self.infoLabel) or ""
+  output = string.format("%s\n \n%s",oldText, str)
+  widget.setText(self.infoLabel, output)
+  widget.setData(self.infoLabel, output)
 end
 
-local b = string.find(directive, gsubTable[1])
-  if not b then 
-      directive = directive..gsubTable[2]
-  else
-      directive = string.gsub(directive,gsubTable[1],gsubTable[2],1)
-  end
-
-  directive = string.gsub(directive,"<(.)>",value,1)
-  jsonSetPath(curO, applyPath,directive)
+function applyDirective(cur, curO, value, data)
+  local path = data.path
+  local gsubTable = data.gsubTable
+  local directive = jsonPath(curO, path) or cur[data.key] 
+  
+  if directive == "" then return end
+  local b = string.find(directive, gsubTable[1])
+    if not b then 
+        directive = directive..gsubTable[2]
+    else
+        directive = string.gsub(directive,gsubTable[1],gsubTable[2],1)
+    end
+  
+    directive = string.gsub(directive,"<(.)>",value,1)
+    jsonSetPath(curO, path, directive)
 end
 
-function getDirectiveValue(cur, curO, applyPath, gsubTable)
-local directive = jsonPath(curO, applyPath)
-if not directive then 
-  local directiveName = util.split(applyPath,".")[2]
-  directive = sb.jsonQuery(cur, directiveName) or ""
+function getDirectiveValue(cur, curO, data)
+  local path = data.path
+  local gsubTable = data.gsubTable
+  
+  local directive = jsonPath(curO, path) or cur[data.key]
+    local b, _, value = string.find(directive, gsubTable[1])
+    return value
 end
-  dLog(applyPath, "getPATH:")
+
+
+function removeDirective(cur, curO, data)
+  local path = data.path
+  local gsubTable = data.gsubTable
+  local directive = jsonPath(curO, path) or ""
+
   local b, _, value = string.find(directive, gsubTable[1])
-  if not value then return end
-  return value
-end
-
-
-function removeDirective(cur, curO, applyPath, gsubTable)
-  dLog({value, applyPath, gsubTable},  "entered Remove Directive")
-  local directive = jsonPath(curO, applyPath)
-  if not directive then return end
-
-  local b, _, value = string.find(directive, gsubTable[1])
   if not b then 
-    dLog("skipping")
+    --dLog("skipping")
     return 
   end
   directive = string.gsub(directive,gsubTable[1],"",1)
-  dLog(directive, "directive")
-  jsonSetPath(curO, applyPath, directive)
+  --dLog(directive, "directive")
+  jsonSetPath(curO, path, directive)
 end
 
 function uninit()
@@ -1314,14 +1338,19 @@ function onMainSliderChange()
   if self.updatingSlider then return end
   local data = widget.getData(self.sldMain)
   local value = widget.getSliderValue(self.sldMain)
-  self[data.funcName](value, data.path, data.gsubTable, data.removeOnZero)
-
+  local cur = self.currentIdentity
+  local curO = self.currentOverride
+  if data.removeOnZero and cur[data.key] == "" then
+    widget.setSliderValue(self.sldMain, 0)
+  else
+    self[data.funcName](value, data)
+  end
   --Need to get value again because it may have changed
   value = widget.getSliderValue(self.sldMain)
 
   --dLog(data.removeOnZero, "onZero?")
   if data.removeOnZero and value == 0 then
-    removeDirective(self.currentIdentity, self.currentOverride, data.path, data.gsubTable)
+    removeDirective(cur, curO, data)
     widget.setText(data.valueId, string.format(data.valueText, data.zeroText))
   else
     widget.setText(data.valueId, string.format(data.valueText, value)) 
@@ -1350,14 +1379,13 @@ end
 function spnSldParamBase.updateOwnData(data)
   local param = data.params[data.index]
   local newSldData =  widget.getData(data.sldName)
-  --local sldParam = data.sldParams[data.indx]
-  --dLogJson(sldParam, "sld Params")
+
   widget.setText(data.lblName, param.titleText)
   widget.setVisible(data.spnDetailName, param.detailVisible)
   widget.setFontColor(data.lblDetailName, param.detailFontColor)
   local value = 0
   if param.titleText ~= "Seed" then
-    value = getDirectiveValue(self.currentIdentity, self.currentOverride, newSldData.path, newSldData.gsubTable)
+    value = getDirectiveValue(self.currentIdentity, self.currentOverride, newSldData)
     value = tonumber(value) or 0
   else
     value = self.currentSeed
@@ -1366,6 +1394,10 @@ function spnSldParamBase.updateOwnData(data)
   self.updatingSlider = true
   widget.setSliderRange(data.sldName, param.minSldValue, param.maxSldValue, 1)
   self.updatingSlider = false
+
+  local detailData = widget.getData("spnSldParamDetail")
+  spnSldParamDetail.updateOwnData(detailData)
+
   if widget.getSliderValue(data.sldName) ~= value then
     widget.setSliderValue(data.sldName, value)
   else
@@ -1376,8 +1408,9 @@ end
 function spnSldParamDetail.up()
   local data = widget.getData("spnSldParamDetail")
   data.index = util.wrap(data.index+1, 1,data.maxIndx)
-  updateSldData(data)
-  spnSldParamDetail.updateOwnData(data)
+
+    updateSldData(data)
+    spnSldParamDetail.updateOwnData(data)
   widget.setData(data.selfName, data)
 end
 
@@ -1397,8 +1430,14 @@ function spnSldParamDetail.updateOwnData(data)
   local newSldData =  widget.getData(data.sldName)
   local value = 0
 
-  value = getDirectiveValue(self.currentIdentity, self.currentOverride, newSldData.path, newSldData.gsubTable)
+  value = getDirectiveValue(self.currentIdentity, self.currentOverride, newSldData)
   value = tonumber(value) or 0
+  
+  if self.currentIdentity[newSldData.key] == "" then
+    widget.setFontColor(data.lblName, data.fontColor[1])
+  else 
+    widget.setFontColor(data.lblName, data.fontColor[2]) 
+  end
 
   if widget.getSliderValue(data.sldName) ~= value then
     widget.setSliderValue(data.sldName, value)

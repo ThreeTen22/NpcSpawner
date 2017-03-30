@@ -1,3 +1,6 @@
+require "/scripts/util.lua"
+require "/scripts/interp.lua"
+
 dComp = {}
 
 function dLog(item, prefix)
@@ -153,9 +156,8 @@ function getPathStr(t, str)
 end
 
 function setPathStr(t, str, value)
-    local s, _ = string.find(str, ".", 1, true)
-    if not s then t[str] = value return end
-    jsonSetPath(t, pathString,value)
+    if str == "" then t[str] = value return end
+    return jsonSetPath(t, str,value)
 end
 
 function toBool(value)
@@ -201,6 +203,23 @@ end
 
 function toHex(v)
   return string.format("%02x", math.min(math.floor(v),255))
+end
+
+--overriding function found in util.lua so I can comment out the logInfo clutter.  Its functioonality is untouched.
+function setPath(t, ...)
+  local args = {...}
+  --sb.logInfo("args are %s", args)
+  if #args < 2 then return end
+
+  for i,child in ipairs(args) do
+    if i == #args - 1 then
+      t[child] = args[#args]
+      return
+    else
+      t[child] = t[child] or {}
+      t = t[child]
+    end
+  end
 end
 
 --toHex(v*tonumber(color:sub(0,2),16))..toHex(v*tonumber(color:sub(3,4),16))..toHex(v*tonumber(color:sub(5,6),16))
