@@ -111,11 +111,7 @@ function init()
         self.currentSeed = tonumber(value) 
   end
   self.setOverride = function(value, applyType, gsubTable, removeOnZero) 
-      if removeOnZero then
-        applyDirective(self.currentIdentity, self.currentOverride, value, applyType, gsubTable) 
-      else
-        removeDirective(self.currentIdentity, self.currentOverride,  applyType, gsubTable) 
-      end
+      applyDirective(self.currentIdentity, self.currentOverride, value, applyType, gsubTable) 
   end
   script.setUpdateDelta(3)
 end
@@ -443,15 +439,15 @@ function selectTab(index, option)
   dLog("contining getting tab info")
 
   if self.returnInfo.colors then
-    getColorInfo(self.returnInfoColors, returnInfo)
+    getColorInfo(self.returnInfoColors, self.returnInfo)
   else
     local optn  = config.getParameter("assetParams."..listType)
     if optn then
-      getSpeciesAsset(self.speciesJson, getGenderIndx(self.currentIdentity.gender), self.currentSpecies, optn, returnInfo)
+      getSpeciesAsset(self.speciesJson, getGenderIndx(self.currentIdentity.gender), self.currentSpecies, optn, self.returnInfo)
     end
   end
-  returnInfo.colors = self.returnInfoColors
-  setList(returnInfo)
+  self.returnInfo.colors = self.returnInfoColors
+  setList(copy(self.returnInfo))
 end
 
 function selectGenCategory(button, data)
@@ -1266,15 +1262,7 @@ if not directive then
   local directiveName = util.split(applyPath,".")[2]
   directive = sb.jsonQuery(cur, directiveName) 
 end
---local directive = directivePath
---if not directive then setJsonPath(curO,applyPath, "")
---[[
-dLog(cur, "cur")
-dLog(curO,"curO")
-dLog(applyPath, "path")
-dLog(directive, "direc")
-dLog(gsubTable[1], "gsub")
---]]
+
 local b = string.find(directive, gsubTable[1])
   if not b then 
       directive = directive..gsubTable[2]
@@ -1299,14 +1287,18 @@ end
 end
 
 
-function removeDirective(cur, curO, value, applyPath, gsubTable)
-  local directive = path(curO, applyPath)
+function removeDirective(cur, curO, applyPath, gsubTable)
+  dLog({value, applyPath, gsubTable},  "entered Remove Directive")
+  local directive = jsonPath(curO, applyPath)
   if not directive then return end
 
   local b, _, value = string.find(directive, gsubTable[1])
-  if not b then return end
+  if not b then 
+    dLog("skipping")
+    return 
+  end
   directive = string.gsub(directive,gsubTable[1],"",1)
-
+  dLog(directive, "directive")
   jsonSetPath(curO, applyPath, directive)
 end
 
@@ -1323,7 +1315,14 @@ function onMainSliderChange()
 
   --Need to get value again because it may have changed
   value = widget.getSliderValue(self.sldMain)
-  widget.setText(data.valueId, string.format(data.valueText, value))
+
+  --dLog(data.removeOnZero, "onZero?")
+  if data.removeOnZero and value == 0 then
+    removeDirective(self.currentIdentity, self.currentOverride, data.path, data.gsubTable)
+    widget.setText(data.valueId, string.format(data.valueText, data.zeroText))
+  else
+    widget.setText(data.valueId, string.format(data.valueText, value)) 
+  end
   updateNpc()
 end
 
@@ -1364,7 +1363,11 @@ function spnSldParamBase.updateOwnData(data)
   self.updatingSlider = true
   widget.setSliderRange(data.sldName, param.minSldValue, param.maxSldValue, 1)
   self.updatingSlider = false
-  widget.setSliderValue(data.sldName, value)
+  if widget.getSliderValue(data.sldName) ~= value then
+    widget.setSliderValue(data.sldName, value)
+  else
+    return onMainSliderChange()
+  end
 end
 
 function spnSldParamDetail.up()
@@ -1386,14 +1389,25 @@ end
 function spnSldParamDetail.updateOwnData(data)
   local text = data.params[data.index]
   widget.setText(data.lblName, text)
+
+
+  local newSldData =  widget.getData(data.sldName)
+  local value = 0
+
+  value = getDirectiveValue(self.currentIdentity, self.currentOverride, newSldData.path, newSldData.gsubTable)
+  value = tonumber(value) or 0
+
+  if widget.getSliderValue(data.sldName) ~= value then
+    widget.setSliderValue(data.sldName, value)
+  else
+    return onMainSliderChange()
+  end
 end
 
 function updateSldData(data)
   local sldData = widget.getData(data.sldName)
   local newSldData = data.sldParams[data.index]
-  --dLog(newSldData, "before: updateSldData")
   sldData = parseArgs(newSldData, sldData)
-  --dLog(sldData, "after: updateSldData")
   widget.setData(data.sldName, sldData)
 end
 
