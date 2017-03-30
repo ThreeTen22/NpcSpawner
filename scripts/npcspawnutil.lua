@@ -79,20 +79,6 @@ function keysToList(keyList)
   return newList
 end
 
-function lowercaseCopy(v)
-  if type(v) ~= "table" then
-    return string.lower(v)
-  else
-    local c = {}
-    for k,v in pairs(v) do
-      if type(k) == "string" then k = string.lower(k) end
-      c[k] = lowercaseCopy(v)
-    end
-    setmetatable(c, getmetatable(v))
-    return c
-  end
-end
-
 function logENV()
   for i,v in pairs(_ENV) do
     if type(v) == "function" then
@@ -113,17 +99,17 @@ function hasValue(t, value)
 end
 
 function mergeUnique(t1, t2)
-if not t2 or #t2 < 1 then return t1 end
-local merged = util.mergeLists(t1,t2)
-local hash = {}
-local res = {}
-  for _,v in ipairs(merged) do
-     if (not hash[v]) then
-         res[#res+1] = v
-         hash[v] = true
-     end
-  end
-  return res
+  if not t2 or #t2 < 1 then return t1 end
+  local merged = util.mergeLists(t1,t2)
+  local hash = {}
+  local res = {}
+    for _,v in ipairs(merged) do
+       if (not hash[v]) then
+           res[#res+1] = v
+           hash[v] = true
+       end
+    end
+    return res
 end
 
 
@@ -203,6 +189,14 @@ end
 
 function toHex(v)
   return string.format("%02x", math.min(math.floor(v),255))
+end
+
+function checkIfNpcIs(v, npcConfig,typeParams)
+    for k,v2 in pairs(typeParams) do
+      local value = jsonPath(npcConfig, k)
+      if (value and v2) then return true end
+    end
+    return false
 end
 
 --overriding function found in util.lua so I can comment out the logInfo clutter.  Its functioonality is untouched.

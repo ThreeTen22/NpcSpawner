@@ -36,9 +36,9 @@ function init()
   self.npcTypeList = mergeUnique(self.npcTypeList, listOfProtectorates)
   self.returnInfo = {}
   
-  self.getSpeciesPath = function(species, path)
-                             path = path or "/species/";
-                             return tostring(path..species..".species")
+  self.getSpeciesPath = function(species, path)          
+                            path = path or "/species/";
+                            return tostring(path..species..".species")
                         end
 
   self.personalityIndex = 0
@@ -794,7 +794,8 @@ end
 
 function updateSpecies()
     if not(self.speciesJson and (self.speciesJson.kind == self.currentSpecies)) then
-    self.speciesJson = root.assetJson("/species/"..self.currentSpecies..".species")
+      local path = self.getSpeciesPath(self.currentSpecies)
+      self.speciesJson = root.assetJson(path)
   end
 end
 
@@ -989,14 +990,6 @@ function selectedTab.NpcType(args)
   end  
 end
 
-function checkIfNpcIs(v, npcConfig,typeParams)
-    for k,v2 in pairs(typeParams) do
-      local value = jsonPath(npcConfig, k)
-      if (value and v2) then return true end
-    end
-    return false
-end
-
 function selectedTab.Hair(args)
   self.curSelectedTitle = self.currentOverride.identity.hairType or self.currentIdentity.hairType 
   args.title = {}
@@ -1086,7 +1079,6 @@ function selectedTab.UColor(args)
   end
   args.isOverride = true
 end
-
 
 function selectedTab.Prsnlity(args)
   local npcType = self.currentType
@@ -1329,10 +1321,6 @@ function removeDirective(cur, curO, data)
   jsonSetPath(curO, path, directive)
 end
 
-function uninit()
-  self.tbFeedbackColorRoutine = nil
-end
-
 function onMainSliderChange()
   if not self.doingMainUpdate then return end
   if self.updatingSlider then return end
@@ -1451,5 +1439,9 @@ function updateSldData(data)
   local newSldData = data.sldParams[data.index]
   sldData = parseArgs(newSldData, sldData)
   widget.setData(data.sldName, sldData)
+end
+
+function uninit()
+  self.tbFeedbackColorRoutine = nil
 end
 
