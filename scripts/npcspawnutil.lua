@@ -199,6 +199,48 @@ function checkIfNpcIs(v, npcConfig,typeParams)
     return false
 end
 
+function replaceDirectiveAtEnd(directiveBase, directiveReplace)
+  directiveBase = directiveBase or ""
+  directiveReplace = directiveReplace or ""
+
+  local split = util.split(directiveBase, "?replace")
+  if #split < 3 then return directiveBase end
+  if not string.match(directiveReplace, "?replace") then directiveReplace = "?replace"..directiveReplace end
+
+  split[#split] = directiveReplace
+  local result = ""
+  for _,v in ipairs(split) do
+    result = "?replace"..v
+  end
+
+  return result
+end
+
+function getDirectiveAtEnd(directiveBase)
+  local returnValue = ""
+  local split = util.split(directiveBase, "?replace")
+  local indx = #split
+  if indx < 2 then 
+    return nil 
+  end
+  while indx > 2 do
+    if tostring(split[indx]) ~= ""  and string.find(split[indx], "=") then
+      break
+    end
+    indx = indx - 1
+  end 
+  local table = {}
+  for k, v in string.gmatch(split[indx],"(%w+)=(%w+)") do
+    table[string.lower(k)] = string.lower(v)
+  end
+  return table
+end
+
+function getAsset(assetPath)
+  return root.assetJson(assetPath)
+end
+
+
 --overriding function found in util.lua so I can comment out the logInfo clutter.  Its functionality is untouched.
 function setPath(t, ...)
   local args = {...}

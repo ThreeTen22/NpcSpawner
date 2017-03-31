@@ -14,8 +14,8 @@ function init()
   self.equipSlot = baseConfig.equipSlot
   self.portraits = baseConfig.portraits
 
-  dLogJson(self.portraits,"portraits",true)
-  dLogJson(self.equipSlot,"slots",true)
+  --dLogJson(self.portraits,"portraits",true)
+  --dLogJson(self.equipSlot,"slots",true)
 
   local mSpeciesConfig = mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
   self.speciesList = mergeUnique(self.speciesList, mSpeciesConfig)
@@ -41,7 +41,7 @@ function init()
                             return tostring(path..species..".species")
                         end
 
-  self.personalityIndex = 0
+  self.idleStanceIndex = 0
 
   self.returnInfoColors = nil
   --UI VARS--
@@ -190,8 +190,6 @@ function setItemOverride(slotName, insertPosition, itemContainer)
   if itemContainer then 
     if type(itemContainer) == "table" then
         if string.find(itemContainer.name, "capturepod",1,true) then
-          --itemContainer = {}
-          --itemContainer.name = {"npcpetcapturepod"}
           itemContainer = "npcpetcapturepod"
           insertPosition[slotName] = {itemContainer}
           return
@@ -209,19 +207,19 @@ end
 
 -----CALLBACK FUNCTIONS-------
 function spnIdleStance.up()
-  dLog("spinner UP:  ")
+  --dLog("spinner UP:  ")
   local personalities = root.assetJson("/humanoid.config:personalities")
-  self.personalityIndex = util.wrap(self.personalityIndex + 1, 0, #personalities)
-  setIdleStance(self.personalityIndex)
+  self.idleStanceIndex = util.wrap(self.idleStanceIndex + 1, 0, #personalities)
+  setIdleStance(self.idleStanceIndex)
   updateNpc()
   return 
 end
 
 function spnIdleStance.down()
-  dLog("spinner DOWN:  ")
+  --dLog("spinner DOWN:  ")
   local personalities = root.assetJson("/humanoid.config:personalities")
-  self.personalityIndex = util.wrap(self.personalityIndex - 1, 0, #personalities)
-  setIdleStance(self.personalityIndex)
+  self.idleStanceIndex = util.wrap(self.idleStanceIndex - 1, 0, #personalities)
+  setIdleStance(self.idleStanceIndex)
   updateNpc()
   return 
 end
@@ -247,7 +245,7 @@ end
 
 --callback
 function onOverrideEnter()
-  dLog("FinalizingOverride")
+  --dLog("FinalizingOverride")
   self.overrideText = widget.getText(self.overrideTextBox)
   self.overrideText = string.gsub(self.overrideText, "  "," ",1, true)
   while self.overrideText[#self.overrideText] == " " do
@@ -277,7 +275,7 @@ function onOverrideEnter()
   
   
   if override[parsedStrings[1]] then
-    dLog("entered override Check")
+    --dLog("entered override Check")
     wasSuccessful, errorMsg = override[parsedStrings[1]](self.currentOverride,self.currentIdentity,table.unpack(parsedStrings,2))
   end
   if wasSuccessful then
@@ -308,7 +306,7 @@ function onSeachBoxKeyPress(tbLabel)
   if text == self.filterText then return end
   self.filterText = text
   local args = widget.getData(string.format("%s", self.techList))
-  dLog("keypress passed")
+  --dLog("keypress passed")
   if text == "" then text = nil end
   args.filter = text
   return setList(args)
@@ -459,7 +457,7 @@ function selectTab(index, option)
     end
   end
   self.returnInfo.colors = self.returnInfoColors
-  setList(copy(self.returnInfo))
+  setList(self.returnInfo)
 end
 
 function selectGenCategory(button, data)
@@ -539,7 +537,7 @@ function setList(args)
         for k,v in pairs(iData) do
           hexIndx = hexIndx+1
           hexId = tostring(v)
-          if hexIndx == 3 then break end
+          if hexIndx == 2 then break end
         end
       else
         if args.iData and args.iData[v] then
@@ -655,6 +653,9 @@ function changeTabLabels(tabs, option)
   end
 end
 
+--While the humanoid table has defined these idle stances as personalities, they do not affect
+--actual npc behavior.  That is the personality table with the path: scriptConfig.personality
+--if scriptConfig.personality isnt found, its chosen at random from scriptConfig.personalities
 function setIdleStance(index)
   if index ~= 0 then
     widget.setText("lblIdleStance", tostring(index))
@@ -747,50 +748,6 @@ function setPortrait(npcPort)
     widget.setVisible(portraits[num], false)
     num = num+1
   end
-end
-
-function getAsset(assetPath)
-  return root.assetJson(assetPath)
-end
-
--------MAIN LIST FUNCTIONS-----------
-
-
-function replaceDirectiveAtEnd(directiveBase, directiveReplace)
-  directiveBase = directiveBase or ""
-  directiveReplace = directiveReplace or ""
-
-  local split = util.split(directiveBase, "?replace")
-  if #split < 3 then return directiveBase end
-  if not string.match(directiveReplace, "?replace") then directiveReplace = "?replace"..directiveReplace end
-
-  split[#split] = directiveReplace
-  local result = ""
-  for _,v in ipairs(split) do
-    result = "?replace"..v
-  end
-
-  return result
-end
-
-function getDirectiveAtEnd(directiveBase)
-  local returnValue = ""
-  local split = util.split(directiveBase, "?replace")
-  local indx = #split
-  if indx < 2 then 
-    return nil 
-  end
-  while indx > 2 do
-    if tostring(split[indx]) ~= ""  and string.find(split[indx], "=") then
-      break
-    end
-    indx = indx - 1
-  end 
-  local table = {}
-  for k, v in string.gmatch(split[indx],"(%w+)=(%w+)") do
-    table[string.lower(k)] = string.lower(v)
-  end
-  return table
 end
 
 function updateSpecies()
@@ -1142,12 +1099,18 @@ end
 
 function override.set(curO, cur, setParams, ...)
     local setParam = config.getParameter("overrideConfig.setParams."..setParams)
-    if not setParam then dLog("Cannot find parameter") return false, "Cannot find parameter:"..setParams.." spelling error?" end
+    if not setParam then 
+      --dLog("Cannot find parameter") 
+      return false, "Cannot find parameter:"..setParams.." spelling error?" 
+    end
     local formattedParam = formatParam(setParam[2], ...)
     local setPath = config.getParameter("overrideConfig.path."..setParam[1])
-    if not setPath then dLog("cannot find path to parameter") return false, "cannot find path to parameter" end
+    if not setPath then 
+      --dLog("cannot find path to parameter") 
+      return false, "cannot find path to parameter" 
+    end
 
-    --Check if its not a path but a function to call on self.
+    --Check if its not a path but a variable in the self table.
     if setPath == "selfVariable" then
       if type(formattedParam) == "nil" then dLog("formatted incorrectly") return false, ("value given incorrectly formatted: Expect: "..setParam[2]) end
       if type(self[setParam[1]]) ~= "nil" then
