@@ -199,7 +199,7 @@ function checkIfNpcIs(v, npcConfig,typeParams)
     return false
 end
 
---overriding function found in util.lua so I can comment out the logInfo clutter.  Its functioonality is untouched.
+--overriding function found in util.lua so I can comment out the logInfo clutter.  Its functionality is untouched.
 function setPath(t, ...)
   local args = {...}
   --sb.logInfo("args are %s", args)

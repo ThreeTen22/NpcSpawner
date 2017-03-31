@@ -102,7 +102,8 @@ function init()
   widget.setText("lblSliderValue", "Seed:  "..tostring(self.sliderValue))
   self.mockdt = 0.33
   self.mockTimer = 0
-  
+
+
   --used for slider
   self.setSeedValue = function(value) 
         self.currentSeed = tonumber(value) 
@@ -110,10 +111,13 @@ function init()
   self.setOverride = function(value, data) 
       applyDirective(self.currentIdentity, self.currentOverride, value, data)
   end
+
+  --detach
+
   script.setUpdateDelta(3)
 end
 
---uninit WORKS. Question is, can we send entity messages without worrying about memory leaks?  Answer: fuck entity messages.
+--uninit WORKS. Question is, can we send entity messages?  Answer: fuck entity messages.
 function update(dt)
   --Cannot send entity messages during init, so will do it here
   if self.doingMainUpdate then
@@ -132,7 +136,6 @@ function update(dt)
 
         --Also add them to bmain's initialStorage config parameter so its baked into the npc during reloads.
 
-        --if type(insertPosition[1]) ~= "string" then
           local currentPath = self.currentOverride.scriptConfig
           if (not path(currentPath,"initialStorage","itemSlots")) then 
             setPath(currentPath,"initialStorage","itemSlots",{}) 
@@ -141,9 +144,8 @@ function update(dt)
           itemSlots[self.equipSlot[i]] = itemBagCopy
           if itemSlots[self.equipSlot[i]] and itemSlots[self.equipSlot[i]].name == "capturepod" then 
             itemSlots[self.equipSlot[i]].name = "npcpetcapturepod" 
-            itemSlots[self.equipSlot[i]].count = 10
+            itemSlots[self.equipSlot[i]].count = 1
           end
-        --end
         contentsChanged = true
       end
     end
@@ -362,6 +364,7 @@ function acceptBtn()
     npcParam = self.currentOverride
   }
     self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
+    pane.dismiss()
 end
 
 function setListInfo(categoryName, uniqueId, infoOverride)
@@ -947,13 +950,11 @@ function selectedTab.NpcType(args)
   args.skipTheRest = true
   args.iIcon = {}
   local worldStorage = world.getProperty(self.npcTypeStorage)
-  if not (worldStorage and worldStorage.iIcon) then worldStorage = {iIcon = {}, skyTime = world.time()} end
+  if not (worldStorage and worldStorage.iIcon) then worldStorage = {iIcon = {}, time = world.time()} end
 
   local updateToWorld = false
-  --TODO:  CHANGE THIS SO THAT A REASONABLE AMOUNT OF TIME HAS PASSED.
-    --IDEALLY IT WOULD BE NICE IF I COULD GET A HASH OF LOADED ASSETS SO I CAN QUICKLY DETECT CHANGES.  
-    --MAYBE HASH THE NPCTYPE LIST
-  if worldStorage.skyTime and worldStorage.skyTime + 86400 < world.time() then
+  --TODO: Load speeds are pretty damn fast already, but we still want to keep things updated.  Maybe 
+  if worldStorage.time and worldStorage.time + 800 < world.time() then
     override.clearcache()
   end
   
@@ -983,7 +984,7 @@ function selectedTab.NpcType(args)
   end
   args.iIcon = shallowCopy(worldStorage.iIcon)
   if updateToWorld then
-    worldStorage.skyTime = world.time()
+    worldStorage.time = world.time()
     world.setProperty(self.npcTypeStorage, worldStorage)
   end  
 end
@@ -1110,7 +1111,6 @@ function selectedTab.Export(args)
   spawner.npcTypeOptions[1] = args.npcType
   spawner.npcParameterOptions[1] = args.npcParam
   local exportString = string.format("/spawnitem spawnerwizard 1 '{\"shortdescription\":\"%s Spawner\",\"retainObjectParametersInItem\": true, \"level\":%s,\"spawner\":%s}'", args.npcParam.identity.name, args.currentLevel, sb.printJson(spawner))
-  local config = getUserConfig("npcSpawnerPlus")
   local name = widget.getText(self.nameBox)
   local species = self.currentSpecies
   local gender = self.currentIdentity.gender
@@ -1143,20 +1143,78 @@ end
 function override.set(curO, cur, setParams, ...)
     local setParam = config.getParameter("overrideConfig.setParams."..setParams)
     if not setParam then dLog("Cannot find parameter") return false, "Cannot find parameter:"..setParams.." spelling error?" end
+    local formattedParam = formatParam(setParam[2], ...)
     local setPath = config.getParameter("overrideConfig.path."..setParam[1])
     if not setPath then dLog("cannot find path to parameter") return false, "cannot find path to parameter" end
-    local setPathTable = getPathStr(curO, setPath)
-    if not setPathTable then 
-      setPathTable = setPathStr(curO,setPath,{})
+
+    --Check if its not a path but a function to call on self.
+    if setPath == "selfVariable" then
+      if type(formattedParam) == "nil" then dLog("formatted incorrectly") return false, ("value given incorrectly formatted: Expect: "..setParam[2]) end
+      if type(self[setParam[1]]) ~= "nil" then
+          self[setParam[1]] = formattedParam
+          return true, "parameter set"
+      else
+        return false, string.format("no variable named: %s was found inside self", setParam[1])
+      end
+    else
+      local setPathTable = getPathStr(curO, setPath)
+      if not setPathTable then 
+        setPathTable = setPathStr(curO,setPath,{})
+      end
+      --dLog(setPathTable)
+      
+      if type(formattedParam) == "nil" then dLog("formatted incorrectly") return false, ("value given incorrectly formatted: Expect: "..setParam[2]) end
+      setPathTable[setParam[1]] = formattedParam
+      return true, "parameter set"
     end
-    --dLog(setPathTable)
-    local formattedParam = formatParam(setParam[2], ...)
-    if type(formattedParam) == "nil" then dLog("formatted incorrectly") return false, ("value given incorrectly formatted: Expect: "..setParam[2]) end
-    setPathTable[setParam[1]] = formattedParam
-    return true
+    return false, "set could not complete for unknown reasons"
 end
 
 function override.detach()
+  local initInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
+  local curSpecies = self.currentSpecies
+  local curSeed =  self.currentSeed
+  local curType = self.currentType
+  local curLevel = self.currentLevel
+
+  local curOverride = self.currentOverride
+
+  local errs = {}
+
+  if curSpecies ~= initInfo.npcSpecies then
+    table.insert(errs, "Species")
+  end
+  if curSeed ~= initInfo.npcSeed then
+    table.insert(errs, "Seed")
+  end
+  if curType ~= initInfo.npcType then
+    table.insert(errs, "npctype")
+  end
+  local npcParam = initInfo.npcParam or {}
+
+  if not compare(curOverride.identity, npcParam.identity) then
+    table.insert(errs, "identity")
+  end
+
+  if not compare(curOverride.scriptConfig, npcParam.scriptConfig) then
+    table.insert(errs, "Behavior and/or equipped items")
+  end
+
+  if not compare(curOverride.items, npcParam.items) then
+    table.insert(errs, "Equippied Items")
+  end
+
+  if #errs > 0 then
+    local str = "Unable to detach:  Inconsistancies found in your npc's parameters:\n"
+    
+    for _,v in ipairs(errs) do
+      str = str.."\n"..v
+    end
+    str = str.."\n\nEither finalize your changes by pressing the activate button, or close and reopen this panel.  After doing so, enter the command again."
+  return false, str 
+  end
+
+
   world.sendEntityMessage(pane.containerEntityId(), "detachNpc")
   return true
 end
@@ -1209,8 +1267,16 @@ function override.insert(_,_,name, ...)
   return true
 end
 
+function override.clear()
+  widget.clearListItems(self.infoList)
+  widget.setText(self.overrideTextBox, "")
+  widget.setText(self.infoLabel, "")
+  return true
+end
+
 function override.clearcache()
   world.setProperty(self.npcTypeStorage, nil)
+  widget.setText(self.overrideTextBox, "")
   return true
 end
 
