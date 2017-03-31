@@ -1,0 +1,6 @@
+{
+  "input" : [
+    { "item" : "battery", "count" : 5}
+  ],
+  "groups" : [ "spawnerstation", "all" ]
+}

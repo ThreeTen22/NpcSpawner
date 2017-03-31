@@ -1,9 +1,0 @@
-{
-  "input" : [
-  	{ "item" : "wire", "count" : 30},
-    { "item" : "siliconboard", "count": 20},
-    { "item" : "battery", "count" : 5}
-  ],
-  "output" : { "item" : "NpcSpawnerPanel", "count" : 1},
-  "groups" : [ "spawnerstation", "all" ]
-}
