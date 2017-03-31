@@ -1,3 +1,5 @@
 [
-{ "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "spawnerstation" }}
+{ "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "spawnerstation" }},
+{ "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "npcspawnerfloor" }},
+{ "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "npcspawnerpanel" }}
 ]
