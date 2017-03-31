@@ -1,11 +1,14 @@
+require "/scripts/util.lua"
+require "/scripts/interp.lua"
+
 dComp = {}
 
 function dLog(item, prefix)
   if not prefix then prefix = "" end
   if type(item) ~= "string" then
-    sb.logInfo(prefix.."  "..dOut(item))
+    sb.logInfo("%s",prefix.."  "..dOut(item))
   else 
-    sb.logInfo(prefix.."  "..item)
+    sb.logInfo("%s",prefix.."  "..dOut(item))
   end
 end
 
@@ -15,18 +18,24 @@ function dOut(input)
 end
 
 function dLogJson(input, prefix, clean)
-  if type(prefix) == "boolean" then clean = (prefix and true); prefix = "" end
-  if (clean and true) then clean = 1 else clean = 0 end
-  if prefix ~= nil then
-    sb.logInfo(prefix)
+  local str = "\n"
+  if toBool(clean) or toBool(prefix) then clean = 1 else clean = 0 end
+  if prefix ~= "true" and prefix ~= "false" and prefix then
+    str = prefix..str
   end
-   
-   local info = sb.printJson(input,clean)
-   sb.logInfo("%s", info)
+   local info = sb.printJson(input, clean)
+   sb.logInfo("%s", str..info)
 end
 
+function dPrintJson(input)
+  local info = sb.printJson(input,1)
+  sb.logInfo("%s",info)
+  return info
+end
+
+
 function dCompare(prefix, one, two)
-  sb.logInfo(prefix)
+
   dComp[type(one)](one) 
   dComp[type(two)](two) 
 end
@@ -43,7 +52,7 @@ function dComp.number(input)
   return dLog(input, "number")
 end
 
-function dComp.bool(input)
+function dComp.boolean(input)
   return dLog(input, "bool: ")
 end
 
@@ -70,20 +79,6 @@ function keysToList(keyList)
   return newList
 end
 
-function lowercaseCopy(v)
-  if type(v) ~= "table" then
-    return string.lower(v)
-  else
-    local c = {}
-    for k,v in pairs(v) do
-      if type(k) == "string" then k = string.lower(k) end
-      c[k] = lowercaseCopy(v)
-    end
-    setmetatable(c, getmetatable(v))
-    return c
-  end
-end
-
 function logENV()
   for i,v in pairs(_ENV) do
     if type(v) == "function" then
@@ -103,16 +98,18 @@ function hasValue(t, value)
   return false
 end
 
-function appendToListIfUnique(output, list)
-  if not list then return end
-  local itemsToAdd = {}
-  for i,v in ipairs(list) do
-    if (not hasValue(output, v)) and v ~= "" then table.insert(itemsToAdd,v) end
-  end
-  for _,v in ipairs(itemsToAdd) do
-    table.insert(output, v)
-  end
-  return itemsToAdd
+function mergeUnique(t1, t2)
+  if not t2 or #t2 < 1 then return t1 end
+  local merged = util.mergeLists(t1,t2)
+  local hash = {}
+  local res = {}
+    for _,v in ipairs(merged) do
+       if (not hash[v]) then
+           res[#res+1] = v
+           hash[v] = true
+       end
+    end
+    return res
 end
 
 
@@ -126,9 +123,7 @@ end
 function getUserConfig(key)
   local config = root.getConfiguration(key)
   if not config then
-    local defaults = root.assetJson("/interface/scripted/NpcMenu/modConfig.config")
-    dLogJson(defaults, "DEFAULTS")
-    root.setConfiguration(key, defaults)
+    root.setConfiguration(key, {additionalSpecies = jarray(), additionalNpcTypes = jarray()})
     config = root.getConfiguration(key)
   end
   return root.getConfiguration(key)
@@ -136,22 +131,19 @@ end
 
 function isContainerEmpty(itemBag)
    for k,v in pairs(itemBag) do
-    if type(v) ~= "nil" then return false end
+    if v then return false end
    end
    return true
 end
 
 function getPathStr(t, str)
     if str == "" then return t end
-    local s, _ = string.find(str, ".", 1, true)
-    if not s then return t[str] end
-    return jsonPath(t,str)
+    return jsonPath(t,str) or t[str]
 end
 
-function setPathStr(t, pathString, value)
-    local s, _ = string.find(str, ".", 1, true)
-    if not s then t[str] = value return end
-    jsonSetPath(t, pathString,value)
+function setPathStr(t, str, value)
+    if str == "" then t[str] = value return end
+    return jsonSetPath(t, str,value)
 end
 
 function toBool(value)
@@ -161,7 +153,6 @@ function toBool(value)
     end
     return nil
 end
-
 
 function formatParam(strType,...)
     local params = {...}
@@ -196,5 +187,61 @@ function formatParam(strType,...)
     end
 end
 
+function toHex(v)
+  return string.format("%02x", math.min(math.floor(v),255))
+end
 
+function checkIfNpcIs(v, npcConfig,typeParams)
+    for k,v2 in pairs(typeParams) do
+      local value = jsonPath(npcConfig, k)
+      if (value and v2) then return true end
+    end
+    return false
+end
+
+function getDirectiveAtEnd(directiveBase)
+  local returnValue = ""
+  local split = util.split(directiveBase, "?replace")
+  local indx = #split
+  if indx < 2 then 
+    return nil 
+  end
+  while indx > 2 do
+    if tostring(split[indx]) ~= ""  and string.find(split[indx], "=") then
+      break
+    end
+    indx = indx - 1
+  end 
+  local table = {}
+  for k, v in string.gmatch(split[indx],"(%w+)=(%w+)") do
+    table[string.lower(k)] = string.lower(v)
+  end
+  return table
+end
+
+function getAsset(assetPath)
+  return root.assetJson(assetPath)
+end
+
+
+--overriding function found in util.lua so I can comment out the logInfo clutter.  Its functionality is untouched.
+function setPath(t, ...)
+  local args = {...}
+  --sb.logInfo("args are %s", args)
+  if #args < 2 then return end
+
+  for i,child in ipairs(args) do
+    if i == #args - 1 then
+      t[child] = args[#args]
+      return
+    else
+      t[child] = t[child] or {}
+      t = t[child]
+    end
+  end
+end
+
+--toHex(v*tonumber(color:sub(0,2),16))..toHex(v*tonumber(color:sub(3,4),16))..toHex(v*tonumber(color:sub(5,6),16))
+dComp["thread"] = function(input) dLog(input) end
+dComp["function"] = function(input) sb.logInfo("%s", input) end
 dComp["nil"] = function(input) return dLog("nil") end
