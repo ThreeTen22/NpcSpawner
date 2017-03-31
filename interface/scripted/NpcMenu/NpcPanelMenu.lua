@@ -93,7 +93,6 @@ function init()
 
   updateNpc(true)
   modNpc.Species({iTitle = self.currentSpecies}, self.currentIdentity, self.currentOverride)
-  --if #self.currentOverride.identity < 1 or jcount(self.currentOverride.identity) < 1 then self.currentOverride.identity = copy(self.currentIdentity)
   self.slotCount = 12
   self.sliderValue = tonumber(self.currentSeed) or 0
 
@@ -109,7 +108,6 @@ function init()
         self.currentSeed = tonumber(value) 
   end
   self.setOverride = function(value, data) 
-      --local data = widget.getData(self.sldMain)
       applyDirective(self.currentIdentity, self.currentOverride, value, data)
   end
   script.setUpdateDelta(3)

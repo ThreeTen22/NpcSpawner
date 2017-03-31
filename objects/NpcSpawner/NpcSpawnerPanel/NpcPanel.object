@@ -6,7 +6,7 @@
   "shortdescription" : "NPC Maker 3000",
   "subtitle" : "When they arrive, don't ask how they got there, you don't wanna know.",
   "race" : "generic",
-  "price" : 200,
+  "price" : 15000,
   "category" : "spawner",
   "tooltipKind" : "object",
   "genericDescription" : "Who should I spawn next?",
