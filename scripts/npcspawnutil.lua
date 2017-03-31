@@ -199,23 +199,6 @@ function checkIfNpcIs(v, npcConfig,typeParams)
     return false
 end
 
-function replaceDirectiveAtEnd(directiveBase, directiveReplace)
-  directiveBase = directiveBase or ""
-  directiveReplace = directiveReplace or ""
-
-  local split = util.split(directiveBase, "?replace")
-  if #split < 3 then return directiveBase end
-  if not string.match(directiveReplace, "?replace") then directiveReplace = "?replace"..directiveReplace end
-
-  split[#split] = directiveReplace
-  local result = ""
-  for _,v in ipairs(split) do
-    result = "?replace"..v
-  end
-
-  return result
-end
-
 function getDirectiveAtEnd(directiveBase)
   local returnValue = ""
   local split = util.split(directiveBase, "?replace")
