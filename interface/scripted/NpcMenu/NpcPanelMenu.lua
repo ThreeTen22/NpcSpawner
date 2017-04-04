@@ -34,6 +34,11 @@ function init()
     table.insert(listOfProtectorates, tostring(name))
   end
   self.npcTypeList = mergeUnique(self.npcTypeList, listOfProtectorates)
+  for i,v in ipairs(self.npcTypeList) do
+    if not pcall(root.npcConfig,v) then
+      self.npcTypeList[i] = nil
+    end
+  end
   self.returnInfo = {}
   
   self.getSpeciesPath = function(species, path)          
@@ -927,15 +932,19 @@ function selectedTab.NpcType(args)
   local crew = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","crew"))
 
   local npcConfig = nil
+  local success = false
+
   for _,v in ipairs(self.npcTypeList) do
     if not worldStorage.iIcon[v] then
-     npcConfig = root.npcConfig(v)
-      if checkIfNpcIs(v, npcConfig, hostile) then worldStorage.iIcon[v] = hIcon; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, guard) then worldStorage.iIcon[v] = gIcon ; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, merchant) then worldStorage.iIcon[v] = mIcon ; updateToWorld = true;
-      elseif checkIfNpcIs(v, npcConfig, crew) then worldStorage.iIcon[v] = cIcon; updateToWorld = true;
-      else  
-        worldStorage.iIcon[v] = vIcon
+      success, npcConfig = pcall(root.npcConfig,v)
+      if success then
+        if checkIfNpcIs(v, npcConfig, hostile) then worldStorage.iIcon[v] = hIcon; updateToWorld = true;
+        elseif checkIfNpcIs(v, npcConfig, guard) then worldStorage.iIcon[v] = gIcon ; updateToWorld = true;
+        elseif checkIfNpcIs(v, npcConfig, merchant) then worldStorage.iIcon[v] = mIcon ; updateToWorld = true;
+        elseif checkIfNpcIs(v, npcConfig, crew) then worldStorage.iIcon[v] = cIcon; updateToWorld = true;
+        else  
+          worldStorage.iIcon[v] = vIcon
+        end
       end
     end
   end
