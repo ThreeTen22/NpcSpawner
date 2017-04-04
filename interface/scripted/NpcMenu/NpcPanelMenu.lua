@@ -1076,7 +1076,9 @@ function selectedTab.Export(args)
   spawner.npcSpeciesOptions[1] = args.npcSpecies
   spawner.npcTypeOptions[1] = args.npcType
   spawner.npcParameterOptions[1] = args.npcParam
-  local exportString = string.format("/spawnitem spawnerwizard 1 '{\"shortdescription\":\"%s Spawner\",\"retainObjectParametersInItem\": true, \"level\":%s,\"spawner\":%s}'", args.npcParam.identity.name, args.currentLevel, sb.printJson(spawner))
+  local level = args.npcLevel
+  if level then level = "\"level\":"..tostring(level).."," else level = "" end
+  local exportString = string.format("/spawnitem spawnerwizard 1 '{\"shortdescription\":\"%s Spawner\",\"retainObjectParametersInItem\": true, %s\"spawner\":%s}'", args.npcParam.identity.name, level, sb.printJson(spawner))
   local name = widget.getText(self.nameBox)
   local species = self.currentSpecies
   local gender = self.currentIdentity.gender
