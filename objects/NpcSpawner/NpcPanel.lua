@@ -13,10 +13,10 @@ function init(virtual)
     storage.keepStorageInfo = storage.keepStorageInfo or false
     self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
     local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
-    local userConfig = getUserConfig("npcSpawnerPlus")
-    local mSpeciesConfig = mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
-    self.speciesList = mergeUnique(self.speciesList, mSpeciesConfig)
-    self.npcTypeList = mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
+    local userConfig = npcUtil.getUserConfig("npcSpawnerPlus")
+    local mSpeciesConfig = npcUtil.mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
+    self.speciesList = npcUtil.mergeUnique(self.speciesList, mSpeciesConfig)
+    self.npcTypeList = npcUtil.mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
     randomItUp()
     
     local args = {

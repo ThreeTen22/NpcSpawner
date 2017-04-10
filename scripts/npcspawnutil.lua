@@ -91,7 +91,7 @@ function toBool(value)
     return nil
 end
 
-function checkIfNpcIs(v, npcConfig,typeParams)
+function npcUtil.checkIfNpcIs(v, npcConfig,typeParams)
     for k,v2 in pairs(typeParams) do
       local value = jsonPath(npcConfig, k)
       if (value and v2) then return true end
@@ -99,7 +99,7 @@ function checkIfNpcIs(v, npcConfig,typeParams)
     return false
 end
 
-function formatParam(strType,...)
+function npcUtil.formatParam(strType,...)
     local params = {...}
     if #params == 0 then return nil end
     if strType == "boolean" then 
@@ -132,7 +132,7 @@ function formatParam(strType,...)
     end
 end
 
-function getDirectiveAtEnd(directiveBase)
+function npcUtil.getDirectiveAtEnd(directiveBase)
   local returnValue = ""
   local split = util.split(directiveBase, "?replace")
   local indx = #split
@@ -152,14 +152,14 @@ function getDirectiveAtEnd(directiveBase)
   return table
 end
 
-function getGenderIndx(name, genderTable)
+function npcUtil.getGenderIndx(name, genderTable)
   local genderIndx
   for i,v in ipairs(genderTable) do
     if v.name == name then return i end
   end
 end
 
-function getUserConfig(key)
+function npcUtil.getUserConfig(key)
   local config = root.getConfiguration(key)
   if not config then
     root.setConfiguration(key, {additionalSpecies = jarray(), additionalNpcTypes = jarray()})
@@ -168,7 +168,7 @@ function getUserConfig(key)
   return root.getConfiguration(key)
 end
 
-function getWorldStorage(id, modVersion)
+function npcUtil.getWorldStorage(id, modVersion)
   local worldStorage = world.getProperty(id)
   local clearCache = false
   if not (worldStorage and worldStorage.iIcon) then 
@@ -186,14 +186,14 @@ function getWorldStorage(id, modVersion)
   return worldStorage, clearCache
 end
 
-function isContainerEmpty(itemBag)
+function npcUtil.isContainerEmpty(itemBag)
    for k,v in pairs(itemBag) do
     if v then return false end
    end
    return true
 end
 
-function mergeUnique(t1, t2)
+function npcUtil.mergeUnique(t1, t2)
   if not t2 or #t2 < 1 then return t1 end
   local merged = util.mergeLists(t1,t2)
   local hash = {}
@@ -207,11 +207,11 @@ function mergeUnique(t1, t2)
   return res
 end
 
-function modVersion() 
+function npcUtil.modVersion() 
   return tostring(root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init.modVersion")) 
 end
 
-function replaceDirectives(directive, directiveJson)
+function npcUtil.replaceDirectives(directive, directiveJson)
   
   if not directive and type(directive) == "nil" then return nil end
   local splitDirectives = util.split(directive,"?replace")

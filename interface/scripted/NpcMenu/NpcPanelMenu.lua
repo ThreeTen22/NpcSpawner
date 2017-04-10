@@ -10,16 +10,16 @@ override = {}
 function init()
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
   local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
-  local userConfig = getUserConfig("npcSpawnerPlus")
+  local userConfig = npcUtil.getUserConfig("npcSpawnerPlus")
   self.equipSlot = baseConfig.equipSlot
   self.portraits = baseConfig.portraits
 
   --dLogJson(self.portraits,"portraits",true)
   --dLogJson(self.equipSlot,"slots",true)
 
-  local mSpeciesConfig = mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
-  self.speciesList = mergeUnique(self.speciesList, mSpeciesConfig)
-  self.npcTypeList = mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
+  local mSpeciesConfig = npcUtil.mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
+  self.speciesList = npcUtil.mergeUnique(self.speciesList, mSpeciesConfig)
+  self.npcTypeList = npcUtil.mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
 
   local protectorate = root.npcConfig("villager")
   
@@ -30,7 +30,7 @@ function init()
     local name = v[2]
     table.insert(listOfProtectorates, tostring(name))
   end
-  self.npcTypeList = mergeUnique(self.npcTypeList, listOfProtectorates)
+  self.npcTypeList = npcUtil.mergeUnique(self.npcTypeList, listOfProtectorates)
   local removeNames = {}
   for i,v in ipairs(self.npcTypeList) do
     dLog(v, "type: ")
@@ -152,7 +152,7 @@ function update(dt)
     end
 
     if contentsChanged then 
-      if isContainerEmpty(itemBag) then
+      if npcUtil.isContainerEmpty(itemBag) then
         self.currentOverride.items = nil
         if self.currentOverride.scriptConfig then
           self.currentOverride.scriptConfig.initialStorage = nil
@@ -500,7 +500,7 @@ function selectTab(index, option)
   else
     local optn  = config.getParameter("assetParams."..listType)
     if optn then
-      getSpeciesAsset(self.speciesJson, getGenderIndx(self.currentIdentity.gender), self.currentSpecies, optn, self.returnInfo)
+      getSpeciesAsset(self.speciesJson, npcUtil.getGenderIndx(self.currentIdentity.gender), self.currentSpecies, optn, self.returnInfo)
     end
   end
   self.returnInfo.colors = self.returnInfoColors
@@ -794,7 +794,7 @@ function modNpc.Species(listData, cur, curO)
     curO.identity = {}
   end
   updateSpecies()
-  local genderIndx = getGenderIndx(cur.gender, self.speciesJson.genders)
+  local genderIndx = npcUtil.getGenderIndx(cur.gender, self.speciesJson.genders)
   local speciesIcon = self.speciesJson.genders[genderIndx].characterImage
   widget.setImage("techIconHead",speciesIcon)
 end
@@ -842,7 +842,7 @@ function modNpc.HColor(listData, cur, curO)
   if listData.clearConfig then
     curO["hairDirectives"] = nil
   else
-    curO.hairDirectives = replaceDirectives(curO.hairDirectives or cur.hairDirectives, listData.iData)
+    curO.hairDirectives = npcUtil.replaceDirectives(curO.hairDirectives or cur.hairDirectives, listData.iData)
   end
 end
 
@@ -852,7 +852,7 @@ function modNpc.FHColor(listData, cur, curO)
   if listData.clearConfig then
     curO["facialHairDirectives"] = nil
   else
-    curO.facialHairDirectives = replaceDirectives(curO.facialHairDirectives or cur.facialHairDirectives, listData.iData)
+    curO.facialHairDirectives = npcUtil.replaceDirectives(curO.facialHairDirectives or cur.facialHairDirectives, listData.iData)
   end
 end
 
@@ -862,7 +862,7 @@ function modNpc.FMColor(listData, cur, curO)
   if listData.clearConfig then
     curO["facialMaskDirectives"] = nil
   else
-    curO.facialMaskDirectives = replaceDirectives(curO.facialMaskDirectives or cur.facialMaskDirectives, listData.iData)
+    curO.facialMaskDirectives = npcUtil.replaceDirectives(curO.facialMaskDirectives or cur.facialMaskDirectives, listData.iData)
   end
 end
 
@@ -873,22 +873,22 @@ function modNpc.BColor(listData, cur, curO)
     curO["bodyDirectives"] = nil
     curO["emoteDirectives"] = nil
   else
-    curO.bodyDirectives = replaceDirectives(curO.bodyDirectives or cur.bodyDirectives, listData.iData)
-    curO.emoteDirectives = replaceDirectives(curO.emoteDirectives or cur.emoteDirectives, listData.iData)  
+    curO.bodyDirectives = npcUtil.replaceDirectives(curO.bodyDirectives or cur.bodyDirectives, listData.iData)
+    curO.emoteDirectives = npcUtil.replaceDirectives(curO.emoteDirectives or cur.emoteDirectives, listData.iData)  
   end
 end
 
 function modNpc.UColor(listData, cur, curO)
   local curO = curO.identity
   if listData.clearConfig then
-    local endDirective = getDirectiveAtEnd(cur.bodyDirectives)
-    curO.bodyDirectives = replaceDirectives(curO.bodyDirectives, endDirective)
-    curO.hairDirectives = replaceDirectives(curO.hairDirectives, endDirective)  
-    curO.emoteDirectives = replaceDirectives(curO.emoteDirectives, endDirective)
+    local endDirective = npcUtil.getDirectiveAtEnd(cur.bodyDirectives)
+    curO.bodyDirectives = npcUtil.replaceDirectives(curO.bodyDirectives, endDirective)
+    curO.hairDirectives = npcUtil.replaceDirectives(curO.hairDirectives, endDirective)  
+    curO.emoteDirectives = npcUtil.replaceDirectives(curO.emoteDirectives, endDirective)
   else
-    curO.bodyDirectives = replaceDirectives(curO.bodyDirectives or cur.bodyDirectives, listData.iData)
-    curO.hairDirectives = replaceDirectives(curO.hairDirectives or cur.hairDirectives, listData.iData)  
-    curO.emoteDirectives = replaceDirectives(curO.emoteDirectives or cur.emoteDirectives, listData.iData)  
+    curO.bodyDirectives = npcUtil.replaceDirectives(curO.bodyDirectives or cur.bodyDirectives, listData.iData)
+    curO.hairDirectives = npcUtil.replaceDirectives(curO.hairDirectives or cur.hairDirectives, listData.iData)  
+    curO.emoteDirectives = npcUtil.replaceDirectives(curO.emoteDirectives or cur.emoteDirectives, listData.iData)  
   end
 end
 
@@ -912,7 +912,7 @@ function selectedTab.Species(args)
   args.skipTheRest = true
   args.iIcon = {}
   --JSON indx starts at 0,  lua starts at 1.  RIP
-  local genderIndx = getGenderIndx(self.currentIdentity.gender)-1
+  local genderIndx = npcUtil.getGenderIndx(self.currentIdentity.gender)-1
   for _,v in ipairs(self.speciesList) do
     local jsonPath = string.format("/species/%s.species:genders.%s.characterImage",v, tostring(genderIndx))
     --dLog(jsonPath, "JSON PATH")
@@ -944,8 +944,8 @@ function selectedTab.NpcType(args)
   local guard = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","guard"))
   local merchant = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","merchant"))
   local crew = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","crew"))
-  modVersion()
-  local worldStorage, clearCache = getWorldStorage(self.npcTypeStorage, modVersion())
+  npcUtil.modVersion()
+  local worldStorage, clearCache = npcUtil.getWorldStorage(self.npcTypeStorage, npcUtil.modVersion())
   if clearCache then override.clearcache() end
   local npcConfig = nil
   local success = false
@@ -955,10 +955,10 @@ function selectedTab.NpcType(args)
       success, npcConfig = pcall(root.npcConfig,v)
       --dCompare("npcType: ",v,npcConfig)
       if success then
-        if checkIfNpcIs(v, npcConfig, hostile) then worldStorage.iIcon[v] = hIcon; updateToWorld = true;
-        elseif checkIfNpcIs(v, npcConfig, guard) then worldStorage.iIcon[v] = gIcon ; updateToWorld = true;
-        elseif checkIfNpcIs(v, npcConfig, merchant) then worldStorage.iIcon[v] = mIcon ; updateToWorld = true;
-        elseif checkIfNpcIs(v, npcConfig, crew) then worldStorage.iIcon[v] = cIcon; updateToWorld = true;
+        if npcUtil.checkIfNpcIs(v, npcConfig, hostile) then worldStorage.iIcon[v] = hIcon; updateToWorld = true;
+        elseif npcUtil.checkIfNpcIs(v, npcConfig, guard) then worldStorage.iIcon[v] = gIcon ; updateToWorld = true;
+        elseif npcUtil.checkIfNpcIs(v, npcConfig, merchant) then worldStorage.iIcon[v] = mIcon ; updateToWorld = true;
+        elseif npcUtil.checkIfNpcIs(v, npcConfig, crew) then worldStorage.iIcon[v] = cIcon; updateToWorld = true;
         else  
           worldStorage.iIcon[v] = vIcon
         end
@@ -1131,7 +1131,7 @@ function override.set(curO, cur, setParams, ...)
       --dLog("Cannot find parameter") 
       return false, "Cannot find parameter:"..setParams.." spelling error?" 
     end
-    local formattedParam = formatParam(setParam[2], ...)
+    local formattedParam = npcUtil.formatParam(setParam[2], ...)
     local setPath = config.getParameter("overrideConfig.path."..setParam[1])
     if not setPath then 
       --dLog("cannot find path to parameter") 
@@ -1252,7 +1252,7 @@ function override.insert(_,_,name, ...)
   override.outputStr("re-open the panel to see the updated changes")
   userConfig = root.getConfigurationPath(key)
   --dLog(userConfig,"userConfig:")
-  userConfig = mergeUnique(userConfig, successes)
+  userConfig = npcUtil.mergeUnique(userConfig, successes)
   --dLog(userConfig,"userConfig:")
   root.setConfigurationPath(key, userConfig)
   return true
