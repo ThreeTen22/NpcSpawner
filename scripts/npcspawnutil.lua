@@ -2,6 +2,7 @@ require "/scripts/util.lua"
 require "/scripts/interp.lua"
 
 dComp = {}
+npcUtil = {}
 
 function dLog(item, prefix)
   if not prefix then prefix = "" end
@@ -35,9 +36,8 @@ end
 
 
 function dCompare(prefix, one, two)
-
   dComp[type(one)](one) 
-  dComp[type(two)](two) 
+  dComp[type(two)](two)
 end
 
 function dComp.string(input)
@@ -60,80 +60,13 @@ function dComp.userdata(input)
   return dLogJson(input, "userdata:")
 end
 
-function valuesToKeys(list)
-  local newList = {}
-  local vName = ""
-  for k,v in pairs(list) do
-    vName = tostring(v)
-    newList.vName = {}
-  end
-end
-
-function keysToList(keyList)
-  local newList = {}
-  local count = 0
-  for k,_ in pairs(keyList) do
-    count = count + 1
-    table.insert(newList,tostring(k))
-  end
-  return newList
-end
-
-function logENV()
-  for i,v in pairs(_ENV) do
-    if type(v) == "function" then
-      sb.logInfo("%s", i)
-    elseif type(v) == "table" then
-      for j,k in pairs(v) do
-        sb.logInfo("%s.%s (%s)", i, j, type(k))
-      end
-    end
-  end
-end
-
-function hasValue(t, value)
-  for _,v in pairs(t) do
-    if v == value then return true end
-  end
-  return false
-end
-
-function mergeUnique(t1, t2)
-  if not t2 or #t2 < 1 then return t1 end
-  local merged = util.mergeLists(t1,t2)
-  local hash = {}
-  local res = {}
-    for _,v in ipairs(merged) do
-       if (not hash[v]) then
-           res[#res+1] = v
-           hash[v] = true
-       end
-    end
-    return res
-end
+dComp["thread"] = function(input) return dLog(input) end
+dComp["function"] = function(input) return sb.logInfo("%s", input) end
+dComp["nil"] = function(input) return dLog("nil") end
 
 
-function hasKey(t, value)
-  for k,_ in pairs(t) do
-    if k == value then return true end
-  end
-  return false
-end
-
-function getUserConfig(key)
-  local config = root.getConfiguration(key)
-  if not config then
-    root.setConfiguration(key, {additionalSpecies = jarray(), additionalNpcTypes = jarray()})
-    config = root.getConfiguration(key)
-  end
-  return root.getConfiguration(key)
-end
-
-function isContainerEmpty(itemBag)
-   for k,v in pairs(itemBag) do
-    if v then return false end
-   end
-   return true
+function getAsset(assetPath)
+  return root.assetJson(assetPath)
 end
 
 function getPathStr(t, str)
@@ -146,12 +79,24 @@ function setPathStr(t, str, value)
     return jsonSetPath(t, str,value)
 end
 
+function toHex(v)
+  return string.format("%02x", math.min(math.floor(v),255))
+end
+
 function toBool(value)
     if value then
       if value == "true" then return true end
       if value == "false" then return false end 
     end
     return nil
+end
+
+function checkIfNpcIs(v, npcConfig,typeParams)
+    for k,v2 in pairs(typeParams) do
+      local value = jsonPath(npcConfig, k)
+      if (value and v2) then return true end
+    end
+    return false
 end
 
 function formatParam(strType,...)
@@ -187,18 +132,6 @@ function formatParam(strType,...)
     end
 end
 
-function toHex(v)
-  return string.format("%02x", math.min(math.floor(v),255))
-end
-
-function checkIfNpcIs(v, npcConfig,typeParams)
-    for k,v2 in pairs(typeParams) do
-      local value = jsonPath(npcConfig, k)
-      if (value and v2) then return true end
-    end
-    return false
-end
-
 function getDirectiveAtEnd(directiveBase)
   local returnValue = ""
   local split = util.split(directiveBase, "?replace")
@@ -219,10 +152,86 @@ function getDirectiveAtEnd(directiveBase)
   return table
 end
 
-function getAsset(assetPath)
-  return root.assetJson(assetPath)
+function getGenderIndx(name, genderTable)
+  local genderIndx
+  for i,v in ipairs(genderTable) do
+    if v.name == name then return i end
+  end
 end
 
+function getUserConfig(key)
+  local config = root.getConfiguration(key)
+  if not config then
+    root.setConfiguration(key, {additionalSpecies = jarray(), additionalNpcTypes = jarray()})
+    config = root.getConfiguration(key)
+  end
+  return root.getConfiguration(key)
+end
+
+function getWorldStorage(id, modVersion)
+  local worldStorage = world.getProperty(id)
+  local clearCache = false
+  if not (worldStorage and worldStorage.iIcon) then 
+    worldStorage = {iIcon = {}, time = world.time(), modVersion = modVersion} 
+  end
+
+  if worldStorage.modVersion ~= modVersion then
+    worldStorage.modVersion = modVersion
+    clearCache = true
+  end
+  if (worldStorage.time + 800) > world.time() then
+    clearCache = true
+  end
+
+  return worldStorage, clearCache
+end
+
+function isContainerEmpty(itemBag)
+   for k,v in pairs(itemBag) do
+    if v then return false end
+   end
+   return true
+end
+
+function mergeUnique(t1, t2)
+  if not t2 or #t2 < 1 then return t1 end
+  local merged = util.mergeLists(t1,t2)
+  local hash = {}
+  local res = {}
+    for _,v in ipairs(merged) do
+       if (not hash[v]) then
+           res[#res+1] = v
+           hash[v] = true
+       end
+    end
+  return res
+end
+
+function modVersion() 
+  return tostring(root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init.modVersion")) 
+end
+
+function replaceDirectives(directive, directiveJson)
+  
+  if not directive and type(directive) == "nil" then return nil end
+  local splitDirectives = util.split(directive,"?replace")
+
+  for i,v in ipairs(splitDirectives) do
+    if not (v == "") then
+        local k = string.match(v, "(%w+)=%w+")
+        if directiveJson[k] or directiveJson[string.upper(k)] or directiveJson[string.lower(k)] then
+            splitDirectives[i] = createDirective(directiveJson)
+        end
+    end
+  end
+  local returnString = ""
+  for i,v in ipairs(splitDirectives) do
+    if v ~= "" then
+      returnString = returnString.."?replace"..v
+    end
+  end
+  return returnString
+end
 
 --overriding function found in util.lua so I can comment out the logInfo clutter.  Its functionality is untouched.
 function setPath(t, ...)
@@ -242,6 +251,3 @@ function setPath(t, ...)
 end
 
 --toHex(v*tonumber(color:sub(0,2),16))..toHex(v*tonumber(color:sub(3,4),16))..toHex(v*tonumber(color:sub(5,6),16))
-dComp["thread"] = function(input) dLog(input) end
-dComp["function"] = function(input) sb.logInfo("%s", input) end
-dComp["nil"] = function(input) return dLog("nil") end
