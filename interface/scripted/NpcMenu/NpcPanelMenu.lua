@@ -21,9 +21,6 @@ function init()
   self.speciesList = mergeUnique(self.speciesList, mSpeciesConfig)
   self.npcTypeList = mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
 
-  table.sort(self.speciesList)
-  table.sort(self.npcTypeList)
-
   local protectorate = root.npcConfig("villager")
   
   local listOfProtectorates = {}
@@ -34,11 +31,23 @@ function init()
     table.insert(listOfProtectorates, tostring(name))
   end
   self.npcTypeList = mergeUnique(self.npcTypeList, listOfProtectorates)
+  local removeNames = {}
   for i,v in ipairs(self.npcTypeList) do
+    dLog(v, "type: ")
     if not pcall(root.npcConfig,v) then
-      self.npcTypeList[i] = nil
+      dLog(v, "bad NpcType: ")
+      self.npcTypeList[i] = "_r"
     end
   end
+
+
+  table.sort(self.speciesList)
+  table.sort(self.npcTypeList)
+
+  while self.npcTypeList[1] ~= "_r" do
+    table.remove(self.npcTypeList, 1)
+  end
+
   self.returnInfo = {}
   
   self.getSpeciesPath = function(species, path)          
@@ -138,19 +147,6 @@ function update(dt)
         --Add items to override item slot so they update visually.
         local insertPosition = self.currentOverride.items.override[1][2][1]
         setItemOverride(self.equipSlot[i],insertPosition, itemBag[i])
-
-        --Also add them to bmain's initialStorage config parameter so its baked into the npc during reloads.
-
-          local currentPath = self.currentOverride.scriptConfig
-          if (not path(currentPath,"initialStorage","itemSlots")) then 
-            setPath(currentPath,"initialStorage","itemSlots",{}) 
-          end
-          local itemSlots = self.currentOverride.scriptConfig.initialStorage.itemSlots
-          itemSlots[self.equipSlot[i]] = itemBagCopy
-          if itemSlots[self.equipSlot[i]] and itemSlots[self.equipSlot[i]].name == "capturepod" then 
-            itemSlots[self.equipSlot[i]].name = "npcpetcapturepod" 
-            itemSlots[self.equipSlot[i]].count = 1
-          end
         contentsChanged = true
       end
     end
@@ -357,6 +353,52 @@ end
 function acceptBtn()
   self.currentOverride.identity = self.currentOverride.identity or {} 
   self.currentOverride.identity = parseArgs(self.currentOverride.identity, self.currentIdentity)
+  local hasEquip = false
+  local hasWeapon = false
+  local itemBag = widget.itemGridItems("itemGrid")
+  local currentPath = self.currentOverride.scriptConfig
+
+  if (not path(currentPath,"initialStorage","itemSlots")) then 
+      setPath(currentPath,"initialStorage","itemSlots",{}) 
+  end
+
+  local itemSlots = self.currentOverride.scriptConfig.initialStorage.itemSlots
+  local slotName = ""
+  for i = 1, 4 do 
+    if itemBag[i] then
+        hasWeapons = true
+        slotName = self.equipSlot[i]
+        itemSlots[slotName] = copy(itemBag[i])
+        if itemSlots[slotName] and string.find(itemSlots[slotName].name, "capturepod",1,true) then 
+          itemSlots[slotName].name = "npcpetcapturepod" 
+          itemSlots[slotName].count = 1
+        end
+    end
+  end
+
+  for i = 4, self.slotCount do
+    if itemBag[i] then
+      hasEquip = true
+      local slotName = self.equipSlot[i]
+      itemSlots[slotName] = copy(itemBag[i])
+    end
+  end
+
+  if hasEquip then 
+    self.currentOverride.scriptConfig.crew.uniformSlots = jobject()
+  else
+    self.currentOverride.scriptConfig.crew = nil
+  end
+
+  if hasWeapon then
+    currentPath = self.currentOverride.scriptConfig
+    setPath(currentPath,"behaviorConfig","emptyHands",false)
+  end
+
+  if hasEquip and hasWeapon then
+    self.currentOverride.scriptConfig.initialStorage = nil
+  end
+
   setNpcName()
   update(0)
   local args = {
@@ -366,8 +408,8 @@ function acceptBtn()
     npcLevel = self.currentLevel,
     npcParam = self.currentOverride
   }
-    self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
-    pane.dismiss()
+  self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
+  pane.dismiss()
 end
 
 function setListInfo(categoryName, uniqueId, infoOverride)
@@ -688,27 +730,6 @@ function clearPersonality()
     widget.setText("lblIdleStance", "No Override")
 end
 
-function replaceDirectives(directive, directiveJson)
-  
-  if not directive and type(directive) == "nil" then return nil end
-  local splitDirectives = util.split(directive,"?replace")
-
-  for i,v in ipairs(splitDirectives) do
-    if not (v == "") then
-        local k = string.match(v, "(%w+)=%w+")
-        if directiveJson[k] or directiveJson[string.upper(k)] or directiveJson[string.lower(k)] then
-            splitDirectives[i] = createDirective(directiveJson)
-        end
-    end
-  end
-  local returnString = ""
-  for i,v in ipairs(splitDirectives) do
-    if v ~= "" then
-      returnString = returnString.."?replace"..v
-    end
-  end
-  return returnString
-end
 
 function createDirective(directiveJson)
   local prefix = ""
@@ -762,12 +783,7 @@ function updateSpecies()
   end
 end
 
-function getGenderIndx(name)
-  local genderIndx
-  for i,v in ipairs(self.speciesJson.genders) do
-    if v.name == name then return i end
-  end
-end
+
 
 
 ------CHANGE NPC FUNCTIONS---------
@@ -778,7 +794,8 @@ function modNpc.Species(listData, cur, curO)
     curO.identity = {}
   end
   updateSpecies()
-  local speciesIcon = self.speciesJson.genders[getGenderIndx(cur.gender)].characterImage
+  local genderIndx = getGenderIndx(cur.gender, self.speciesJson.genders)
+  local speciesIcon = self.speciesJson.genders[genderIndx].characterImage
   widget.setImage("techIconHead",speciesIcon)
 end
 
@@ -911,14 +928,11 @@ function selectedTab.NpcType(args)
   args.isOverride = false
   args.skipTheRest = true
   args.iIcon = {}
-  local worldStorage = world.getProperty(self.npcTypeStorage)
-  if not (worldStorage and worldStorage.iIcon) then worldStorage = {iIcon = {}, time = world.time()} end
+  
 
   local updateToWorld = false
   --TODO: Load speeds are pretty damn fast already, but we still want to keep things updated.  Maybe 
-  if worldStorage.time and worldStorage.time + 800 < world.time() then
-    override.clearcache()
-  end
+
   
   local typeParams = config.getParameter("npcTypeParams")
   local hIcon = jsonPath(typeParams,"hostile.icon")
@@ -930,13 +944,16 @@ function selectedTab.NpcType(args)
   local guard = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","guard"))
   local merchant = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","merchant"))
   local crew = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","crew"))
-
+  modVersion()
+  local worldStorage, clearCache = getWorldStorage(self.npcTypeStorage, modVersion())
+  if clearCache then override.clearcache() end
   local npcConfig = nil
   local success = false
 
   for _,v in ipairs(self.npcTypeList) do
     if not worldStorage.iIcon[v] then
       success, npcConfig = pcall(root.npcConfig,v)
+      --dCompare("npcType: ",v,npcConfig)
       if success then
         if checkIfNpcIs(v, npcConfig, hostile) then worldStorage.iIcon[v] = hIcon; updateToWorld = true;
         elseif checkIfNpcIs(v, npcConfig, guard) then worldStorage.iIcon[v] = gIcon ; updateToWorld = true;
@@ -948,11 +965,11 @@ function selectedTab.NpcType(args)
       end
     end
   end
-  args.iIcon = shallowCopy(worldStorage.iIcon)
   if updateToWorld then
     worldStorage.time = world.time()
     world.setProperty(self.npcTypeStorage, worldStorage)
-  end  
+  end
+  args.iIcon = shallowCopy(worldStorage.iIcon)
 end
 
 function selectedTab.Hair(args)
