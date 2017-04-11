@@ -337,14 +337,7 @@ function setNpcName(instant)
 
 end
 
---Callback
-function onSliderChange()
-  if not self.doingMainUpdate then return end
-  local data = widget.getData(self.sldMain)
-  local value = widget.getSliderValue(self.sldMain)
 
-  updateNpc()
-end
 
 function acceptBtn()
   self.currentOverride.identity = self.currentOverride.identity or {} 
@@ -1377,6 +1370,7 @@ function removeDirective(cur, curO, data)
   jsonSetPath(curO, path, directive)
 end
 
+--Callback
 function onMainSliderChange()
   if not self.doingMainUpdate then return end
   if self.updatingSlider then return end
