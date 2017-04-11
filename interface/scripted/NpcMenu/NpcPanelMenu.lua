@@ -33,7 +33,6 @@ function init()
   self.npcTypeList = npcUtil.mergeUnique(self.npcTypeList, listOfProtectorates)
   local removeNames = {}
   for i,v in ipairs(self.npcTypeList) do
-    dLog(v, "type: ")
     if not pcall(root.npcConfig,v) then
       dLog(v, "bad NpcType: ")
       self.npcTypeList[i] = "_r"
@@ -44,7 +43,7 @@ function init()
   table.sort(self.speciesList)
   table.sort(self.npcTypeList)
 
-  while self.npcTypeList[1] ~= "_r" do
+  while string.find(self.npcTypeList[1],"_r",1,true) do
     table.remove(self.npcTypeList, 1)
   end
 
@@ -94,7 +93,7 @@ function init()
   self.currentSeed = self.gettingInfo.npcSeed or math.random(0, self.maxSldValue)
   self.currentLevel = self.gettingInfo.npcLevel or math.random(1, world.threatLevel())
   self.currentSpecies = self.gettingInfo.npcSpecies or "penguin"
-
+  self.currentOverride.identity.gender = nil
   self.currentIdentity = {}
   self.tbFeedbackColorRoutine = nil
   self.tbGreenColor = {0,255,0}
@@ -154,9 +153,6 @@ function update(dt)
     if contentsChanged then 
       if npcUtil.isContainerEmpty(itemBag) then
         self.currentOverride.items = nil
-        if self.currentOverride.scriptConfig then
-          self.currentOverride.scriptConfig.initialStorage = nil
-        end
       end
       self.equipBagStorage = widget.itemGridItems("itemGrid")
       updateNpc() 
@@ -315,7 +311,7 @@ end
 
 --Callback
 
-function setNpcName()
+function setNpcName(instant)
   while self.tbFeedbackColorRoutine do
     self.tbFeedbackColorRoutine()
   end
@@ -332,7 +328,7 @@ function setNpcName()
   else
     self.currentOverride.identity.name = text
   end
-
+  if instant then return end
   widget.setFontColor(self.nameBox, self.tbGreenColor)
   self.curOverrideColor = copy(self.tbGreenColor)
   script.setUpdateDelta(3)
@@ -356,17 +352,16 @@ function acceptBtn()
   local hasEquip = false
   local hasWeapon = false
   local itemBag = widget.itemGridItems("itemGrid")
-  local currentPath = self.currentOverride.scriptConfig
-
-  if (not path(currentPath,"initialStorage","itemSlots")) then 
-      setPath(currentPath,"initialStorage","itemSlots",{}) 
+  dLog(itemBag, "bag: \n")
+  if (not path(self.currentOverride.scriptConfig,"initialStorage","itemSlots")) then 
+      setPath(self.currentOverride.scriptConfig,"initialStorage","itemSlots",{})
   end
 
   local itemSlots = self.currentOverride.scriptConfig.initialStorage.itemSlots
   local slotName = ""
-  for i = 1, 4 do 
+  for i = 1, self.slotCount do 
     if itemBag[i] then
-        hasWeapons = true
+        hasWeapon = true
         slotName = self.equipSlot[i]
         itemSlots[slotName] = copy(itemBag[i])
         if itemSlots[slotName] and string.find(itemSlots[slotName].name, "capturepod",1,true) then 
@@ -385,28 +380,41 @@ function acceptBtn()
   end
 
   if hasEquip then 
-    self.currentOverride.scriptConfig.crew.uniformSlots = jobject()
+    local path = self.currentOverride.scriptConfig
+    setPath(path,"crew","uniformSlots",jobject())
   else
     self.currentOverride.scriptConfig.crew = nil
   end
 
+  --The only scriptConfig parameter to get saved is personality.  You can sneak in behaviorConfig parameters in that table.
+  --If no personality was manually chosen then I will mimic what bmain.lua does when generating a personality
   if hasWeapon then
-    currentPath = self.currentOverride.scriptConfig
-    setPath(currentPath,"behaviorConfig","emptyHands",false)
+    construct(self.currentOverride,"scriptConfig","personality")
+    self.currentOverride.scriptConfig.personality = self.currentOverride.scriptConfig.personality or {}
+    
+    local path = self.currentOverride.scriptConfig.personality
+    if jsize(path) == 0 then
+      path = npcUtil.getPersonality(self.currentType, self.currentSeed)
+    end
+    setPath(path,"behaviorConfig","emptyHands",false)
+    self.currentOverride.scriptConfig.personality = path
+    dLog(self.currentOverride.scriptConfig.personality, "personality: \n")
   end
 
-  if hasEquip and hasWeapon then
+  if (not hasEquip) and (not hasWeapon) then
     self.currentOverride.scriptConfig.initialStorage = nil
   end
 
   setNpcName()
-  update(0)
+
+  update(self.mockdt)
+
   local args = {
-    npcSpecies = self.currentSpecies,
-    npcSeed = self.currentSeed,
-    npcType = self.currentType,
-    npcLevel = self.currentLevel,
-    npcParam = self.currentOverride
+    npcSpecies = tostring(self.currentSpecies),
+    npcSeed = tostring(self.currentSeed),
+    npcType = tostring(self.currentType),
+    npcLevel = math.floor(tonumber(self.currentLevel)),
+    npcParam = copy(self.currentOverride)
   }
   self.sendingData = world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
   pane.dismiss()
@@ -500,7 +508,8 @@ function selectTab(index, option)
   else
     local optn  = config.getParameter("assetParams."..listType)
     if optn then
-      getSpeciesAsset(self.speciesJson, npcUtil.getGenderIndx(self.currentIdentity.gender), self.currentSpecies, optn, self.returnInfo)
+      local genderIndx = npcUtil.getGenderIndx(self.currentIdentity.gender, self.speciesJson.genders)
+      getSpeciesAsset(self.speciesJson, genderIndx, self.currentSpecies, optn, self.returnInfo)
     end
   end
   self.returnInfo.colors = self.returnInfoColors
@@ -730,15 +739,6 @@ function clearPersonality()
     widget.setText("lblIdleStance", "No Override")
 end
 
-
-function createDirective(directiveJson)
-  local prefix = ""
-  for k,v in pairs(directiveJson) do
-    prefix = string.format("%s;%s=%s",prefix,k,v)
-  end
-  return prefix
-end
-
 function updateNpc(noVisual)
   local curSpecies = self.currentSpecies
   local curSeed =  self.currentSeed
@@ -756,7 +756,6 @@ function updateNpc(noVisual)
     widget.setText(self.nameBox, self.currentIdentity.name)
   end
   if noVisual then return end
-  sb.setLogMap("curOverride", "%s",sb.printJson(curOverride or {},1))
   local npcPort = root.npcPortrait("full", curSpecies, curType, curLevel, curSeed, curOverride)
   --dLogJson(curOverride, "whsa", false)
   return setPortrait(npcPort)
@@ -894,12 +893,11 @@ end
 
 function modNpc.Prsnlity(listData,cur,curO)
   if listData.clearConfig then 
-    if curO.scriptConfig and curO.scriptConfig.personality then
+    if path(curO,"scriptConfig","personality") then
         curO.scriptConfig.personality = nil
     end
   else
-    if not curO.scriptConfig then curO.scriptConfig = {} end
-    if not curO.scriptConfig.personality then curO.scriptConfig.personality = {} end
+    construct(curO,"scriptConfig","personality")
     self.currentOverride.scriptConfig.personality = listData.iData
   end
 end
@@ -912,7 +910,7 @@ function selectedTab.Species(args)
   args.skipTheRest = true
   args.iIcon = {}
   --JSON indx starts at 0,  lua starts at 1.  RIP
-  local genderIndx = npcUtil.getGenderIndx(self.currentIdentity.gender)-1
+  local genderIndx = npcUtil.getGenderIndx(self.currentIdentity.gender, self.speciesJson.genders)-1
   for _,v in ipairs(self.speciesList) do
     local jsonPath = string.format("/species/%s.species:genders.%s.characterImage",v, tostring(genderIndx))
     --dLog(jsonPath, "JSON PATH")
@@ -931,7 +929,7 @@ function selectedTab.NpcType(args)
   
 
   local updateToWorld = false
-  --TODO: Load speeds are pretty damn fast already, but we still want to keep things updated.  Maybe 
+  --TODO: Load speeds are pretty damn fast already, but we still want to keep things updated. 
 
   
   local typeParams = config.getParameter("npcTypeParams")
@@ -944,7 +942,6 @@ function selectedTab.NpcType(args)
   local guard = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","guard"))
   local merchant = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","merchant"))
   local crew = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","crew"))
-  npcUtil.modVersion()
   local worldStorage, clearCache = npcUtil.getWorldStorage(self.npcTypeStorage, npcUtil.modVersion())
   if clearCache then override.clearcache() end
   local npcConfig = nil
@@ -970,6 +967,7 @@ function selectedTab.NpcType(args)
     world.setProperty(self.npcTypeStorage, worldStorage)
   end
   args.iIcon = shallowCopy(worldStorage.iIcon)
+  return worldStorage
 end
 
 function selectedTab.Hair(args)
@@ -1126,6 +1124,9 @@ function selectedTab.Detach(args)
 end
 
 function override.set(curO, cur, setParams, ...)
+    if (not setParams) or setParams == "" then 
+      return false, "no parameter given"
+    end
     local setParam = config.getParameter("overrideConfig.setParams."..setParams)
     if not setParam then 
       --dLog("Cannot find parameter") 

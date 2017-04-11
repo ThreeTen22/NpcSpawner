@@ -65,6 +65,8 @@ dComp["function"] = function(input) return sb.logInfo("%s", input) end
 dComp["nil"] = function(input) return dLog("nil") end
 
 
+
+
 function getAsset(assetPath)
   return root.assetJson(assetPath)
 end
@@ -97,6 +99,14 @@ function npcUtil.checkIfNpcIs(v, npcConfig,typeParams)
       if (value and v2) then return true end
     end
     return false
+end
+
+function npcUtil.jsonToDirective(directiveJson)
+  local prefix = ""
+  for k,v in pairs(directiveJson) do
+    prefix = string.format("%s;%s=%s",prefix,k,v)
+  end
+  return prefix
 end
 
 function npcUtil.formatParam(strType,...)
@@ -160,12 +170,21 @@ function npcUtil.getGenderIndx(name, genderTable)
 end
 
 function npcUtil.getUserConfig(key)
+  local update = false
   local config = root.getConfiguration(key)
   if not config then
-    root.setConfiguration(key, {additionalSpecies = jarray(), additionalNpcTypes = jarray()})
-    config = root.getConfiguration(key)
+    update = true
+    config = {additionalSpecies = jarray(), additionalNpcTypes = jarray()}
   end
-  return root.getConfiguration(key)
+  if not config.modVersion then
+    update = true
+    local version = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:modVersion")
+    config.modVersion = modVersion
+  end
+  if update then
+    root.setConfiguration(key, config)
+  end
+  return config
 end
 
 function npcUtil.getWorldStorage(id, modVersion)
@@ -185,6 +204,12 @@ function npcUtil.getWorldStorage(id, modVersion)
 
   return worldStorage, clearCache
 end
+
+function npcUtil.getPersonality(npcType, seed)
+  local config = root.npcConfig(npcType).scriptConfig.personalities
+  return util.weightedRandom(config, seed)
+end
+
 
 function npcUtil.isContainerEmpty(itemBag)
    for k,v in pairs(itemBag) do
@@ -208,7 +233,7 @@ function npcUtil.mergeUnique(t1, t2)
 end
 
 function npcUtil.modVersion() 
-  return tostring(root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init.modVersion")) 
+  return tostring(root.assetJson("/interface/scripted/NpcMenu/modConfig.config:modVersion")) 
 end
 
 function npcUtil.replaceDirectives(directive, directiveJson)
@@ -220,7 +245,7 @@ function npcUtil.replaceDirectives(directive, directiveJson)
     if not (v == "") then
         local k = string.match(v, "(%w+)=%w+")
         if directiveJson[k] or directiveJson[string.upper(k)] or directiveJson[string.lower(k)] then
-            splitDirectives[i] = createDirective(directiveJson)
+            splitDirectives[i] = npcUtil.jsonToDirective(directiveJson)
         end
     end
   end
