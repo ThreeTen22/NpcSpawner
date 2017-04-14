@@ -26,25 +26,25 @@
   "interactive" : false,
   "orientations" : [
     {
-      "image" : "hologramprojector.png?scalebicubic=0.51",
-      "imagePosition" : [0, 0],
+      "image" : "hologramprojector.png",
+      "imagePosition" : [-8, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
       "direction" : "left",
-      "animationPosition" : [0, 0],
-      "lightPosition" : [0, 3],
+      "animationPosition" : [-8, 0],
+      "lightPosition" : [0, 4],
 
       "spaceScan" : 0.1,
       "anchors" : [ "bottom" ]
     },
     {
-      "image" : "hologramprojector.png?scalebicubic=0.51",
-      "imagePosition" : [0, 0],
+      "image" : "hologramprojector.png",
+      "imagePosition" : [-8, 0],
       "frames" : 1,
       "animationCycle" : 0.5,
       "direction" : "right",
-      "animationPosition" : [0, 0],
-      "lightPosition" : [0, 3],
+      "animationPosition" : [-8, 0],
+      "lightPosition" : [0, 4],
 
       "spaceScan" : 0.1,
       "anchors" : [ "bottom" ]

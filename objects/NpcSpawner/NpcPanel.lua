@@ -72,15 +72,20 @@ function update(dt)
     if self.spawnTimer < 0 then
 
       --randomItUp(self.randomize))
-      local npcId = world.spawnNpc(entity.position(), storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
+      local pos = entity.position()
 
-      world.callScriptedEntity(npcId, "status.addEphemeralEffect","beamin")
+      if string.find(object.name(), "floor",-6,true) then
+        pos[2] = pos[2] + 8
+      end
+      local npcId = world.spawnNpc(pos, storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
+
+      world.callScriptedEntity(npcId, "status.addEphemeralEffect","blinkin")
       --assign our new NPC a special unique id
       storage.spawnedID = sb.makeUuid()
       world.setUniqueId(npcId, storage.spawnedID)
       storage.spawned = true
       self.spawnTimer = math.floor(self.maxRespawnTime)
-      logVariant()
+      --logVariant()
     else
       self.spawnTimer = self.spawnTimer - dt
     end
@@ -106,11 +111,15 @@ end
 
 function killNpc()
   self.spawnTimer = self.maxRespawnTime
-  sb.logInfo("killNPC: "..sb.print(storage.spawnedID))
   if (not storage.spawnedID) then storage.spawned = false; return end
   local loadedEnitity = world.loadUniqueEntity(storage.spawnedID)
   if loadedEnitity ~= 0 then
-    world.sendEntityMessage(loadedEnitity, "recruit.beamOut")
+    world.callScriptedEntity(loadedEnitity, "status.addEphemeralEffects", {{effect = "blink", duration = 5},{effect = "monsterdespawn", duration = 5}})
+    world.callScriptedEntity(loadedEnitity, "npc.setDeathParticleBurst",nil)
+    world.callScriptedEntity(loadedEnitity, "npc.setDropPools",{})
+    world.callScriptedEntity(loadedEnitity, "npc.setPersistent",false)
+    world.callScriptedEntity(loadedEnitity, "npc.setPersistent",false)
+    world.callScriptedEntity(loadedEnitity, "npc.setDamageTeam",{type = "friendly", team = 1})
   end
   storage.spawned = false
 end
