@@ -112,6 +112,17 @@ function npcUtil.jsonToDirective(directiveJson)
   return prefix
 end
 
+function npcUtil.compareDirectiveToColor(directive, json)
+  if type(json) ~= "table" or (tostring(directive) == "") then return false end
+  local _,set = next(json)
+  if type(set) ~= "table" then return false end
+  local k,v  = next(set)
+  k = string.lower(k)
+  v = string.lower(v)
+  return string.match(directive,tostring(k).."=")
+end
+
+
 function npcUtil.formatParam(strType,...)
     local params = {...}
     if #params == 0 then return nil end
@@ -232,6 +243,16 @@ function npcUtil.mergeUnique(t1, t2)
        end
     end
   return res
+end
+
+function npcUtil.replaceValueInList(list, value, repl)
+  for i,v in ipairs(list) do
+    if v == value then
+      list[i] = repl
+      return true
+    end
+  end
+  return false
 end
 
 function npcUtil.modVersion() 
