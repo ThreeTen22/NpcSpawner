@@ -9,7 +9,7 @@ function init()
       storage.npcSpecies = storage.npcSpecies
       storage.npcSeed = storage.npcSeed or math.random(0,20000)
       storage.npcLevel = storage.npcLevel or math.max(world.threatLevel(), 1)
-      storage.npcType = storage.npcType 
+      storage.npcType = storage.npcType
       storage.npcParam = storage.npcParam
       storage.spawned = storage.spawned or false
       storage.spawnedID = storage.spawnedID
@@ -79,7 +79,7 @@ function update(dt)
       end
       local npcId = world.spawnNpc(pos, storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
 
-      world.callScriptedEntity(npcId, "status.addEphemeralEffect","blinkin")
+      world.callScriptedEntity(npcId, "status.addEphemeralEffect","beamin")
       --assign our new NPC a special unique id
       storage.spawnedID = sb.makeUuid()
       world.setUniqueId(npcId, storage.spawnedID)
@@ -114,12 +114,9 @@ function killNpc()
   if (not storage.spawnedID) then storage.spawned = false; return end
   local loadedEnitity = world.loadUniqueEntity(storage.spawnedID)
   if loadedEnitity ~= 0 then
-    world.callScriptedEntity(loadedEnitity, "status.addEphemeralEffects", {{effect = "blink", duration = 5},{effect = "monsterdespawn", duration = 5}})
-    world.callScriptedEntity(loadedEnitity, "npc.setDeathParticleBurst",nil)
     world.callScriptedEntity(loadedEnitity, "npc.setDropPools",{})
     world.callScriptedEntity(loadedEnitity, "npc.setPersistent",false)
-    world.callScriptedEntity(loadedEnitity, "npc.setPersistent",false)
-    world.callScriptedEntity(loadedEnitity, "npc.setDamageTeam",{type = "friendly", team = 1})
+    world.sendEntityMessage(loadedEnitity,  "recruit.beamOut")
   end
   storage.spawned = false
 end

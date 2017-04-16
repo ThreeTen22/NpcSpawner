@@ -12,7 +12,7 @@
   "genericDescription" : "It's a thing that does stuff.",
   "objectType" : "container",
   "slotCount" : 12,
-  "openSounds" : ["/sfx/objects/miningchest_open.ogg" ],
+  "openSounds" : ["/sfx/objects/miningchest_open.ogg"],
   "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
   "frameCooldown" : 5,
   "autoCloseCooldown" : 360000,
@@ -51,10 +51,6 @@
     }
   ],
   "npcArgs" : {
-
-  },
-
-  "npcTypeStorage" : {
 
   },
   "spawner" : {

@@ -50,8 +50,9 @@ function init()
     table.remove(self.npcTypeList, 1)
   end
 
-  self.returnInfo = {}
-  
+  for i,v in ipairs(baseConfig.npcTypeListPrio) do
+    table.insert(self.npcTypeList, 1, v)
+  end
   self.getSpeciesPath = function(species, path)          
                             path = path or "/species/";
                             return tostring(path..species..".species")
@@ -71,7 +72,7 @@ function init()
   self.infoLabel = "techScrollArea.lblOverrideConsole"
 
   self.tabData = nil
-  self.tabGroupWidget = "rgTabs"
+  self.tabsWidget = "rgTabs"
   self.categoryWidget = "rgSelectCategory"
   self.categoryWidgetData = "Generate"
   self.nameBox = "tbNameBox"
@@ -102,7 +103,7 @@ function init()
   self.currentOverride.items = self.items
 
   
-  self.currentType = self.gettingInfo.npcType or "follower"
+  self.currentType = self.gettingInfo.npcType or "nakedvillager"
   self.currentSeed = self.gettingInfo.npcSeed or math.random(0, self.maxSldValue)
   self.currentLevel = self.gettingInfo.npcLevel or math.random(1, world.threatLevel())
   self.currentSpecies = self.gettingInfo.npcSpecies or "penguin"
@@ -132,20 +133,21 @@ function init()
 
   --used for slider
   self.setSeedValue = function(value) 
-        self.currentSeed = tonumber(value) 
+  self.currentSeed = tonumber(value) 
   end
   self.setOverride = function(value, data) 
       applyDirective(self.seedIdentity, self.currentOverride, value, data)
   end
-
   --detach
   script.setUpdateDelta(3)
+  dLog("end of init")
 end
 
 --uninit WORKS. Question is, can we send entity messages?  Answer: fuck entity messages.
 function update(dt)
   --Cannot send entity messages during init, so will do it here
   if self.doingMainUpdate then
+    dLog("main update")
     if notTime(dt) then return end
     local contentsChanged = false
     local itemBag = widget.itemGridItems("itemGrid")
@@ -174,11 +176,12 @@ function update(dt)
   else
     widget.setSelectedOption(self.categoryWidget, -1)
     widget.setVisible(self.categoryWidget, true)
-    widget.setVisible(self.tabGroupWidget, true)
+    widget.setVisible(self.tabsWidget, true)
     widget.setVisible(self.scrollArea, true)
     self.doingMainUpdate = true
     updateNpc()
     script.setUpdateDelta(20)
+    dLog("update: visible")
   end
 end
 
@@ -258,34 +261,36 @@ function onOverrideEnter()
   --dLog("FinalizingOverride")
   local wasSuccessful = nil
   local overrideText = widget.getText(self.overrideTextBox)
+  local parsedStrings = nil
   while self.tbFeedbackColorRoutine do
       self.tbFeedbackColorRoutine()
   end
+ 
+  overrideText = string.gsub(overrideText, "  "," ",1, true)
+  while overrideText[#overrideText] == " " do
+    overrideText[#overrideText] = ""
+  end
+  while overrideText[1] == " " do
+    overrideText[1] = ""
+  end
   if overrideText ~= "" then 
-    overrideText = string.gsub(overrideText, "  "," ",1, true)
-    while overrideText[#overrideText] == " " do
-      overrideText[#overrideText] = ""
-    end
-    while overrideText[1] == " " do
-      overrideText[1] = ""
-    end
-    local parsedStrings = util.split(overrideText, " ")
+    parsedStrings = util.split(overrideText, " ")
     --widget.setText(self.overrideTextBox, self.overrideText) 
     while self.tbFeedbackColorRoutine do
       self.tbFeedbackColorRoutine()
     end
-    
     parsedStrings[1] = string.lower(parsedStrings[1])
-  
+
     if parsedStrings[2] then
       parsedStrings[2] = string.lower(parsedStrings[2])
     end
-  
+
     if not(parsedStrings[1] == "output") then  
       for i,v in ipairs(parsedStrings) do
           parsedStrings[i] = string.lower(v)
       end
     end
+
   end
   
   if override[parsedStrings[1]] then
@@ -426,7 +431,7 @@ end
 
 function setListInfo(categoryName, uniqueId, infoOverride)
   widget.clearListItems(self.infoList)
-  --dLog(categoryName, "catName")
+  dLog(categoryName, "catName")
   if not categoryName then return end
   local tabInfo = config.getParameter("tabOptions."..categoryName)
   local info = infoOverride or root.assetJson("/interface/scripted/NpcMenu/modConfig.config:infoDescription")
@@ -463,17 +468,19 @@ function setListInfo(categoryName, uniqueId, infoOverride)
 end
 
 function selectTab(index, option)
-  --dLog(option,  "    SelectTab") 
+  dLog(option,  "    SelectTab") 
+  dLog(index, "index")
   self.returnInfo = {}
   self.returnInfoColors = nil
   self.curSelectedTitle = nil
   widget.setText(self.infoLabel, "")
   widget.setData(self.infoLabel, "")
-  local listOption = widget.getSelectedOption(self.tabGroupWidget)
+  --local listOption = widget.getSelectedOption(self.tabsWidget)
+   local listOption = widget.getSelectedOption(self.tabsWidget)
 
   local curTabs = config.getParameter("tabOptions."..self.categoryWidgetData)
-  local listType = curTabs[index+2]
-  
+  local listType = curTabs[index+1]
+
   if not listType or listType == "" then 
     return setList(nil) 
   end
@@ -520,33 +527,32 @@ function selectTab(index, option)
   setList(self.returnInfo)
 end
 
-function selectGenCategory(button, data)
-  --dLog("selectGenCategory")
+function onCategorySelection(id, data)
+  dCompare("onCategorySelection ",id,data)
+  local id = widget.getSelectedOption(self.tabsWidget)
   self.categoryWidgetData = data
-  local tabNames = {"lblTab01","lblTab02","lblTab03","lblTab04","lblTab05","lblTab06"}
-  local indx = widget.getSelectedOption(self.tabGroupWidget)
-  local tabData = widget.getSelectedData(self.tabGroupWidget)
   if data == "Generate" then
     widget.setVisible(self.scrollArea, true)
     widget.setSliderEnabled(self.sldMain, true)
     widget.setVisible("spnPersonality", false)
     widget.setVisible("lblPersonality", false)
+
   elseif data == "Colorize" then
     widget.setVisible(self.scrollArea, true)
     widget.setVisible("spnPersonality", true)
     widget.setVisible("lblPersonality", true)
+
   elseif data == "Advanced" then
     widget.setSliderEnabled(self.sldMain, false)
-    widget.setVisible("lblBlockNameBox", false)
     widget.setVisible("spnPersonality", false)
     widget.setVisible("lblPersonality", false)
   end
-  changeTabLabels(tabNames, data)
-  --dLog(data, "selectGenCategory - selectedOption:  ")
-  if indx and tabData then
-    selectTab(indx, tabData)
-    return 
-  end
+  local tabs = config.getParameter("tabOptions."..data)
+  changeTabLabels(self.tabsWidget,  tabs)
+  local indx = widget.getSelectedOption(self.tabsWidget)
+  local tabData = widget.getSelectedData(self.tabsWidget)
+  selectTab(indx, tabData)
+  return 
 end
 
 --args:
@@ -697,18 +703,9 @@ end
 
 
 ------ GUI UPDATE FUNCTIONS ------
-function changeTabLabels(tabs, option)
-  tabs = tabs or "nil"
-  option = option or "Error"
-
-  local tabOptions = config.getParameter("tabOptions."..option)
-  local indx = 1
-
-  if tabOptions then
-    for _,v in ipairs(tabs) do
-      widget.setText(v, tabOptions[indx])
-      indx = indx+1
-    end
+function changeTabLabels(tabBaseName, options)
+  for i,v in ipairs(options) do
+    widget.setText(string.format("%s.%s",tabBaseName,i-1), options[i])
   end
 end
 
@@ -735,6 +732,10 @@ function setIdleStance(index, identity)
 end
 
 function updateNpc(noVisual)
+  self.currentOverride.scriptConfig = self.scriptConfig
+  self.currentOverride.items = self.items
+  self.currentOverride.identity = self.identity
+  dLog("updateNpc")
   self.seedIdentity = root.npcVariant(self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed).humanoidIdentity
   if self.identity.name then
     widget.setText(self.nameBox, self.identity.name)
@@ -743,7 +744,8 @@ function updateNpc(noVisual)
   end
   if noVisual then return end
   --dLogJson(curOverride, "whsa", false)
-  return updatePortrait()
+  updatePortrait()
+  return 
 end
 
 function updatePortrait()

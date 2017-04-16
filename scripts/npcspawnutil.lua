@@ -38,6 +38,7 @@ end
 
 
 function dCompare(prefix, one, two)
+  dLog(prefix)
   dComp[type(one)](one) 
   dComp[type(two)](two)
 end
