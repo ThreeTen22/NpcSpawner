@@ -461,7 +461,7 @@ function selectTab(index, curTabs)
   curTabs = self.tabList
   self.returnInfo = {}
   self.returnInfoColors = nil
-  self.curSelectedTitle = nil
+  self.curSelectedTitle = "none"
   widget.setText(self.infoLabel, "")
   widget.setData(self.infoLabel, "")
 
@@ -504,7 +504,7 @@ function selectTab(index, curTabs)
   else
     local optn  = config.getParameter("assetParams."..listType)
     if optn then
-      local genderIndx = npcUtil.getGenderIndx(self.seedIdentity.gender, self.speciesJson.genders)
+      local genderIndx = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
       getSpeciesAsset(self.speciesJson, genderIndx, self.currentSpecies, optn, self.returnInfo)
     end
   end
@@ -629,7 +629,6 @@ function setList(args)
   end
   widget.setData(string.format("%s", self.techList), args)
   if selectedItem then  
-    sb.logInfo("setList:  entered setListSelected")
     widget.setListSelected(self.techList, selectedItem)
   end
 end
@@ -644,7 +643,7 @@ function onSelectItem(name, listData)
   listData.iTitle = itemData.iTitle
   listData.clearConfig = itemData.clearConfig
   if not listData and listData.listType then return end
-  self.curSelectedTitle = itemData.iTitle
+  --self.curSelectedTitle = itemData.iTitle
   modNpc[listData.listType](listData, self.seedIdentity, self.currentOverride)
 
   return updateNpc()
@@ -657,6 +656,7 @@ function getSpeciesAsset(speciesJson, genderIndx, species, optn, output)
   local genderPath = speciesJson.genders[genderIndx]
   local title = {}
   local iIcon = {}
+  local iData = {}
   local info = {}
   local oOne = tostring(optn[1])
   local oTwo = tostring(optn[2])
@@ -664,14 +664,20 @@ function getSpeciesAsset(speciesJson, genderIndx, species, optn, output)
   info[oOne] = genderPath[oOne] or optn[3]
   info[oTwo] = genderPath[oTwo]
   local directive = self.identity[optn[4]] or self.seedIdentity[optn[4]]
+  --local append = " - "..genderPath.name
+  --local vTitle = ""
   for _,v in ipairs(info[oTwo]) do
-    local append = ""
     table.insert(title, v)
     iIcon[v] = string.format("/humanoid/%s/%s/%s.png:normal%s",species,info[oOne],v,directive)
+    if not output.iData then
+      iData[v] = output.assetGroup
+    end
   end
   output.title = title
   output.iIcon = iIcon
-  output.hairGroup = info[oOne]
+  if not output.iData then
+    output.iData = iData
+  end
 end
 
 function getColorInfo(colors, output)
@@ -717,7 +723,7 @@ function updateNpc(noVisual)
   self.currentOverride.scriptConfig = self.scriptConfig
   self.currentOverride.items = self.items
   self.currentOverride.identity = self.identity
-  dLog("updateNpc")
+
   self.seedIdentity = root.npcVariant(self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed).humanoidIdentity
   if self.identity.name then
     widget.setText(self.nameBox, self.identity.name)
@@ -777,22 +783,25 @@ function modNpc.Species(listData, cur, curO)
   end
 
   updateSpecies()
-  local genderIndx = npcUtil.getGenderIndx(cur.gender, self.speciesJson.genders)
+  local genderIndx = npcUtil.getGenderIndx(self.identity.gender or cur.gender, self.speciesJson.genders)
   local speciesIcon = self.speciesJson.genders[genderIndx].characterImage
   widget.setImage("techIconHead",speciesIcon)
 end
 
 function modNpc.NpcType(listData, cur, curO)
-    self.currentType = tostring(listData.iTitle)
+    self.currentType = listData.iTitle
 end
 
 function modNpc.Hair(listData, cur, curO)
   local curO = curO.identity
   if listData.clearConfig then 
-    curO["hairType"] = nil
+    curO.hairType = nil
+    curO.hairGroup = nil
   else
-    curO.hairType = tostring(listData.iTitle)
+    curO.hairType = listData.iTitle
+    curO.hairGroup = listData.iData
   end
+  dCompare("hairs: ",curO.hairGroup, curO.hairType)
 end
 
 function modNpc.FHair(listData, cur, curO)
@@ -800,11 +809,14 @@ function modNpc.FHair(listData, cur, curO)
   if listData.clearConfig then 
     --dLog("listData.fhair : clearConfig:  entered ClearConfig")
     --curO["facialHairGroup"] = nil
-    curO["facialHairType"] = nil
+    curO.facialHairType = nil
+    curO.facialHairGroup = nil
   else
     --curO.facialHairGroup = listData.facialHairGroup
     curO.facialHairType = listData.iTitle
+    curO.facialHairGroup = listData.iData
   end
+    dCompare("facialHairs: ",curO.facialHairGroup, curO.facialHairType)
 end
 
 function modNpc.FMask(listData, cur, curO)
@@ -812,15 +824,16 @@ function modNpc.FMask(listData, cur, curO)
   if listData.clearConfig then 
     --dLog("listData.fMask : clearConfig:  entered ClearConfig")
     curO.facialMaskType = nil
+    curO.facialMaskGroup = nil
   else
     curO.facialMaskType = listData.iTitle
+    curO.facialMaskGroup = listData.iData
   end
+   dCompare("fachialMasks: ",curO.facialMaskGroup, curO.facialMaskType)
 end
 
 function modNpc.HColor(listData, cur, curO)
   local curO = curO.identity
-  --dLog(cur.hairDirectives, "enterd HColor  ")
-  --dLog(listData.iData, "ItemData  ")
   if cur.hairDirectives == "" then return end
   if listData.clearConfig then
     curO.hairDirectives = nil
@@ -905,7 +918,7 @@ function selectedTab.Species(args)
   args.skipTheRest = true
   args.iIcon = {}
   --JSON indx starts at 0,  lua starts at 1.  RIP
-  local genderIndx = npcUtil.getGenderIndx(self.seedIdentity.gender, self.speciesJson.genders)-1
+  local genderIndx = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)-1
   for _,v in ipairs(self.speciesList) do
     local jsonPath = string.format("/species/%s.species:genders.%s.characterImage",v, tostring(genderIndx))
     --dLog(jsonPath, "JSON PATH")
@@ -959,6 +972,7 @@ function selectedTab.NpcType(args)
   end
   if updateToWorld then
     worldStorage.time = world.time()
+    worldStorage.modVersion = npcUtil.modVersion()
     world.setProperty(self.npcTypeStorage, worldStorage)
   end
   args.iIcon = shallowCopy(worldStorage.iIcon)
@@ -966,19 +980,41 @@ function selectedTab.NpcType(args)
 end
 
 function selectedTab.Hair(args)
+  local gender = self.identity.gender or self.seedIdentity.gender
+  local genderIndx = npcUtil.getGenderIndx(gender, self.speciesJson.genders)
+
   self.curSelectedTitle = self.identity.hairType or self.seedIdentity.hairType 
+  --self.curSelectedTitle = self.curSelectedTitle.." - "..gender
+
+  args.assetGroup = self.speciesJson.genders[genderIndx].hairGroup or "hair"
   args.title = {}
   args.isOverride = true
 end
 
 function selectedTab.FHair(args)
+  
+  local gender = self.identity.gender or self.seedIdentity.gender
+  local genderIndx = npcUtil.getGenderIndx(gender, self.speciesJson.genders)
+
   self.curSelectedTitle = self.identity.facialHairType or self.seedIdentity.facialHairType
+  --self.curSelectedTitle = self.curSelectedTitle.." - "..gender
+
+  args.assetGroup = self.speciesJson.genders[genderIndx].facialHairGroup
+
   args.title = {}
   args.isOverride = true
 end
 
 function selectedTab.FMask(args)
+
+  local gender = self.identity.gender or self.seedIdentity.gender
+  local genderIndx = npcUtil.getGenderIndx(gender, self.speciesJson.genders)
+
   self.curSelectedTitle = self.identity.facialMaskType or self.seedIdentity.facialMaskType
+  --self.curSelectedTitle = self.curSelectedTitle.." - "..gender
+  
+  args.assetGroup = self.speciesJson.genders[genderIndx].facialMaskGroup
+
   args.title = {}
   args.isOverride = true
 end
@@ -1473,7 +1509,17 @@ spnSldParamDetail.down= spnSldParamDetail.run
 
 function onGenderSelection(id, data)
   self.identity.gender = data or self.speciesJson.genders[tonumber(id)+1].name
+  local genderIndx = npcUtil.getGenderIndx(self.identity.gender, self.speciesJson.genders)
+  local speciesIcon = self.speciesJson.genders[genderIndx].characterImage
+  --self.identity.facialHairGroup = self.speciesJson.genders[genderIndx].facialHairGroup
+  --self.identity.facialMaskGroup = self.speciesJson.genders[genderIndx].facialMaskGroup
+  widget.setImage("techIconHead",speciesIcon)
+  local indx = widget.getSelectedOption(self.tabsWidget)
+  local tabData = widget.getSelectedData(self.tabsWidget)
+  setList(nil)
+  selectTab(indx, self.tabList)
   updatePortrait()
+  return 
 end
 
 function uninit()
