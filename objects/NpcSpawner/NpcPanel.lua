@@ -1,38 +1,44 @@
 require "/scripts/npcspawnutil.lua"
 require "/scripts/util.lua"
 
-function init(virtual)
-    dLog(virtual ,"NpcPanel: init")
-    storage.npcSpecies = storage.npcSpecies
-    storage.npcSeed = storage.npcSeed or math.random(0,20000)
-    storage.npcLevel = storage.npcLevel or math.max(world.threatLevel(), 1)
-    storage.npcType = storage.npcType 
-    storage.npcParam = storage.npcParam
-    storage.spawned = storage.spawned or false
-    storage.spawnedID = storage.spawnedID or nil
-    storage.keepStorageInfo = storage.keepStorageInfo or false
-    self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-    local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
-    local userConfig = getUserConfig("npcSpawnerPlus")
-    local mSpeciesConfig = mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
-    self.speciesList = mergeUnique(self.speciesList, mSpeciesConfig)
-    self.npcTypeList = mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
-    randomItUp()
-    
-    local args = {
-      npcSpecies = storage.npcSpecies,
-      npcSeed = storage.npcSeed,
-      npcLevel = storage.npcLevel,
-      npcType = storage.npcType,
-      npcParam = storage.npcParam
-    }
-    object.setConfigParameter("npcArgs", args)
+function init()
+    dLog("NpcPanel: init")
+    object.setInteractive(false)
+    local initialArgs = config.getParameter("npcArgs")
+    if jsize(initialArgs) == 0 then
+      storage.npcSpecies = storage.npcSpecies
+      storage.npcSeed = storage.npcSeed or math.random(0,20000)
+      storage.npcLevel = storage.npcLevel or math.max(world.threatLevel(), 1)
+      storage.npcType = storage.npcType
+      storage.npcParam = storage.npcParam
+      storage.spawned = storage.spawned or false
+      storage.spawnedID = storage.spawnedID
 
-    self.absPosition = nil
-    self.spawnTimer = 1
-    self.maxRespawnTime = 10
-    self.randomize = false
-    self.needToUpdateParameter = false
+      local speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
+      local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
+      local userConfig = npcUtil.getUserConfig("npcSpawnerPlus")
+      local mSpeciesConfig = npcUtil.mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
+      speciesList = npcUtil.mergeUnique(speciesList, mSpeciesConfig)
+      npcTypeList = shallowCopy(baseConfig.npcTypeList)
+      randomItUp(speciesList, npcTypeList)
+    
+      local args = {
+        npcSpecies = storage.npcSpecies,
+        npcSeed = storage.npcSeed,
+        npcLevel = storage.npcLevel,
+        npcType = storage.npcType,
+        npcParam = storage.npcParam
+      }
+      object.setConfigParameter("npcArgs", args)
+    else
+      local args = config.getParameter("npcArgs")
+      for k,v in pairs(args) do 
+        storage[k] = copy(v)
+      end
+    end
+    local timerConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:spawnTimers", {spawnTimer = 1, maxRespawnTime = 10})
+    self.spawnTimer = timerConfig.spawnTimer
+    self.maxRespawnTime = timerConfig.maxRespawnTime
     --randomItUp(self.randomize)
      --dLog("get NPC DATA")
     message.setHandler("getNpcData",function(_, _)
@@ -50,17 +56,14 @@ function init(virtual)
     message.setHandler("sayMessage", function(_,_, args)
       sayMessage()
     end)
-    if not virtual then
-      object.setInteractive(true)
-    end
+
+    object.setInteractive(true)
 end
 
 function update(dt)
   if not storage.uniqueId then
     storage.uniqueId = sb.makeUuid()
     world.setUniqueId(entity.id(), storage.uniqueId)
-    local position = self.absPosition or entity.position()
-    self.absPosition = position
   end
 
 
@@ -69,7 +72,12 @@ function update(dt)
     if self.spawnTimer < 0 then
 
       --randomItUp(self.randomize))
-      local npcId = world.spawnNpc(entity.position(), storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
+      local pos = entity.position()
+
+      if string.find(object.name(), "floor",-6,true) then
+        pos[2] = pos[2] + 8
+      end
+      local npcId = world.spawnNpc(pos, storage.npcSpecies,storage.npcType, storage.npcLevel, storage.npcSeed, storage.npcParam)
 
       world.callScriptedEntity(npcId, "status.addEphemeralEffect","beamin")
       --assign our new NPC a special unique id
@@ -77,11 +85,12 @@ function update(dt)
       world.setUniqueId(npcId, storage.spawnedID)
       storage.spawned = true
       self.spawnTimer = math.floor(self.maxRespawnTime)
+      --logVariant()
     else
       self.spawnTimer = self.spawnTimer - dt
     end
   else
-    --if our spawned NPC has died or disappeared since last tick, set spawned to false. otherwise check to see if it's time to update gear
+    --if our spawned NPC has died or disappeared since last tick, set spawned to false.
     if storage.spawnedID and world.loadUniqueEntity(storage.spawnedID) == 0 then
       storage.spawned = false
       self.spawnTimer = self.maxRespawnTime
@@ -102,11 +111,12 @@ end
 
 function killNpc()
   self.spawnTimer = self.maxRespawnTime
-  sb.logInfo("killNPC: "..sb.print(storage.spawnedID))
   if (not storage.spawnedID) then storage.spawned = false; return end
   local loadedEnitity = world.loadUniqueEntity(storage.spawnedID)
   if loadedEnitity ~= 0 then
-    world.sendEntityMessage(loadedEnitity, "recruit.beamOut")
+    world.callScriptedEntity(loadedEnitity, "npc.setDropPools",{})
+    world.callScriptedEntity(loadedEnitity, "npc.setPersistent",false)
+    world.sendEntityMessage(loadedEnitity,  "recruit.beamOut")
   end
   storage.spawned = false
 end
@@ -139,17 +149,16 @@ function detachNpc()
   object.smash()
 end
 
-function randomItUp(override)
+function randomItUp(speciesList,typeList,override)
   if (not storage.npcLevel) or override then storage.npcLevel = math.random(1, 10) end
   if (not storage.npcSpecies) or override then 
-    storage.npcSpecies = util.randomFromList(self.speciesList)
-    storage.npcSpecies = storage.npcSpecies or "human"
+    storage.npcSpecies = util.randomFromList(speciesList or {"penguin"})
   end
   if (not storage.npcType) or override then
-    storage.npcType = util.randomFromList(self.npcTypeList)
+    storage.npcType = util.randomFromList(typeList or {"nakedvillager"})
   end
-  if not storage.npcSeed then
-    storage.npcSeed = math.random(20000)
+  if (not storage.npcSeed) or override then
+    storage.npcSeed = math.random(1, 20000)
   end
 end
 
