@@ -370,6 +370,14 @@ function acceptBtn()
     end
   end
 
+  construct(self.currentOverride,"scriptConfig","personality")
+  self.scriptConfig.personality = self.scriptConfig.personality or {}
+  
+  local path = self.scriptConfig.personality
+  if jsize(path) == 0 then
+    path = npcUtil.getPersonality(self.currentType, self.currentSeed)
+  end
+
   for i = 4, self.slotCount do
     if itemBag[i] then
       hasEquip = true
@@ -390,13 +398,6 @@ function acceptBtn()
   --Update - I no longer technically need this because its bollocks and doesnt work due to chucklefish's personality changes being applied AFTER its behavior was implemented.
             --However I am adding it in anyways because if chucklefish decides to fix it, it will be ready to go!
   if hasWeapon then
-    construct(self.currentOverride,"scriptConfig","personality")
-    self.scriptConfig.personality = self.scriptConfig.personality or {}
-    
-    local path = self.scriptConfig.personality
-    if jsize(path) == 0 then
-      path = npcUtil.getPersonality(self.currentType, self.currentSeed)
-    end
     setPath(path,"behaviorConfig","emptyHands",false)
     self.scriptConfig.personality = path
   end
@@ -408,6 +409,8 @@ function acceptBtn()
   setNpcName()
 
   update(self.mockdt)
+
+  self.currentOverride.personality.storedOverrides = copy(self.currentOverride) 
 
   local args = {
     npcSpecies = tostring(self.currentSpecies),
