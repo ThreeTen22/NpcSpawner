@@ -180,6 +180,7 @@ function update(dt)
     script.setUpdateDelta(20)
     self.doingMainUpdate = true
     self.firstRun = false
+    world.sendEntityMessage(pane.playerEntityId(), "logCallback")
   end
 end
 
@@ -370,12 +371,10 @@ function acceptBtn()
     end
   end
 
-  construct(self.currentOverride,"scriptConfig","personality")
   self.scriptConfig.personality = self.scriptConfig.personality or {}
-  
-  local path = self.scriptConfig.personality
-  if jsize(path) == 0 then
-    path = npcUtil.getPersonality(self.currentType, self.currentSeed)
+
+  if jsize(self.scriptConfig.personality) == 0 then
+    self.scriptConfig.personality = npcUtil.getPersonality(self.currentType, self.currentSeed)
   end
 
   for i = 4, self.slotCount do
@@ -402,7 +401,7 @@ function acceptBtn()
     self.scriptConfig.personality = path
   end
 
-  if (not hasEquip) and (not hasWeapon) then
+  if (not hasEquip) and (not hasWeapon) and self.scriptConfig.initialStorage then
     self.scriptConfig.initialStorage = nil
   end
 
@@ -410,7 +409,10 @@ function acceptBtn()
 
   update(self.mockdt)
 
-  self.currentOverride.personality.storedOverrides = copy(self.currentOverride) 
+  self.scriptConfig.personality.storedOverrides = copy(self.currentOverride) 
+  self.currentOverride.scriptConfig = self.scriptConfig
+  self.currentOverride.items = self.items
+  self.currentOverride.identity = self.identity
 
   local args = {
     npcSpecies = tostring(self.currentSpecies),

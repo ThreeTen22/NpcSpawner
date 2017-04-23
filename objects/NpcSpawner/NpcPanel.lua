@@ -85,7 +85,7 @@ function update(dt)
       world.setUniqueId(npcId, storage.spawnedID)
       storage.spawned = true
       self.spawnTimer = math.floor(self.maxRespawnTime)
-      --logVariant()
+      logVariant()
     else
       self.spawnTimer = self.spawnTimer - dt
     end
