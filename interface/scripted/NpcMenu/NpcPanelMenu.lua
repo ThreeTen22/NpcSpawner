@@ -178,9 +178,9 @@ function update(dt)
     widget.setVisible(self.scrollArea, true)
     updateNpc()
     script.setUpdateDelta(20)
+    self.mockdt = script.updateDt()
     self.doingMainUpdate = true
     self.firstRun = false
-    world.sendEntityMessage(pane.playerEntityId(), "logCallback")
   end
 end
 
