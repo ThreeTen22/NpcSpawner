@@ -359,7 +359,7 @@ function acceptBtn()
 
   local itemSlots = {}
   local slotName = ""
-  for i = 1, self.slotCount do 
+  for i = 1, 4 do 
     if itemBag[i] then
         hasWeapon = true
         slotName = self.equipSlot[i]
@@ -377,7 +377,7 @@ function acceptBtn()
     self.scriptConfig.personality = npcUtil.getPersonality(self.currentType, self.currentSeed)
   end
 
-  for i = 4, self.slotCount do
+  for i = 5, self.slotCount do
     if itemBag[i] then
       hasEquip = true
       local slotName = self.equipSlot[i]
