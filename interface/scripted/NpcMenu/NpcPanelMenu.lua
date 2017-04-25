@@ -9,25 +9,24 @@ override = {}
 
 
 function init()
-
-  self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
   local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
   local userConfig = npcUtil.getUserConfig("npcSpawnerPlus")
+  local protectorate = root.npcConfig("villager")
+  local lotsOfNpcs = jsonPath(protectorate, "scriptConfig.questGenerator.graduation.nextNpcType")
+  local mSpeciesConfig = npcUtil.mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
+  local listOfProtectorates = {}
+
+  
   self.equipSlot = baseConfig.equipSlot
+  self.equipSlotType = baseConfig.equipSlotType
   self.portraits = baseConfig.portraits
 
-  --dLogJson(self.portraits,"portraits",true)
-  --dLogJson(self.equipSlot,"slots",true)
-
-  local mSpeciesConfig = npcUtil.mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
+  self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
   self.speciesList = npcUtil.mergeUnique(self.speciesList, mSpeciesConfig)
   self.npcTypeList = npcUtil.mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
 
-  local protectorate = root.npcConfig("villager")
   
-  local listOfProtectorates = {}
-  local lotsOfNpcs = jsonPath(protectorate, "scriptConfig.questGenerator.graduation.nextNpcType")
-  
+
   for _,v in ipairs(lotsOfNpcs) do
     local name = v[2]
     table.insert(listOfProtectorates, tostring(name))
@@ -88,8 +87,7 @@ function init()
   self.filterText = ""
   self.npcTypeStorage = "npcTypeStorage"  
 
-                  --primary and sheathed primary are always the goto weapons, secondary is for shields.
-                  --duel wielding weapons for npcs doesn't work.
+  --primary and sheathed primary are always the goto weapons, secondary is for shields.
   self.equipBagStorage = widget.itemGridItems("itemGrid")
   self.gettingInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
   local param = self.gettingInfo.npcParam or {}
@@ -134,7 +132,7 @@ function init()
 
   --used for slider
   self.setSeedValue = function(value) 
-  self.currentSeed = tonumber(value) 
+    self.currentSeed = tonumber(value) 
   end
   self.setOverride = function(value, data) 
       applyDirective(self.seedIdentity, self.currentOverride, value, data)
@@ -153,6 +151,11 @@ function update(dt)
     local itemBag = widget.itemGridItems("itemGrid")
     for i = 1, self.slotCount do
       if not compare(self.equipBagStorage[i], itemBag[i]) then
+        if itemBag[i] ~= nil and (not inCorrectSlot(i, itemBag[i])) then
+          world.sendEntityMessage(pane.containerEntityId(), "removeItemAt", i)
+          player.giveItem(itemBag[i])
+          return
+        end
         if not (self.items.override)  then 
           self.items = config.getParameter("overrideContainerTemplate.items") 
         end
@@ -193,6 +196,16 @@ function notTime(dt)
     end
     self.mockTimer = 0
     return false
+  end
+  return false
+end
+
+function inCorrectSlot(index, itemDescription)
+  local success, itemType = pcall(root.itemType, itemDescription.name)
+  if success then 
+    if itemType == self.equipSlotType[index] then
+      return true
+    end
   end
   return false
 end

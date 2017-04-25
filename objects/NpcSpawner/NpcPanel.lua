@@ -53,8 +53,8 @@ function init()
       detachNpc()
     end)
 
-    message.setHandler("sayMessage", function(_,_, args)
-      sayMessage()
+    message.setHandler("removeItemAt", function(_,_, index)
+      removeItemAt(index)
     end)
 
     object.setInteractive(true)
@@ -160,6 +160,11 @@ function randomItUp(speciesList,typeList,override)
   if (not storage.npcSeed) or override then
     storage.npcSeed = math.random(1, 20000)
   end
+end
+
+function removeItemAt(index)
+  dLog(index, "index ")
+  world.containerTakeAt(entity.id(), index-1)
 end
 
 --[[

@@ -191,8 +191,8 @@ function npcUtil.getUserConfig(key)
   end
   if not config.modVersion then
     update = true
-    local version = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:modVersion")
-    config.modVersion = modVersion
+    local version = npcUtil.modVersion()
+    config.modVersion = version
   end
   if update then
     root.setConfiguration(key, config)
@@ -256,7 +256,7 @@ function npcUtil.replaceValueInList(list, value, repl)
 end
 
 function npcUtil.modVersion() 
-  return tostring(root.assetJson("/interface/scripted/NpcMenu/modConfig.config:modVersion")) 
+  return root.assetJson("/interface/scripted/NpcMenu/modConfig.config:modVersion")
 end
 
 function npcUtil.replaceDirectives(directive, directiveJson)
