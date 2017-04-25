@@ -397,8 +397,7 @@ function acceptBtn()
   --Update - I no longer technically need this because its bollocks and doesnt work due to chucklefish's personality changes being applied AFTER its behavior was implemented.
             --However I am adding it in anyways because if chucklefish decides to fix it, it will be ready to go!
   if hasWeapon then
-    setPath(path,"behaviorConfig","emptyHands",false)
-    self.scriptConfig.personality = path
+    setPath(self.scriptConfig, "personality", "behaviorConfig","emptyHands",false)
   end
 
   if (not hasEquip) and (not hasWeapon) and self.scriptConfig.initialStorage then
