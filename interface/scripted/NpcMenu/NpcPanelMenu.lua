@@ -407,7 +407,7 @@ function acceptBtn()
   setNpcName()
 
   update(self.mockdt)
-
+  if self.scriptConfig.personality.storedOverrides then self.scriptConfig.personality.storedOverrides = {} end
   self.scriptConfig.personality.storedOverrides = copy(self.currentOverride) 
   self.currentOverride.scriptConfig = self.scriptConfig
   self.currentOverride.items = self.items
