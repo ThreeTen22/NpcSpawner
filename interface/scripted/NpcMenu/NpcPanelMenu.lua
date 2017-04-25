@@ -710,7 +710,7 @@ function changeTabLabels(tabBaseName)
       npcUtil.replaceValueInList(self.tabList, "FHColor", "")
     end
     if self.seedIdentity.facialMaskType == "" then
-      npcUtil.replaceValueInList(self.tabList, "FHColor", "")
+      npcUtil.replaceValueInList(self.tabList, "FMColor", "")
     end
     if self.speciesJson.hairColorAsBodySubColor then
       npcUtil.replaceValueInList(self.tabList, "", "BSColor")
