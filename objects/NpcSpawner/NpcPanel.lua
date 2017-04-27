@@ -39,22 +39,13 @@ function init()
     local timerConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:spawnTimers", {spawnTimer = 1, maxRespawnTime = 10})
     self.spawnTimer = timerConfig.spawnTimer
     self.maxRespawnTime = timerConfig.maxRespawnTime
-    --randomItUp(self.randomize)
-     --dLog("get NPC DATA")
-    message.setHandler("getNpcData",function(_, _)
-      return getNpcData()
-    end)
-    --dLog("set NPC DATA")
-    message.setHandler("setNpcData", function(_,_, args)
-      setNpcData(args)
-    end)
 
-    message.setHandler("detachNpc", function(_,_)
-      detachNpc()
-    end)
+    message.setHandler("getNpcData",simpleHandler(getNpcData))
+    message.setHandler("setNpcData", simpleHandler(setNpcData))
+    message.setHandler("detachNpc", simpleHandler(detachNpc))
 
     message.setHandler("removeItemAt", function(_,_, index)
-      removeItemAt(index)
+      world.containerTakeAt(entity.id(), index-1)
     end)
 
     object.setInteractive(true)
@@ -160,11 +151,6 @@ function randomItUp(speciesList,typeList,override)
   if (not storage.npcSeed) or override then
     storage.npcSeed = math.random(1, 20000)
   end
-end
-
-function removeItemAt(index)
-  dLog(index, "index ")
-  world.containerTakeAt(entity.id(), index-1)
 end
 
 --[[

@@ -1,5 +1,6 @@
 require "/scripts/util.lua"
 require "/scripts/interp.lua"
+require "/scripts/messageutil.lua"
 
 dComp = {}
 npcUtil = {} 
