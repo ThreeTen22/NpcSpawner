@@ -229,7 +229,7 @@ end
 
 function npcUtil.isContainerEmpty(itemBag)
    for k,v in pairs(itemBag) do
-    if v then return false end
+    if v ~= nil then return false end
    end
    return true
 end
@@ -299,6 +299,18 @@ function setPath(t, ...)
       t = t[child]
     end
   end
+end
+
+function npcUtil.buildItemOverrideTable(t)
+  local items = t or {}
+  local container = nil
+  table.insert(items.override, {})
+  container = items.override[1]
+  table.insert(container, 0)
+  table.insert(container, {})
+  container = items.override[1][2]
+  table.insert(container, {})
+  return items
 end
 ----[[
 function logENV()

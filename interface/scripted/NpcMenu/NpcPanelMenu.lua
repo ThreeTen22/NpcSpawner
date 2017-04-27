@@ -22,7 +22,7 @@ function init()
   end
 
   self.setOverride = function(value, data) 
-    applyDirective(self.seedIdentity, self.currentOverride, value, data)
+    applyDirective(self.seedIdentity, self.getCurrentOverride(), value, data)
   end
   self.tabList = nil
   self.tabData = nil
@@ -70,31 +70,27 @@ function init()
   --primary and sheathed primary are always the goto weapons, secondary is for shields.
   self.equipBagStorage = widget.itemGridItems("itemGrid")
 
-  local gettingInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
+  self.gettingInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
 
-  self.currentType = gettingInfo.npcType or "nakedvillager"
-  self.currentSeed = gettingInfo.npcSeed or math.random(0, self.maxSldValue)
-  self.currentLevel = gettingInfo.npcLevel or math.random(1, world.threatLevel())
-  self.currentSpecies = gettingInfo.npcSpecies or "penguin"
+  self.currentType = self.gettingInfo.npcType or "nakedvillager"
+  self.currentSeed = self.gettingInfo.npcSeed or math.random(0, self.maxSldValue)
+  self.currentLevel = self.gettingInfo.npcLevel or math.random(1, world.threatLevel())
+  self.currentSpecies = self.gettingInfo.npcSpecies or "penguin"
 
 
-  local param = gettingInfo.npcParam or {}
+  local param = self.gettingInfo.npcParam or {}
   --self.currentOverride = gettingInfo.npcParam or {identity = {}, scriptConfig = {}}
   self.identity = param.identity or {}
   self.scriptConfig = param.scriptConfig or {}
   self.items = param.items or {}
   self.currentOverride = {}
-  self.currentOverride.identity = self.identity
-  self.currentOverride.scriptConfig = self.scriptConfig
-  self.currentOverride.items = self.items
-
-  
+  self.getCurrentOverride = function() self.currentOverride.identity = self.identity; self.currentOverride.scriptConfig = self.scriptConfig; self.currentOverride.items = self.items return self.currentOverride end
+  self.currentOverride = self.getCurrentOverride()
   self.seedIdentity = {}
 
 
   updateNpc(true)
   modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.currentOverride)
-
   
   self.sliderValue = tonumber(self.currentSeed) or 0
   widget.setText("lblSliderValue", "Seed:  "..tostring(self.sliderValue))
@@ -108,7 +104,8 @@ function update(dt)
   if self.mainUpdate then
     promises:update()
     if self.tbFeedbackColorRoutine then self.tbFeedbackColorRoutine() end
-    if checkForItemChanges() then return updateNpc() end
+    local itemBag = widget.itemGridItems("itemGrid")
+    if checkForItemChanges(itemBag, false) then return updateNpc() end
   else 
     widget.setSelectedOption(self.categoryWidget, -1)
     widget.setVisible(self.categoryWidget, true)
@@ -119,6 +116,7 @@ function update(dt)
     widget.setSliderValue(self.sldMain,self.sliderValue)
     local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
     widget.setSelectedOption("rgGenders", id-1)
+    script.setUpdateDelta(20)
     self.mainUpdate = true
     return updateNpc()
   end
@@ -171,26 +169,32 @@ function spnIdleStance.down()
 end
 
 function checkForItemChanges(itemBag, contentsChanged)
-    itemBag = widget.itemGridItems("itemGrid")
-    contentsChanged = false
+  local itemBag = itemBag
+  }
     for i = 1, self.slotCount do
       if not compare(self.equipBagStorage[i], itemBag[i]) then
         if itemBag[i] ~= nil and (not inCorrectSlot(i, itemBag[i])) then
-          promises:add(world.sendEntityMessage(pane.containerEntityId(), "removeItemAt", i), player.giveItem(itemBag[i])) 
-          return
+          if promises:empty() then
+            promises:add(world.sendEntityMessage(pane.containerEntityId(), "removeItemAt", i), player.giveItem(itemBag[i]))
+          end
         end
-        if not (self.items.override) then 
-          self.items = config.getParameter("overrideContainerTemplate.items") 
+        if not (self.items.override) then
+          self.items.override = {}
+          self.items = npcUtil.buildItemOverrideTable(self.items.override)
         end
-        --Add items to override item slot so they update visually.
         local insertPosition = self.items.override[1][2][1]
+        --Add items to override item slot so they update visually.
         setItemOverride(self.equipSlot[i],insertPosition, itemBag[i])
         contentsChanged = true
       end
     end
-    if npcUtil.isContainerEmpty(itemBag) then
+
+    if contentsChanged then 
+      
+      
+      if npcUtil.isContainerEmpty(itemBag) then
         self.items = {}
-        self.currentOverride.items = self.items
+      end
     end
     self.equipBagStorage = widget.itemGridItems("itemGrid") 
     return contentsChanged
@@ -248,7 +252,7 @@ function onOverrideEnter()
   end
   
   if override[parsedStrings[1]] then
-    wasSuccessful, errorMsg = override[parsedStrings[1]](self.currentOverride,self.seedIdentity,table.unpack(parsedStrings,2))
+    wasSuccessful, errorMsg = override[parsedStrings[1]](self.getCurrentOverride(),self.seedIdentity,table.unpack(parsedStrings,2))
   end
   if wasSuccessful then
     widget.setFontColor(self.overrideTextBox, self.tbGreenColor)
@@ -364,17 +368,14 @@ function acceptBtn()
   update()
 
   setPath(self.scriptConfig, "personality", "storedOverrides", {})
-  self.scriptConfig.personality.storedOverrides = copy(self.currentOverride) 
-  self.currentOverride.scriptConfig = self.scriptConfig
-  self.currentOverride.items = self.items
-  self.currentOverride.identity = self.identity
+  self.scriptConfig.personality.storedOverrides = copy(self.getCurrentOverride()) 
 
   local args = {
   npcSpecies = tostring(self.currentSpecies),
   npcSeed = tostring(self.currentSeed),
   npcType = tostring(self.currentType),
   npcLevel = math.floor(tonumber(self.currentLevel)),
-  npcParam = copy(self.currentOverride)
+  npcParam = copy(self.getCurrentOverride())
   }
   world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
   pane.dismiss()
@@ -718,7 +719,6 @@ function updateSpecies(species)
       local gender = self.identity.gender 
       self.identity = {}
       self.identity.gender = gender
-      self.currentOverride.identity = self.identity
     end
     self.speciesJson = root.assetJson(self.getSpeciesPath(species))
     local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
@@ -1054,7 +1054,7 @@ function selectedTab.Export(args)
   npcSeed = self.currentSeed,
   npcType = self.currentType,
   npcLevel = self.currentLevel,
-  npcParam = self.currentOverride
+  npcParam = self.getCurrentOverride()
 }
 local spawner = world.getObjectParameter(pane.containerEntityId(),"spawner")
 spawner.npcSpeciesOptions[1] = args.npcSpecies
