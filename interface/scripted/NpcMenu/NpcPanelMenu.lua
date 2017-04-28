@@ -83,14 +83,12 @@ function init()
   self.identity = param.identity or {}
   self.scriptConfig = param.scriptConfig or {}
   self.items = param.items or {}
-  self.currentOverride = {}
-  self.getCurrentOverride = function() self.currentOverride.identity = self.identity; self.currentOverride.scriptConfig = self.scriptConfig; self.currentOverride.items = self.items return self.currentOverride end
-  self.currentOverride = self.getCurrentOverride()
+  self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.items} end
   self.seedIdentity = {}
 
 
   updateNpc(true)
-  modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.currentOverride)
+  modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.getCurrentOverride())
   
   self.sliderValue = tonumber(self.currentSeed) or 0
   widget.setText("lblSliderValue", "Seed:  "..tostring(self.sliderValue))
@@ -169,8 +167,6 @@ function spnIdleStance.down()
 end
 
 function checkForItemChanges(itemBag, contentsChanged)
-  local itemBag = itemBag
-  }
     for i = 1, self.slotCount do
       if not compare(self.equipBagStorage[i], itemBag[i]) then
         if itemBag[i] ~= nil and (not inCorrectSlot(i, itemBag[i])) then
@@ -179,8 +175,8 @@ function checkForItemChanges(itemBag, contentsChanged)
           end
         end
         if not (self.items.override) then
-          self.items.override = {}
-          self.items = npcUtil.buildItemOverrideTable(self.items.override)
+          self.items.override = jarray()
+          self.items.override = npcUtil.buildItemOverrideTable(self.items.override)
         end
         local insertPosition = self.items.override[1][2][1]
         --Add items to override item slot so they update visually.
@@ -190,10 +186,8 @@ function checkForItemChanges(itemBag, contentsChanged)
     end
 
     if contentsChanged then 
-      
-      
       if npcUtil.isContainerEmpty(itemBag) then
-        self.items = {}
+        self.items.override = nil
       end
     end
     self.equipBagStorage = widget.itemGridItems("itemGrid") 
@@ -587,7 +581,7 @@ function onSelectItem(name, listData)
   listData.clearConfig = itemData.clearConfig
   if not listData and listData.listType then return end
   --self.curSelectedTitle = itemData.iTitle
-  modNpc[listData.listType](listData, self.seedIdentity, self.currentOverride)
+  modNpc[listData.listType](listData, self.seedIdentity, self.getCurrentOverride())
 
   return updateNpc()
 end
@@ -700,7 +694,7 @@ end
 function updatePortrait()
   local num = 1
   local portraits = self.portraits
-  local npcPort = root.npcPortrait("full", self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed, self.currentOverride)
+  local npcPort = root.npcPortrait("full", self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed, self.getCurrentOverride())
   while num <= #npcPort do
     widget.setImage(portraits[num], npcPort[num].image)
     widget.setVisible(portraits[num], true)
@@ -1340,7 +1334,7 @@ function onMainSliderChange()
 
   --dLog(data.removeOnZero, "onZero?")
   if data.removeOnZero and value == 0 then
-    removeDirective(self.seedIdentity, self.currentOverride, data)
+    removeDirective(self.seedIdentity, self.getCurrentOverride(), data)
     widget.setText(data.valueId, string.format(data.valueText, data.zeroText))
   else
     widget.setText(data.valueId, string.format(data.valueText, value)) 
@@ -1375,7 +1369,7 @@ function spnSldParamBase.updateOwnData(data)
   widget.setFontColor(data.lblDetailName, param.detailFontColor)
   local value = 0
   if param.titleText ~= "Seed" then
-    value = getDirectiveValue(self.seedIdentity, self.currentOverride, newSldData)
+    value = getDirectiveValue(self.seedIdentity, self.getCurrentOverride(), newSldData)
     value = tonumber(value) or 0
   else
     value = self.currentSeed
@@ -1414,7 +1408,7 @@ function spnSldParamDetail.updateOwnData(data)
   local newSldData =  widget.getData(data.sldName)
   local value = 0
 
-  value = getDirectiveValue(self.seedIdentity, self.currentOverride, newSldData)
+  value = getDirectiveValue(self.seedIdentity, self.getCurrentOverride(), newSldData)
   value = tonumber(value) or 0
   
   if self.seedIdentity[newSldData.key] == "" then

@@ -302,15 +302,15 @@ function setPath(t, ...)
 end
 
 function npcUtil.buildItemOverrideTable(t)
-  local items = t or {}
+  local override = t or {}
   local container = nil
-  table.insert(items.override, {})
-  container = items.override[1]
+  table.insert(override, {})
+  container = override[1]
   table.insert(container, 0)
   table.insert(container, {})
-  container = items.override[1][2]
+  container = override[1][2]
   table.insert(container, {})
-  return items
+  return override
 end
 ----[[
 function logENV()
