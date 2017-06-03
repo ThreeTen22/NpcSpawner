@@ -190,13 +190,12 @@ function npcUtil.getWorldStorage(id, modVersion)
     worldStorage = {iIcon = {}, time = world.time(), modVersion = modVersion} 
   end
 
-
   if worldStorage.modVersion ~= modVersion then
     worldStorage.modVersion = modVersion
     clearCache = true
   end
   worldStorage.time = worldStorage.time or 0
-  if (worldStorage.time + 800) > world.time() then
+  if (worldStorage.time + 800) < world.time() then
     clearCache = true
   end
 

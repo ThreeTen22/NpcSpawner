@@ -895,8 +895,12 @@ function selectedTab.NpcType(args)
   local guard = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","guard"))
   local merchant = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","merchant"))
   local crew = config.getParameter(string.format("npcTypeParams.%s.paramsToCheck","crew"))
-  local worldStorage, clearCache = npcUtil.getWorldStorage(self.npcTypeStorage, npcUtil.modVersion())
-  if clearCache then override.clearcache() end
+  local modVersion = npcUtil.modVersion()
+  local worldStorage, clearCache = npcUtil.getWorldStorage(self.npcTypeStorage, modVersion)
+  if clearCache then
+    worldStorage = {} 
+    override.clearcache() 
+  end
   local npcConfig = nil
   local success = false
 
@@ -917,7 +921,7 @@ function selectedTab.NpcType(args)
         end
         if updateToWorld then
           worldStorage.time = world.time()
-          worldStorage.modVersion = npcUtil.modVersion()
+          worldStorage.modVersion = modVersion
           world.setProperty(self.npcTypeStorage, worldStorage)
         end
         args.iIcon = shallowCopy(worldStorage.iIcon)
@@ -1209,7 +1213,7 @@ function override.clear()
 end
 
 function override.clearcache()
-  world.setProperty(self.npcTypeStorage, nil)
+  world.setProperty(self.npcTypeStorage, {})
   widget.setText(self.overrideTextBox, "")
   return true
 end
