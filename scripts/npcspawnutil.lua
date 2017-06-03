@@ -183,24 +183,6 @@ function npcUtil.getGenderIndx(name, genderTable)
   end
 end
 
-function npcUtil.getUserConfig(key)
-  local update = false
-  local config = root.getConfiguration(key)
-  if not config then
-    update = true
-    config = {additionalSpecies = jarray(), additionalNpcTypes = jarray()}
-  end
-  if not config.modVersion then
-    update = true
-    local version = npcUtil.modVersion()
-    config.modVersion = version
-  end
-  if update then
-    root.setConfiguration(key, config)
-  end
-  return config
-end
-
 function npcUtil.getWorldStorage(id, modVersion)
   local worldStorage = world.getProperty(id)
   local clearCache = false

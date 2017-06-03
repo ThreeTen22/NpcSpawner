@@ -28,22 +28,15 @@ function init()
   self.tabData = nil
 
 
-
-  local userConfig = npcUtil.getUserConfig("npcSpawnerPlus")
-  local protectorate = root.npcConfig("villager")
-  local lotsOfNpcs = jsonPath(protectorate, "scriptConfig.questGenerator.graduation.nextNpcType")
-  local mSpeciesConfig = npcUtil.mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
-  local listOfProtectorates = {}
+  local protectorate = jsonPath(root.npcConfig("villager"), "scriptConfig.questGenerator.graduation.nextNpcType")
   
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
-  self.speciesList = npcUtil.mergeUnique(self.speciesList, mSpeciesConfig)
-  self.npcTypeList = npcUtil.mergeUnique(baseConfig.npcTypeList, userConfig.additionalNpcTypes)
+  self.speciesList = npcUtil.mergeUnique(self.speciesList, baseConfig.additionalSpecies)
   
   
-  
-  for _,v in ipairs(lotsOfNpcs) do
-    local name = v[2]
-    table.insert(listOfProtectorates, tostring(name))
+  local listOfProtectorates = {}
+  for _,v in ipairs(protectorate) do
+    table.insert(listOfProtectorates, tostring(v[2]))
   end
   table.insert(listOfProtectorates, "crewmemberoutlaw")
   self.npcTypeList = npcUtil.mergeUnique(self.npcTypeList, listOfProtectorates)
@@ -339,12 +332,6 @@ function acceptBtn()
     end
   end
   self.scriptConfig.initialStorage.itemSlots = itemSlots
-  
-  if hasEquip then 
-    setPath(self.scriptConfig,"crew","uniformSlots",jobject())
-  else
-    self.scriptConfig.crew = nil
-  end
 
   --The only scriptConfig parameter to get saved is personality.  You can sneak in behaviorConfig parameters in that table.
   --If no personality was manually chosen then I will mimic what bmain.lua does when generating a personality
@@ -1181,6 +1168,10 @@ function override.insert(_,_,name, ...)
       else
         table.insert(failures, v)
       end
+      if not isEmpty(successes) then
+        self.speciesList = npcUtil.mergeUnique(self.speciesList, successes)
+        table.sort(self.speciesList)
+      end
     end
   elseif name == "additionalnpctypes" then
     key = "npcSpawnerPlus.additionalNpcTypes"
@@ -1190,6 +1181,10 @@ function override.insert(_,_,name, ...)
         table.insert(successes, v)
       else
         table.insert(failures, v)
+      end
+      if not isEmpty(successes) then
+        self.npcTypeList = npcUtil.mergeUnique(self.npcTypeList, successes)
+        table.sort(self.npcTypeList)
       end
     end
   else
@@ -1201,10 +1196,8 @@ function override.insert(_,_,name, ...)
   for i,v in ipairs(failures) do
     override.outputStr("Failed to add "..(v or "-"))
   end
-  override.outputStr("re-open the panel to see the updated changes")
-  userConfig = root.getConfigurationPath(key)
-  userConfig = npcUtil.mergeUnique(userConfig, successes)
-  root.setConfigurationPath(key, userConfig)
+  override.outputStr("\n Note:  Due to patch 1.3 changes, added species/npctypes will NOT be saved after the panel closes.")
+
   return true
 end
 
