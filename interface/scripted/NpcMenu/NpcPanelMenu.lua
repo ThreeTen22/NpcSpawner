@@ -299,7 +299,7 @@ function acceptBtn()
   local hasEquip = false
   local hasWeapon = false
   local itemBag = widget.itemGridItems("itemGrid")
-  self.identity = parseArgs(self.identity, self.seedIdentity)
+  self.identity = npcUtil.parseArgs(self.identity, self.seedIdentity)
   if (not path(self.scriptConfig,"initialStorage","itemSlots")) then 
     setPath(self.scriptConfig,"initialStorage","itemSlots",{})
   end
@@ -1032,7 +1032,7 @@ function selectedTab.Export(args)
   args.useInfoList = true
   args.skipTheRest = true
   args.selectedCategory = "ExportOptn"
-  self.identity = parseArgs(self.identity, copy(self.seedIdentity))
+  self.identity = npcUtil.parseArgs(self.identity, copy(self.seedIdentity))
   setNpcName()
   local args = {
   npcSpecies = self.currentSpecies,
@@ -1342,7 +1342,7 @@ end
 function updateSldData(data)
   local sldData = widget.getData(data.sldName)
   local newSldData = data.sldParams[data.index]
-  sldData = parseArgs(newSldData, sldData)
+  sldData = npcUtil.parseArgs(newSldData, sldData)
   widget.setData(data.sldName, sldData)
 end
 

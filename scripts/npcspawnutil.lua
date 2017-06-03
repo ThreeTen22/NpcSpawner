@@ -183,6 +183,13 @@ function npcUtil.getGenderIndx(name, genderTable)
   end
 end
 
+function npcUtil.parseArgs(args, defaults)
+  for k,v in pairs(args) do
+    defaults[k] = v
+  end
+  return defaults
+end
+
 function npcUtil.getWorldStorage(id, modVersion)
   local worldStorage = world.getProperty(id)
   local clearCache = false

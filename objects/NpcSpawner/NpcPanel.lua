@@ -16,10 +16,8 @@ function init()
 
       local speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
       local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
-      local userConfig = npcUtil.getUserConfig("npcSpawnerPlus")
-      local mSpeciesConfig = npcUtil.mergeUnique(baseConfig.additionalSpecies, userConfig.additionalSpecies)
-      speciesList = npcUtil.mergeUnique(speciesList, mSpeciesConfig)
-      npcTypeList = shallowCopy(baseConfig.npcTypeList)
+      local npcTypeList = shallowCopy(baseConfig.npcTypeList)
+      speciesList = npcUtil.mergeUnique(speciesList, baseConfig.additionalSpecies)
       randomItUp(speciesList, npcTypeList)
     
       local args = {
