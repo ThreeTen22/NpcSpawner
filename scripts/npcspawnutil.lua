@@ -1,5 +1,6 @@
 require "/scripts/util.lua"
 require "/scripts/interp.lua"
+require "/scripts/messageutil.lua"
 
 dComp = {}
 npcUtil = {} 
@@ -182,22 +183,11 @@ function npcUtil.getGenderIndx(name, genderTable)
   end
 end
 
-function npcUtil.getUserConfig(key)
-  local update = false
-  local config = root.getConfiguration(key)
-  if not config then
-    update = true
-    config = {additionalSpecies = jarray(), additionalNpcTypes = jarray()}
+function npcUtil.parseArgs(args, defaults)
+  for k,v in pairs(args) do
+    defaults[k] = v
   end
-  if not config.modVersion then
-    update = true
-    local version = npcUtil.modVersion()
-    config.modVersion = version
-  end
-  if update then
-    root.setConfiguration(key, config)
-  end
-  return config
+  return defaults
 end
 
 function npcUtil.getWorldStorage(id, modVersion)
@@ -211,7 +201,8 @@ function npcUtil.getWorldStorage(id, modVersion)
     worldStorage.modVersion = modVersion
     clearCache = true
   end
-  if (worldStorage.time + 800) > world.time() then
+  worldStorage.time = worldStorage.time or 0
+  if (worldStorage.time + 800) < world.time() then
     clearCache = true
   end
 
@@ -226,7 +217,7 @@ end
 
 function npcUtil.isContainerEmpty(itemBag)
    for k,v in pairs(itemBag) do
-    if v then return false end
+    if v ~= nil then return false end
    end
    return true
 end
@@ -296,6 +287,18 @@ function setPath(t, ...)
       t = t[child]
     end
   end
+end
+
+function npcUtil.buildItemOverrideTable(t)
+  local override = t or {}
+  local container = nil
+  table.insert(override, {})
+  container = override[1]
+  table.insert(container, 0)
+  table.insert(container, {})
+  container = override[1][2]
+  table.insert(container, {})
+  return override
 end
 ----[[
 function logENV()
