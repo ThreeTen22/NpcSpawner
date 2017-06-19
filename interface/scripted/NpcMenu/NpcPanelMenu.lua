@@ -879,12 +879,8 @@ function selectedTab.NpcType(args)
   args.isOverride = false
   args.skipTheRest = true
   args.iIcon = {}
-  
-
   local updateToWorld = false
   --TODO: Load speeds are pretty damn fast already, but we still want to keep things updated. 
-
-  
   local typeParams = config.getParameter("npcTypeParams")
   local hIcon = jsonPath(typeParams,"hostile.icon")
   local gIcon = jsonPath(typeParams,"guard.icon") 
@@ -898,7 +894,7 @@ function selectedTab.NpcType(args)
   local modVersion = npcUtil.modVersion()
   local worldStorage, clearCache = npcUtil.getWorldStorage(self.npcTypeStorage, modVersion)
   if clearCache then
-    worldStorage = {} 
+    worldStorage = {iIcon = {}} 
     override.clearcache() 
   end
   local npcConfig = nil
@@ -910,23 +906,23 @@ function selectedTab.NpcType(args)
       --dCompare("npcType: ",v,npcConfig)
       if success then
         if npcUtil.checkIfNpcIs(v, npcConfig, hostile) then worldStorage.iIcon[v] = hIcon; updateToWorld = true;
-          elseif npcUtil.checkIfNpcIs(v, npcConfig, guard) then worldStorage.iIcon[v] = gIcon ; updateToWorld = true;
-            elseif npcUtil.checkIfNpcIs(v, npcConfig, merchant) then worldStorage.iIcon[v] = mIcon ; updateToWorld = true;
-              elseif npcUtil.checkIfNpcIs(v, npcConfig, crew) then worldStorage.iIcon[v] = cIcon; updateToWorld = true;
-              else  
-                worldStorage.iIcon[v] = vIcon
-              end
-            end
-          end
+        elseif npcUtil.checkIfNpcIs(v, npcConfig, guard) then worldStorage.iIcon[v] = gIcon ; updateToWorld = true;
+        elseif npcUtil.checkIfNpcIs(v, npcConfig, merchant) then worldStorage.iIcon[v] = mIcon ; updateToWorld = true;
+        elseif npcUtil.checkIfNpcIs(v, npcConfig, crew) then worldStorage.iIcon[v] = cIcon; updateToWorld = true;
+        else  
+          worldStorage.iIcon[v] = vIcon
         end
-        if updateToWorld then
-          worldStorage.time = world.time()
-          worldStorage.modVersion = modVersion
-          world.setProperty(self.npcTypeStorage, worldStorage)
-        end
-        args.iIcon = shallowCopy(worldStorage.iIcon)
-        return worldStorage
       end
+    end
+  end
+  if updateToWorld then
+    worldStorage.time = world.time()
+    worldStorage.modVersion = modVersion
+    world.setProperty(self.npcTypeStorage, worldStorage)
+  end
+  args.iIcon = shallowCopy(worldStorage.iIcon)
+  return worldStorage
+end
 
 function selectedTab.Hair(args)
   local gender = self.identity.gender or self.seedIdentity.gender
@@ -1326,7 +1322,7 @@ function onMainSliderChange()
   else
     self[data.funcName](value, data)
   end
-  --Need to get value again because it may have changed
+  --Need to get value again because it may have changedG
   value = widget.getSliderValue(self.sldMain)
 
   --dLog(data.removeOnZero, "onZero?")
