@@ -298,8 +298,10 @@ function npcUtil.buildItemOverrideTable(t)
   table.insert(container, {})
   container = override[1][2]
   table.insert(container, {})
+
   return override
 end
+
 ----[[
 function logENV()
   for i,v in pairs(_ENV) do
