@@ -33,14 +33,13 @@ function init()
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
   self.speciesList = npcUtil.mergeUnique(self.speciesList, baseConfig.additionalSpecies)
   
-  
-  local listOfProtectorates = {}
-  for _,v in ipairs(protectorate) do
-    table.insert(listOfProtectorates, tostring(v[2]))
+  if protectorate ~= nil then
+    local listOfProtectorates = {}
+    for _,v in ipairs(protectorate) do
+      table.insert(listOfProtectorates, tostring(v[2]))
+    end
+    self.npcTypeList = npcUtil.mergeUnique(self.npcTypeList, listOfProtectorates)
   end
-  table.insert(listOfProtectorates, "crewmemberoutlaw")
-  self.npcTypeList = npcUtil.mergeUnique(self.npcTypeList, listOfProtectorates)
-  
   for i,v in ipairs(self.npcTypeList) do
     if not pcall(root.npcConfig,v) then
       dLog(v, "bad NpcType: ")
@@ -567,6 +566,8 @@ function onSelectItem(name, listData)
   listData.iTitle = itemData.iTitle
   listData.clearConfig = itemData.clearConfig
   if not listData and listData.listType then return end
+  dLogJson(itemData, "onSelectItem: itemData")
+  dLogJson(listData, "onSelectItem: listData")
   --self.curSelectedTitle = itemData.iTitle
   modNpc[listData.listType](listData, self.seedIdentity, self.getCurrentOverride())
 
