@@ -184,9 +184,9 @@ function checkForItemChanges(itemBag, contentsChanged)
     return contentsChanged
 end
 
-function interpTextColor()
+function interpTextColor(tbPath)
   local timer = 0
-  local name = self.overrideTextBox
+  local name = tbPath or self.overrideTextBox
   local dt = script.updateDt()
   while timer < self.colorChangeTime do
     timer = math.min(timer + dt, self.colorChangeTime)
@@ -283,7 +283,7 @@ function setNpcName(instant)
   else
     self.identity.name = text
   end
-  if instant then return end
+  if instant == true then return end
   widget.setFontColor(self.nameBox, self.tbGreenColor)
   self.curOverrideColor = copy(self.tbGreenColor)
   self.tbFeedbackColorRoutine = coroutine.wrap(interpTextColor)
@@ -487,16 +487,19 @@ function setList(args)
   local iTitle = nil
   local iData = nil
   local selectedItem = nil
+  local listIndex = {}
   if not args then --dLog("no args found") 
     return 
   end
   if (args.isOverride) and (self.curSelectedTitle ~= "") then
     args.clearConfig = true
     local defaultListItem = widget.addListItem(self.techList)
+    table.insert(listIndex, defaultListItem)
     widget.setText(string.format("%s.%s.title", self.techList, defaultListItem), "Remove Overrides")
     widget.setData(string.format("%s.%s", self.techList, defaultListItem), {listType = tostring(args.listType), clearConfig = true})
   end 
   local s = nil
+  
   for i,v in pairs(args.title) do
     indx = indx+1
     local continue = true
@@ -514,7 +517,7 @@ function setList(args)
       displayText = tostring(v)
       iTitle = tostring(v)
       local listItem = widget.addListItem(self.techList)
-      
+      table.insert(listIndex, listItem)
       local hexId = nil
       if args.colors then
         local hexIndx = 0
@@ -534,10 +537,12 @@ function setList(args)
       if hexId then
         args.iIcon[v] = string.format("/interface/statuses/darken.png?setcolor=%s",hexId)
         displayText = "^#"..hexId..";"..tostring(v)
+        dLog(listItem, "listItem")
       end
       if args.iIcon and args.iIcon[v] then
         local iIcon = args.iIcon[v]
         widget.setImage(string.format("%s.%s.techIcon", self.techList, listItem), iIcon)
+
       end
 
       widget.setText(string.format("%s.%s.title", self.techList, listItem), displayText)
@@ -546,6 +551,18 @@ function setList(args)
       if v == self.curSelectedTitle then 
         selectedItem = tostring(listItem)
       end 
+    end
+  end
+  if args.colors then
+    indx = 2
+    for i,v in pairs(args.title) do
+      local colorLayout = string.format("%s.%s.colorLayout", self.techList, tostring(listIndex[indx]))
+      for _,img in pairs(args.colors[i] or {}) do
+        dLogJson(img, "img:")
+        local hexColorPath = string.format("/interface/statuses/darken.png?setcolor=%s",img)
+        widget.addFlowImage(colorLayout, img, string.format("/interface/statuses/darken.png?setcolor=%s",img))
+      end
+      indx = indx+1
     end
   end
   widget.setData(string.format("%s", self.techList), args)
@@ -680,15 +697,7 @@ function updatePortrait()
   local num = 1
   local portraits = self.portraits
   local npcPort = root.npcPortrait("full", self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed, self.getCurrentOverride())
-  while num <= #npcPort do
-    --widget.setImage(portraits[num], npcPort[num].image)
-    widget.setVisible(portraits[num], false)
-    num = num+1
-  end
-  while num <= #portraits do
-    widget.setVisible(portraits[num], false)
-    num = num+1
-  end
+
   self.portraitCanvas:clear()
   local start = {1,1}
   for _,v in ipairs(npcPort) do
