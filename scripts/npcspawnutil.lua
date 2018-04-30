@@ -228,7 +228,7 @@ function npcUtil.mergeUnique(t1, t2)
   local hash = {}
   local res = {}
     for _,v in ipairs(merged) do
-       if (not hash[v]) then
+       if not hash[v] then
            res[#res+1] = v
            hash[v] = true
        end
@@ -256,7 +256,7 @@ function npcUtil.replaceDirectives(directive, directiveJson)
   local splitDirectives = util.split(directive,"?replace")
 
   for i,v in ipairs(splitDirectives) do
-    if not (v == "") then
+    if v ~= "" then
         local k = string.match(v, "(%w+)=%w+")
         if directiveJson[k] or directiveJson[string.upper(k)] or directiveJson[string.lower(k)] then
             splitDirectives[i] = npcUtil.jsonToDirective(directiveJson)
@@ -300,7 +300,7 @@ function npcUtil.buildItemOverrideTable(t)
   table.insert(container, {})
   return override
 end
-----[[
+--[[
 function logENV()
   for i,v in pairs(_ENV) do
     if type(v) == "function" then

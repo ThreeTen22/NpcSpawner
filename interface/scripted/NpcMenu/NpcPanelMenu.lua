@@ -53,7 +53,6 @@ function init()
   end
 
   --primary and sheathed primary are always the goto weapons, secondary is for shields.
-  self.equipBagStorage = widget.itemGridItems("itemGrid")
 
   self.gettingInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
 
@@ -92,53 +91,51 @@ function update(dt)
     widget.setSliderRange(self.sldMain,self.minSldValue, self.maxSldValue)
     widget.setSliderEnabled(self.sldMain, true)
     widget.setSliderValue(self.sldMain,self.sliderValue)
+
     local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
     widget.setSelectedOption("rgGenders", id-1)
-    script.setUpdateDelta(20)
+    local itemBag = world.containerItems(pane.containerEntityId())
+    widget.setItemSlotItem("primarySlot", itemBag[1])
+    widget.setItemSlotItem("altSlot", itemBag[2])
+    widget.setItemSlotItem("sheathedprimarySlot", itemBag[3])
+    widget.setItemSlotItem("sheathedaltSlot", itemBag[4])
+    widget.setItemSlotItem("headSlot", itemBag[5])
+    widget.setItemSlotItem("headCosmeticSlot", itemBag[6])
+    widget.setItemSlotItem("chestSlot", itemBag[7])
+    widget.setItemSlotItem("chestCosmeticSlot", itemBag[8])
+    widget.setItemSlotItem("legsSlot", itemBag[9])
+    widget.setItemSlotItem("legsCosmeticSlot", itemBag[10])
+    widget.setItemSlotItem("backSlot", itemBag[11])
+    widget.setItemSlotItem("backCosmeticSlot", itemBag[12])
+
+
+    local equipSlots = config.getParameter("equipSlots")
+    if npcUtil.isContainerEmpty(itemBag) then return; end
+    self.items.override = npcUtil.buildItemOverrideTable(jarray())
+    for i = 1, #equipSlots do
+      if itemBag[i] ~= nil then
+        --Add items to override item slot so they update visually.
+        self.items.override[1][2][1][equipSlots[i]] = {itemBag[i]}
+        contentsChanged = true
+      end
+    end
+    if npcUtil.isContainerEmpty(self.items.override[1][2][1]) then
+        self.items.override = nil
+    end
+
+    script.setUpdateDelta(10)
     self.mainUpdate = true
     update = mainUpdate
     return updateNpc()
 end
 
 function mainUpdate(dt)
-  promises:update()
   if self.tbFeedbackColorRoutine then self.tbFeedbackColorRoutine() end
-  local itemBag = widget.itemGridItems("itemGrid")
-  if checkForItemChanges(itemBag, false) then return updateNpc() end
-end
-
-function inCorrectSlot(index, itemDescription)
-  local success, itemType = pcall(root.itemType, itemDescription.name)
-  if success then 
-    if itemType == self.equipSlotType[index] then
-      return true
-    end
-  end
-  return false
 end
 
 local npcifyWeapon = function(itemDescription) 
   local itemConfig = root.itemConfig(itemDescription.name)
 end
-function setItemOverride(slotName, insertPosition, itemContainer)
-  if itemContainer then 
-    if type(itemContainer) == "table" then
-      if string.find(itemContainer.name, "capturepod",1,true) then
-        itemContainer = "npcpetcapturepod"
-        insertPosition[slotName] = {itemContainer}
-        return
-      end
-      if type(itemContainer) ~= "string" then
-        itemContainer.count = nil
-        
-      end
-      insertPosition[slotName] = {itemContainer}
-    end
-  else
-    insertPosition[slotName] = nil
-  end
-end
-
 
 -----CALLBACK FUNCTIONS-------
 function spnIdleStance.up()
@@ -157,31 +154,44 @@ function spnIdleStance.down()
   return updatePortrait()
 end
 
-function checkForItemChanges(itemBag, contentsChanged)
-    for i = 1, self.slotCount do
-      if not compare(self.equipBagStorage[i], itemBag[i]) then
-        if itemBag[i] ~= nil and (not inCorrectSlot(i, itemBag[i])) then
-            player.giveItem(itemBag[i])
-            world.containerTakeAt(pane.containerEntityId(), i-1)
-        end
-        if not (self.items.override) then
-          self.items.override = jarray()
-          self.items.override = npcUtil.buildItemOverrideTable(self.items.override)
-        end
-        local insertPosition = self.items.override[1][2][1]
-        --Add items to override item slot so they update visually.
-        setItemOverride(self.equipSlot[i],insertPosition, itemBag[i])
-        contentsChanged = true
-      end
-    end
+function onItemSlotPress(id, data)
+  if not self.mainUpdate then
+    dLog("INIT: onItemSlotPress!")
+  end
 
-    if contentsChanged then 
-      if npcUtil.isContainerEmpty(itemBag) then
-        self.items.override = nil
-      end
-    end
-    self.equipBagStorage = widget.itemGridItems("itemGrid") 
-    return contentsChanged
+  local itemSwapItem = player.swapSlotItem()
+  local itemSlotItem = widget.itemSlotItem(id)
+  dLog({id, data})
+  dLogJson(itemSwapItem, "itemSwapItem: ")
+  dLogJson(itemSlotItem, "itemSwapItem: ")
+  --Check if item and if its valid (no reason to )
+  if itemSwapItem then
+    local success, itemType = pcall(root.itemType, itemSwapItem.name)
+    if itemType ~= data.equipType then return; end
+  end
+
+  --assume that there is either a valid swap item, or no item at all.
+  player.setSwapSlotItem(itemSlotItem)
+  widget.setItemSlotItem(id, itemSwapItem)
+  
+  itemSlotItem = widget.itemSlotItem(id)
+  world.containerSwapItemsNoCombine(pane.containerEntityId(), itemSlotItem, data.containerSlot)
+
+  --immediately update container.
+  --this is to ensure that if pane crashes, nothing will be lost...
+
+  if not self.items.override then 
+    self.items.override = npcUtil.buildItemOverrideTable(jarray())
+  end
+
+  if itemSlotItem ~= nil then itemSlotItem = {itemSlotItem} end
+
+  self.items.override[1][2][1][data.equipSlot] = itemSlotItem
+  if npcUtil.isContainerEmpty(self.items.override[1][2][1]) then 
+      self.items.override = nil
+  end
+  
+  return updateNpc()
 end
 
 function interpTextColor(tbPath)
@@ -251,7 +261,7 @@ function onOverrideEnter()
     self.tbFeedbackColorRoutine()
   end
   if not wasSuccessful then
-    override.outputStr(errorMsg)
+    return override.outputStr(errorMsg)
   end
 end
 
@@ -295,7 +305,8 @@ end
 function acceptBtn()
   local hasEquip = false
   local hasWeapon = false
-  local itemBag = widget.itemGridItems("itemGrid")
+  local itemBag = world.containerItems(pane.containerEntityId())
+  local equipSlots = config.getParameter("equipSlots")
   self.identity = npcUtil.parseArgs(self.identity, self.seedIdentity)
   if (not path(self.scriptConfig,"initialStorage","itemSlots")) then 
     setPath(self.scriptConfig,"initialStorage","itemSlots",{})
@@ -306,7 +317,7 @@ function acceptBtn()
   for i = 1, 4 do 
     if itemBag[i] then
       hasWeapon = true
-      slotName = self.equipSlot[i]
+      slotName = equipSlots[i]
       itemSlots[slotName] = copy(itemBag[i])
       if itemSlots[slotName] and string.find(itemSlots[slotName].name, "capturepod",1,true) then 
         itemSlots[slotName].name = "npcpetcapturepod" 
@@ -321,10 +332,10 @@ function acceptBtn()
     self.scriptConfig.personality = npcUtil.getPersonality(self.currentType, self.currentSeed)
   end
 
-  for i = 5, self.slotCount do
+  for i = 5, #itemBag do
     if itemBag[i] then
       hasEquip = true
-      local slotName = self.equipSlot[i]
+      local slotName = equipSlots[i]
       itemSlots[slotName] = copy(itemBag[i])
     end
   end
@@ -397,6 +408,7 @@ function setListInfo(categoryName, uniqueId, infoOverride)
 end
 
 function selectTab(index, curTabs)
+    dLog("selectTab")
     curTabs = self.tabList
     self.returnInfo = {}
     self.returnInfoColors = nil
@@ -453,7 +465,7 @@ function selectTab(index, curTabs)
 end
 
 function onCategorySelection(id, data)
-  dCompare("onCategorySelection ",id,data)
+  dLog("onCategorySelection")
   local id = widget.getSelectedOption(self.tabsWidget)
   self.categoryWidgetData = data
   if data == "Generate" then
@@ -487,19 +499,16 @@ function setList(args)
   local iTitle = nil
   local iData = nil
   local selectedItem = nil
-  local listIndex = {}
   if not args then --dLog("no args found") 
     return 
   end
   if (args.isOverride) and (self.curSelectedTitle ~= "") then
     args.clearConfig = true
     local defaultListItem = widget.addListItem(self.techList)
-    table.insert(listIndex, defaultListItem)
     widget.setText(string.format("%s.%s.title", self.techList, defaultListItem), "Remove Overrides")
     widget.setData(string.format("%s.%s", self.techList, defaultListItem), {listType = tostring(args.listType), clearConfig = true})
   end 
   local s = nil
-  
   for i,v in pairs(args.title) do
     indx = indx+1
     local continue = true
@@ -517,7 +526,7 @@ function setList(args)
       displayText = tostring(v)
       iTitle = tostring(v)
       local listItem = widget.addListItem(self.techList)
-      table.insert(listIndex, listItem)
+
       local hexId = nil
       if args.colors then
         local hexIndx = 0
@@ -537,12 +546,10 @@ function setList(args)
       if hexId then
         args.iIcon[v] = string.format("/interface/statuses/darken.png?setcolor=%s",hexId)
         displayText = "^#"..hexId..";"..tostring(v)
-        dLog(listItem, "listItem")
       end
       if args.iIcon and args.iIcon[v] then
         local iIcon = args.iIcon[v]
         widget.setImage(string.format("%s.%s.techIcon", self.techList, listItem), iIcon)
-
       end
 
       widget.setText(string.format("%s.%s.title", self.techList, listItem), displayText)
@@ -553,18 +560,6 @@ function setList(args)
       end 
     end
   end
-  if args.colors then
-    indx = 2
-    for i,v in pairs(args.title) do
-      local colorLayout = string.format("%s.%s.colorLayout", self.techList, tostring(listIndex[indx]))
-      for _,img in pairs(args.colors[i] or {}) do
-        dLogJson(img, "img:")
-        local hexColorPath = string.format("/interface/statuses/darken.png?setcolor=%s",img)
-        widget.addFlowImage(colorLayout, img, string.format("/interface/statuses/darken.png?setcolor=%s",img))
-      end
-      indx = indx+1
-    end
-  end
   widget.setData(string.format("%s", self.techList), args)
   if selectedItem then  
     widget.setListSelected(self.techList, selectedItem)
@@ -573,7 +568,7 @@ end
 
 
 function onSelectItem(name, listData)
-  --dLog("onSelectItem")
+  dLog("onSelectItem")
   local listItem = widget.getListSelected(self.techList)
   if not listItem then return end
   local itemData = widget.getData(string.format("%s.%s", self.techList, listItem))
@@ -695,7 +690,8 @@ end
 
 function updatePortrait()
   local num = 1
-  local portraits = self.portraits
+  dLogJson({self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed}, "seeds")
+  dLogJson(self.getCurrentOverride(), "get current override")
   local npcPort = root.npcPortrait("full", self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed, self.getCurrentOverride())
 
   self.portraitCanvas:clear()
@@ -1439,12 +1435,13 @@ spnSldParamDetail.down= spnSldParamDetail.run
 
 
 function onGenderSelection(id, data)
+
   self.identity.gender = data or self.speciesJson.genders[tonumber(id)+1].name
   if self.mainUpdate then 
     local indx = widget.getSelectedOption(self.tabsWidget)
     setList(nil)
     selectTab(indx, self.tabList)
-    return updatePortrait()
+    return updateVisuals()
   end
 end
 
