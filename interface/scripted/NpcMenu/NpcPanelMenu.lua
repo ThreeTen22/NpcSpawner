@@ -11,7 +11,6 @@ override = {}
 function init()
   local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
   self = baseConfig
-
   self.getSpeciesPath = function(species, path)          
     path = path or "/species/"
     return tostring(path..species..".species")
@@ -20,14 +19,11 @@ function init()
   self.setSeedValue = function(value) 
     self.currentSeed = tonumber(value) 
   end
-
   self.setOverride = function(value, data) 
     applyDirective(self.seedIdentity, self.getCurrentOverride(), value, data)
   end
   self.tabList = nil
   self.tabData = nil
-
-
   local protectorate = jsonPath(root.npcConfig("villager"), "scriptConfig.questGenerator.graduation.nextNpcType")
   
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
@@ -46,11 +42,8 @@ function init()
       self.npcTypeList[i] = "_r"
     end
   end
-  
-  
   table.sort(self.speciesList)
   table.sort(self.npcTypeList)
-  
   while string.find(self.npcTypeList[1],"_r",1,true) do
     table.remove(self.npcTypeList, 1)
   end
@@ -78,6 +71,7 @@ function init()
   self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.items} end
   self.seedIdentity = {}
 
+  self.portraitCanvas = widget.bindCanvas("portraitCanvas")
 
   updateNpc(true)
   modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.getCurrentOverride())
@@ -91,12 +85,6 @@ end
 --uninit WORKS. Question is, can we send entity messages?  Answer: fuck entity messages.
 function update(dt)
   --Cannot send entity messages during init, so will do it here
-  if self.mainUpdate then
-    promises:update()
-    if self.tbFeedbackColorRoutine then self.tbFeedbackColorRoutine() end
-    local itemBag = widget.itemGridItems("itemGrid")
-    if checkForItemChanges(itemBag, false) then return updateNpc() end
-  else 
     widget.setSelectedOption(self.categoryWidget, -1)
     widget.setVisible(self.categoryWidget, true)
     widget.setVisible(self.tabsWidget, true)
@@ -108,8 +96,15 @@ function update(dt)
     widget.setSelectedOption("rgGenders", id-1)
     script.setUpdateDelta(20)
     self.mainUpdate = true
+    update = mainUpdate
     return updateNpc()
-  end
+end
+
+function mainUpdate(dt)
+  promises:update()
+  if self.tbFeedbackColorRoutine then self.tbFeedbackColorRoutine() end
+  local itemBag = widget.itemGridItems("itemGrid")
+  if checkForItemChanges(itemBag, false) then return updateNpc() end
 end
 
 function inCorrectSlot(index, itemDescription)
@@ -122,6 +117,9 @@ function inCorrectSlot(index, itemDescription)
   return false
 end
 
+local npcifyWeapon = function(itemDescription) 
+  local itemConfig = root.itemConfig(itemDescription.name)
+end
 function setItemOverride(slotName, insertPosition, itemContainer)
   if itemContainer then 
     if type(itemContainer) == "table" then
@@ -132,6 +130,7 @@ function setItemOverride(slotName, insertPosition, itemContainer)
       end
       if type(itemContainer) ~= "string" then
         itemContainer.count = nil
+        
       end
       insertPosition[slotName] = {itemContainer}
     end
@@ -162,9 +161,8 @@ function checkForItemChanges(itemBag, contentsChanged)
     for i = 1, self.slotCount do
       if not compare(self.equipBagStorage[i], itemBag[i]) then
         if itemBag[i] ~= nil and (not inCorrectSlot(i, itemBag[i])) then
-          if promises:empty() then
-            promises:add(world.sendEntityMessage(pane.containerEntityId(), "removeItemAt", i), player.giveItem(itemBag[i]))
-          end
+            player.giveItem(itemBag[i])
+            world.containerTakeAt(pane.containerEntityId(), i-1)
         end
         if not (self.items.override) then
           self.items.override = jarray()
@@ -567,7 +565,6 @@ function onSelectItem(name, listData)
   listData.clearConfig = itemData.clearConfig
   if not listData and listData.listType then return end
   dLogJson(itemData, "onSelectItem: itemData")
-  dLogJson(listData, "onSelectItem: listData")
   --self.curSelectedTitle = itemData.iTitle
   modNpc[listData.listType](listData, self.seedIdentity, self.getCurrentOverride())
 
@@ -618,7 +615,7 @@ function changeTabLabels(tabBaseName)
   self.tabList = config.getParameter("tabOptions."..self.categoryWidgetData)
 
   if self.categoryWidgetData == "Generate" then
-
+    updateNpc(true)
     if self.seedIdentity.facialMaskType == "" then
       npcUtil.replaceValueInList(self.tabList, "FMask", "")
     end
@@ -684,19 +681,26 @@ function updatePortrait()
   local portraits = self.portraits
   local npcPort = root.npcPortrait("full", self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed, self.getCurrentOverride())
   while num <= #npcPort do
-    widget.setImage(portraits[num], npcPort[num].image)
-    widget.setVisible(portraits[num], true)
+    --widget.setImage(portraits[num], npcPort[num].image)
+    widget.setVisible(portraits[num], false)
     num = num+1
   end
   while num <= #portraits do
     widget.setVisible(portraits[num], false)
     num = num+1
   end
+  self.portraitCanvas:clear()
+  local start = {1,1}
+  for _,v in ipairs(npcPort) do
+    self.portraitCanvas:drawImage(v.image,{v.position[1]+start[1], v.position[2]+start[2]}, 1.8, v.color, false)
+  end
+
 end
 
 function updateSpecies(species)
   self.currentSpecies = species
-  if not(self.speciesJson and (self.speciesJson.kind == self.currentSpecies)) then
+  dLogJson({(self.speciesJson or {}).kind, self.currentSpecies})
+  if not((self.speciesJson or {}).kind == self.currentSpecies) then
     if self.mainUpdate then
       local gender = self.identity.gender 
       self.identity = {}
