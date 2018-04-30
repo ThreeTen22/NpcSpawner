@@ -10,7 +10,7 @@ override = {}
 
 function init()
   local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
-  self = baseConfig
+
   self.getSpeciesPath = function(species, path)          
     path = path or "/species/"
     return tostring(path..species..".species")
@@ -52,7 +52,6 @@ function init()
     table.insert(self.npcTypeList, 1, v)
   end
 
-  --primary and sheathed primary are always the goto weapons, secondary is for shields.
 
   self.gettingInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
 
@@ -63,73 +62,98 @@ function init()
 
 
   local param = self.gettingInfo.npcParam or {}
-  --self.currentOverride = gettingInfo.npcParam or {identity = {}, scriptConfig = {}}
   self.identity = param.identity or {}
   self.scriptConfig = param.scriptConfig or {}
   self.items = param.items or {}
   self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.items} end
   self.seedIdentity = {}
-
+  self.categoryWidget = "rgSelectCategory"
   self.portraitCanvas = widget.bindCanvas("portraitCanvas")
+  self.tbFeedbackColorRoutine = nil
+  self.curNameBoxColor = nil
+  self.returnInfoColors = nil
+  self.tbGreenColor = {0, 255, 0}
+  self.tbRedColor = {255,0,0}
+  self.colorChangeTime = 1
+  self.slotCount = 12
+  self.idleStanceIndex = 0
+  self.sldMain = "sldMainSlider"
+  self.scrollArea = "techScrollArea"
+  self.techList = "techScrollArea.techList"
+  self.infoList = "techScrollArea.infoList"
+  self.infoLabel = "techScrollArea.lblOverrideConsole"
+  self.tabsWidget = "rgTabs"
+  self.categoryWidget = "rgSelectCategory"
+  self.categoryWidgetData = "Generate"
+  self.nameBox = "tbNameBox"
+  self.overrideTextBox = "tbOverrideBox"
+  self.minSldValue = 0
+  self.maxSldValue = 20000
+  self.mainUpdate = false
+  self.filterText = ""
+  self.npcTypeStorage = "npcTypeStorage"
 
   updateNpc(true)
   modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.getCurrentOverride())
-  
+
+  local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
+  widget.setSelectedOption("rgGenders", id-1)
+
   self.sliderValue = tonumber(self.currentSeed) or 0
   widget.setText("lblSliderValue", "Seed:  "..tostring(self.sliderValue))
   --detach
-  script.setUpdateDelta(3)
+
+  local itemBag = world.containerItems(pane.containerEntityId())
+  widget.setItemSlotItem("primarySlot", itemBag[1])
+  widget.setItemSlotItem("altSlot", itemBag[2])
+  widget.setItemSlotItem("sheathedprimarySlot", itemBag[3])
+  widget.setItemSlotItem("sheathedaltSlot", itemBag[4])
+  widget.setItemSlotItem("headSlot", itemBag[5])
+  widget.setItemSlotItem("headCosmeticSlot", itemBag[6])
+  widget.setItemSlotItem("chestSlot", itemBag[7])
+  widget.setItemSlotItem("chestCosmeticSlot", itemBag[8])
+  widget.setItemSlotItem("legsSlot", itemBag[9])
+  widget.setItemSlotItem("legsCosmeticSlot", itemBag[10])
+  widget.setItemSlotItem("backSlot", itemBag[11])
+  widget.setItemSlotItem("backCosmeticSlot", itemBag[12])
+
+
+  local equipSlots = config.getParameter("equipSlots")
+  if npcUtil.isContainerEmpty(itemBag) then return; end
+  self.items.override = npcUtil.buildItemOverrideTable(jarray())
+  for i = 1, #equipSlots do
+    if itemBag[i] ~= nil then
+      --Add items to override item slot so they update visually.
+      self.items.override[1][2][1][equipSlots[i]] = {itemBag[i]}
+      contentsChanged = true
+    end
+  end
+  if npcUtil.isContainerEmpty(self.items.override[1][2][1]) then
+      self.items.override = nil
+  end
+  script.setUpdateDelta(20)
 end
 
 --uninit WORKS. Question is, can we send entity messages?  Answer: fuck entity messages.
 function update(dt)
   --Cannot send entity messages during init, so will do it here
-    widget.setSelectedOption(self.categoryWidget, -1)
     widget.setVisible(self.categoryWidget, true)
+
     widget.setVisible(self.tabsWidget, true)
     widget.setVisible(self.scrollArea, true)
     widget.setSliderRange(self.sldMain,self.minSldValue, self.maxSldValue)
     widget.setSliderEnabled(self.sldMain, true)
     widget.setSliderValue(self.sldMain,self.sliderValue)
 
-    local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
-    widget.setSelectedOption("rgGenders", id-1)
-    local itemBag = world.containerItems(pane.containerEntityId())
-    widget.setItemSlotItem("primarySlot", itemBag[1])
-    widget.setItemSlotItem("altSlot", itemBag[2])
-    widget.setItemSlotItem("sheathedprimarySlot", itemBag[3])
-    widget.setItemSlotItem("sheathedaltSlot", itemBag[4])
-    widget.setItemSlotItem("headSlot", itemBag[5])
-    widget.setItemSlotItem("headCosmeticSlot", itemBag[6])
-    widget.setItemSlotItem("chestSlot", itemBag[7])
-    widget.setItemSlotItem("chestCosmeticSlot", itemBag[8])
-    widget.setItemSlotItem("legsSlot", itemBag[9])
-    widget.setItemSlotItem("legsCosmeticSlot", itemBag[10])
-    widget.setItemSlotItem("backSlot", itemBag[11])
-    widget.setItemSlotItem("backCosmeticSlot", itemBag[12])
-
-
-    local equipSlots = config.getParameter("equipSlots")
-    if npcUtil.isContainerEmpty(itemBag) then return; end
-    self.items.override = npcUtil.buildItemOverrideTable(jarray())
-    for i = 1, #equipSlots do
-      if itemBag[i] ~= nil then
-        --Add items to override item slot so they update visually.
-        self.items.override[1][2][1][equipSlots[i]] = {itemBag[i]}
-        contentsChanged = true
-      end
-    end
-    if npcUtil.isContainerEmpty(self.items.override[1][2][1]) then
-        self.items.override = nil
-    end
-
-    script.setUpdateDelta(10)
     self.mainUpdate = true
     update = mainUpdate
-    return updateNpc()
+
+    onCategorySelection("-1", "Generate")
+    return updatePortrait()
 end
 
 function mainUpdate(dt)
+  promises:update()
   if self.tbFeedbackColorRoutine then self.tbFeedbackColorRoutine() end
 end
 
@@ -465,7 +489,7 @@ function selectTab(index, curTabs)
 end
 
 function onCategorySelection(id, data)
-  dLog("onCategorySelection")
+
   local id = widget.getSelectedOption(self.tabsWidget)
   self.categoryWidgetData = data
   if data == "Generate" then
@@ -1441,7 +1465,7 @@ function onGenderSelection(id, data)
     local indx = widget.getSelectedOption(self.tabsWidget)
     setList(nil)
     selectTab(indx, self.tabList)
-    return updateVisuals()
+    return updatePortrait()
   end
 end
 
