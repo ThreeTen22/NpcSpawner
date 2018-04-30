@@ -10,7 +10,7 @@ override = {}
 
 function init()
   local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
-
+  self.npcTypeList = baseConfig.npcTypeList
   self.getSpeciesPath = function(species, path)          
     path = path or "/species/"
     return tostring(path..species..".species")
@@ -68,6 +68,7 @@ function init()
   self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.items} end
   self.seedIdentity = {}
   self.categoryWidget = "rgSelectCategory"
+  self.categoryWidgetData = "Generate"
   self.portraitCanvas = widget.bindCanvas("portraitCanvas")
   self.tbFeedbackColorRoutine = nil
   self.curNameBoxColor = nil
@@ -84,7 +85,6 @@ function init()
   self.infoLabel = "techScrollArea.lblOverrideConsole"
   self.tabsWidget = "rgTabs"
   self.categoryWidget = "rgSelectCategory"
-  self.categoryWidgetData = "Generate"
   self.nameBox = "tbNameBox"
   self.overrideTextBox = "tbOverrideBox"
   self.minSldValue = 0
@@ -104,6 +104,7 @@ function init()
   --detach
 
   local itemBag = world.containerItems(pane.containerEntityId())
+  dLogJson(itemBag, "bags")
   widget.setItemSlotItem("primarySlot", itemBag[1])
   widget.setItemSlotItem("altSlot", itemBag[2])
   widget.setItemSlotItem("sheathedprimarySlot", itemBag[3])
@@ -713,9 +714,6 @@ function updateNpc(noVisual)
 end
 
 function updatePortrait()
-  local num = 1
-  dLogJson({self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed}, "seeds")
-  dLogJson(self.getCurrentOverride(), "get current override")
   local npcPort = root.npcPortrait("full", self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed, self.getCurrentOverride())
 
   self.portraitCanvas:clear()
