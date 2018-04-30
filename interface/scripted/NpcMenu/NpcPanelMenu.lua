@@ -898,7 +898,6 @@ function selectedTab.Species(args)
   local genderIndx = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)-1
   for _,v in ipairs(self.speciesList) do
     local jsonPath = string.format("/species/%s.species:genders.%s.characterImage",v, tostring(genderIndx))
-    --dLog(jsonPath, "JSON PATH")
     local image = root.assetJson(jsonPath)
     args.iIcon[v] = image
   end
