@@ -291,14 +291,8 @@ end
 
 function npcUtil.buildItemOverrideTable(t)
   local override = t or {}
-  local container = nil
-  table.insert(override, {})
-  container = override[1]
-  table.insert(container, 0)
-  table.insert(container, {})
-  container = override[1][2]
-  table.insert(container, {})
-  return override
+  table.insert(t, {[1]=0, [2]={[1]={}}})
+  return t
 end
 --[[
 function logENV()

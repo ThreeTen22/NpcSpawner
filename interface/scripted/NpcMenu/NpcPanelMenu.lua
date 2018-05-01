@@ -125,7 +125,7 @@ function update(dt)
     widget.setSliderValue(self.sldMain,self.sliderValue)
     self.mainUpdate = true
     update = mainUpdate
-
+    
     onCategorySelection("-1", "Generate")
     return updatePortrait()
 end
@@ -415,8 +415,8 @@ function setListInfo(categoryName, uniqueId, infoOverride)
   end
 end
 
-function selectTab(index, curTabs)
-    --dLog("selectTab")
+function onTabSelection(index, curTabs)
+    --dLog("onTabSelection")
     curTabs = self.tabList
     self.returnInfo = {}
     self.returnInfoColors = nil
@@ -494,7 +494,7 @@ function onCategorySelection(id, data)
   changeTabLabels(self.tabsWidget)
   local indx = widget.getSelectedOption(self.tabsWidget)
   local tabData = widget.getSelectedData(self.tabsWidget)
-  return selectTab(indx, self.tabList)
+  return onTabSelection(indx, self.tabList)
 end
 
 --args:
@@ -908,8 +908,8 @@ function selectedTab.NpcType(args)
   local modVersion = npcUtil.modVersion()
   local worldStorage, clearCache = npcUtil.getWorldStorage(self.npcTypeStorage, modVersion)
   if clearCache then
-    worldStorage = {iIcon = {}} 
-    override.clearcache() 
+    world.setProperty(self.npcTypeStorage, {iIcon = {}})
+    worldStorage = {iIcon = {}}
   end
   local npcConfig = nil
   local success = false
@@ -1486,7 +1486,7 @@ function onGenderSelection(id, data)
   if self.mainUpdate then 
     local indx = widget.getSelectedOption(self.tabsWidget)
     setList(nil)
-    selectTab(indx, self.tabList)
+    onTabSelection(indx, self.tabList)
     return updatePortrait()
   end
 end
