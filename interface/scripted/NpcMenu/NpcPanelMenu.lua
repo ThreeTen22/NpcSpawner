@@ -104,12 +104,12 @@ function init()
   self.items = {}
   local equipSlots = config.getParameter("equipSlots")
   local itemBag = world.containerItems(pane.containerEntityId())
+  
   if npcUtil.isContainerEmpty(itemBag) then return; end
-  for i = 1, #equipSlots do
-    if not onItemSlotPress(equipSlots[i].."Slot",nil, {nil, itemBag[i]}) then
-    end
-  end
 
+  for i = 1, #equipSlots do
+      onItemSlotPress(equipSlots[i].."Slot",nil, {nil, itemBag[i]})
+  end
 
   script.setUpdateDelta(20)
 end
@@ -132,9 +132,13 @@ end
 
 function mainUpdate(dt)
   promises:update()
-  local itemBag = widget.itemGridItems("itemGrid")
+  local itemBag = world.containerItems(pane.containerEntityId())
+  local itemSlotBag = copy(self.itemSlotBag)
   for i=0, 12 do
-
+    if type(itemBag[i]) ~= type(itemSlotBag[i]) then
+      player.giveItem(itemBag[i])
+      world.containerSwapItemsNoCombine(pane.containerEntityId(), nil, i-1)
+    end
   end
   if self.tbFeedbackColorRoutine then self.tbFeedbackColorRoutine() end
 end
