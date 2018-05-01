@@ -1067,7 +1067,49 @@ dLog("")
 dLog("Search ID:  "..key:lower().."\n\n"..exportString.."\n\n")
 dLog("")
 dLog("")
+
+local item = config.getParameter("templateCard")
+local portrait = root.npcPortrait("full", self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed, self.getCurrentOverride())
+local bust = root.npcPortrait("bust", self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed, self.getCurrentOverride())
+
+local iconStorage = selectedTab.NpcType()
+
+local _, indx = util.find(self.npcTypeList, function(input) return input == args.npcType end, 1) 
+
+item.parameters.shortdescription = name
+item.parameters.inventoryIcon = bust
+--item.parameters.description = "Inscribed in this item contains all the information about your npc.  Share it with everyone!"
+item.parameters.description = ""
+item.parameters.tooltipFields.collarNameLabel = "Created By:  "..world.entityName(player.id())
+item.parameters.tooltipFields.objectImage = portrait
+item.parameters.tooltipFields.subtitle = self.currentType
+item.parameters.tooltipFields.collarIconImage = iconStorage.iIcon[indx]
+
+widget.setItemSlotItem("exportItemSlot", item)
+
 end
+
+--[[
+  "templateCard" : {
+    "item" : "secretnote",
+    "count": 1,
+    "parameters": {
+      "rarity" : "Common",
+      "category" : "quest",
+      "inventoryIcon" : "bust",
+      "description" : "A note with a secret message on it.",
+      "shortdescription" : "Someones Name",
+      "tooltipKind": "filledcapturepod",
+      "tooltipFields": {
+        "subtitle" : "ThreeTen22",
+        "collarNameLabel": "Created By:  ThreeTen",
+        "collarIconImage": "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
+        "noCollarLabel": "",
+        "objectImage" : "full"
+      }
+    }
+  }  
+--]]
 
 function selectedTab.Override(args)
   args.useInfoList = true
