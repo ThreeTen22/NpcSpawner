@@ -4,6 +4,7 @@ require "/scripts/util.lua"
 function init()
     dLog("NpcPanel: init")
     object.setInteractive(false)
+
     local initialArgs = config.getParameter("npcArgs")
     if jsize(initialArgs) == 0 then
       storage.npcSpecies = storage.npcSpecies
@@ -42,7 +43,7 @@ function init()
     message.setHandler("setNpcData", simpleHandler(setNpcData))
     message.setHandler("detachNpc", simpleHandler(detachNpc))
 
-    message.setHandler("removeItemAt", function(_,_, index)
+    message.setHandler("setItemAt", function(_,_, index)
       world.containerTakeAt(entity.id(), index-1)
     end)
 
@@ -151,9 +152,15 @@ function randomItUp(speciesList,typeList,override)
   end
 end
 
---[[
+function containerCallback(...)
+  dLogJson({...}, "containerCallback:  ")
+end
+
 function onInteraction(args)
-  Guess what kids?
+  return {"ScriptPane","/interface/scripted/NpcMenu/NpcPanelMenu.config"}
+end
+
+--[[  Guess what kids?
   If your object is a container, this function doesn't even get called.
   
   Also guess what?
@@ -164,5 +171,4 @@ function onInteraction(args)
   
   So what does that mean?
   It means I still need to poll with the pane menu, and that makes me a sad panda.
-end
---]]
+  --]]
