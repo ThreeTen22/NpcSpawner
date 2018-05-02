@@ -9,13 +9,13 @@
   "price" : 15000,
   "category" : "spawner",
   "tooltipKind" : "object",
-  "genericDescription" : "It's a thing that does stuff.",
+  "genericDescription" : "I wonder if they make these for monsters?",
   "objectType" : "container",
   "slotCount" : 12,
   "openSounds" : ["/sfx/objects/miningchest_open.ogg"],
   "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
   "frameCooldown" : 5,
-  "autoCloseCooldown" : 3600,
+  "autoCloseCooldown" : 360000,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
   "scriptDelta" : 30,
   "smashOnBreak" : false,
@@ -52,6 +52,10 @@
   ],
   "npcArgs" : {
 
+  },
+  "deedConfig" : {
+    "maxRespawnTime" : 30,
+    "spawnTimer" : 5
   },
   "spawner" : {
     "searchRadius" : 10.0,
