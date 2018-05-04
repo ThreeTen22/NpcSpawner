@@ -105,17 +105,6 @@ function init(cardArgs)
 
   self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.items} end
 
- 
-  local equipSlots = config.getParameter("equipSlots")
-  local itemBag = world.containerItems(pane.containerEntityId())
-  
-  if not npcUtil.isContainerEmpty(itemBag) then 
-    
-    for i = 1, #equipSlots do
-      onItemSlotPress(equipSlots[i].."Slot",nil, {nil, itemBag[i]})
-    end
-  
-  end
   --Cannot send entity messages during init, so will do it here
   self.sliderValue =  tonumber(self.currentSeed)
 
@@ -140,7 +129,16 @@ function update(dt)
     local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
     widget.setSelectedOption("rgGenders", id-1)
   
+    local equipSlots = config.getParameter("equipSlots")
+    local itemBag = world.containerItems(pane.containerEntityId())
     
+    if not npcUtil.isContainerEmpty(itemBag) then 
+      
+      for i = 1, #equipSlots do
+        onItemSlotPress(equipSlots[i].."Slot",nil, {nil, itemBag[i]})
+      end
+    
+    end
     widget.setSelectedOption("rgSelectCategory", 0)
     widget.setSelectedOption("rgTabs", 0)
     updatePortrait()
@@ -210,6 +208,7 @@ function onItemSlotPress(id, data, args)
     --add / remove / update self.items
     itemSlotItem = itemSlotItem and ({itemSlotItem})
     self.items.override[1][2][1][data.equipSlot] = itemSlotItem
+    if not self.itemSlotBag then self.itemSlotBag = {} end
     self.itemSlotBag[data.containerSlot+1] = itemSlotItem
     if npcUtil.isContainerEmpty(self.items.override[1][2][1]) then 
       self.items.override = nil
@@ -218,29 +217,34 @@ function onItemSlotPress(id, data, args)
 end
 
 function onImportItemSlotClick(id, data)
-  local swapItem = player.swapSlotItem() or {}
-  local slotItem = widget.itemSlotItem(id) or {}
-  dLog("importing?")
-  if isEmpty(swapItem) and isEmpty(slotItem) then return end
+  local swapItem = player.swapSlotItem() 
+  local slotItem = widget.itemSlotItem(id)
+
+  if (swapItem and slotItem) == false then return end
 
   if path(swapItem, "parameters", "npcArgs") then
+
     self.currentSpecies = swapItem.parameters.npcArgs.npcSpecies
     self.currentType = swapItem.parameters.npcArgs.npcType
     self.currentSeed = swapItem.parameters.npcArgs.npcSeed
     self.currentLevel = swapItem.parameters.npcArgs.npcLevel
+    
+    updateNpc(true)
+    modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.getCurrentOverride())
+
+
     self.items = swapItem.parameters.npcArgs.npcParam.items
     self.identity = swapItem.parameters.npcArgs.npcParam.identity
     self.scriptConfig = swapItem.parameters.npcArgs.npcParam.scriptConfig
     widget.setItemSlotItem(id, swapItem)
 
-    widget.setVisible(self.categoryWidget, true)
-    widget.setVisible("rgTabs", true)
-    widget.setVisible(self.scrollArea, true)
-    widget.setSliderRange("sldMainSlider",self.minSldValue, self.maxSldValue)
-    widget.setSliderValue("sldMainSlider",self.sliderValue)
-    widget.setSliderEnabled("sldMainSlider", true)
-    widget.setSelectedOption(self.categoryWidget, -1)
-    widget.setSelectedOption("rgTabs", -1)
+    
+  
+    local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
+    widget.setSelectedOption("rgGenders", id-1)
+
+    widget.setSelectedOption("rgCategories", 0)
+    widget.setSelectedOption("rgTabs", 0)
     updateNpc()    
   end
 end
