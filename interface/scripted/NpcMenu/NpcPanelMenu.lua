@@ -19,12 +19,7 @@ function init(cardArgs)
     return tostring(path..species..".species")
   end
   --used for slider
-  self.setSeedValue = function(value) 
-    self.currentSeed = tonumber(value) 
-  end
-  self.setOverride = function(value, data) 
-    applyDirective(self.seedIdentity, self.getCurrentOverride(), value, data)
-  end
+
   self.tabOptions = config.getParameter("tabOptions.Generate")
   self.tabData = nil
   local protectorate = jsonPath(root.npcConfig("villager"), "scriptConfig.questGenerator.graduation.nextNpcType")
@@ -63,7 +58,6 @@ function init(cardArgs)
   self.colorChangeTime = 1
   self.slotCount = 12
   self.idleStanceIndex = 0
-  self.scrollArea = "techScrollArea"
   self.techList = "techScrollArea.techList"
   self.infoList = "techScrollArea.infoList"
   self.infoLabel = "techScrollArea.lblOverrideConsole"
@@ -103,8 +97,6 @@ function init(cardArgs)
     return nil
   end
 
-  self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.items} end
-
   --Cannot send entity messages during init, so will do it here
   self.sliderValue =  tonumber(self.currentSeed)
 
@@ -117,6 +109,13 @@ function update(dt)
   if self.mainUpdate == false then 
     self.itemSlotBag = self.itemSlotBag or {}
     self.sliderValue = self.currentSeed
+    self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.items} end
+    self.setSeedValue = function(value) 
+      self.currentSeed = tonumber(value) 
+    end
+    self.setOverride = function(value, data) 
+      applyDirective(self.seedIdentity, self.getCurrentOverride(), value, data)
+    end
     widget.setSliderRange("sldMainSlider", 0, 20000)
     widget.setSliderValue("sldMainSlider",self.currentSeed)
     widget.setText("lblSliderValue", "Seed Value:  "..tostring(self.currentSeed))
@@ -217,10 +216,10 @@ function onItemSlotPress(id, data, args)
 end
 
 function onImportItemSlotClick(id, data)
-  local swapItem = player.swapSlotItem() 
+  local swapItem = player.swapSlotItem()
   local slotItem = widget.itemSlotItem(id)
 
-  if (swapItem and slotItem) == false then return end
+  if not(swapItem and slotItem) then return end
 
   if path(swapItem, "parameters", "npcArgs") then
 
@@ -544,12 +543,12 @@ function onCategorySelection(id, data)
   self.tabOptions = config.getParameter("tabOptions."..data)
   self.categoryWidgetData = data
   if data == "Generate" then
-    widget.setVisible(self.scrollArea, true)
+    widget.setVisible("techScrollArea", true)
     widget.setSliderEnabled("sldMainSlider", true)
     widget.setVisible("spnPersonality", false)
     widget.setVisible("lblPersonality", false)
   elseif data == "Colorize" then
-    widget.setVisible(self.scrollArea, true)
+    widget.setVisible("techScrollArea", true)
     widget.setVisible("spnPersonality", true)
     widget.setVisible("lblPersonality", true)
   elseif data == "Advanced" then
@@ -1163,6 +1162,7 @@ function selectedTab.Export(args)
   npcParam = self.getCurrentOverride()
   }
 
+  --[[
   local spawner = world.getObjectParameter(pane.containerEntityId(),"spawner")
   spawner.npcSpeciesOptions[1] = args.npcSpecies
   spawner.npcTypeOptions[1] = args.npcType
@@ -1170,6 +1170,13 @@ function selectedTab.Export(args)
   local level = args.npcLevel
   if level then level = "\"level\":"..tostring(level).."," else level = "" end
   local exportString = string.format("/spawnitem spawnerwizard 1 '{\"shortdescription\":\"%s Spawner\",\"retainObjectParametersInItem\": true, %s\"spawner\":%s}'", args.npcParam.identity.name, level, sb.printJson(spawner))
+
+  --]]
+  local exportString = [[/spawnnpc %s %s %s %s '%s']]
+  exportString = exportString:format(args.npcSpecies, args.npcType, args.npcLevel, args.npcSeed, sb.printJson(args.npcParam))
+  
+
+
   local name = widget.getText(self.nameBox)
   local species = self.currentSpecies
   local gender = self.seedIdentity.gender
