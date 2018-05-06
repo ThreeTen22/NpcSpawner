@@ -1,14 +1,76 @@
 require "/scripts/npcspawnutil.lua"
 require "/scripts/loggingutil.lua"
-
+require "/scripts/rect.lua"
+require "/scripts/vec2.lua"
 spnIdleStance = {}
 spnSldParamBase = {}
 spnSldParamDetail = {}
 modNpc = {}
 selectedTab = {}
 override = {}
+widgetDimentions = {}
 
+--args:
+---position:
+---size:
+--OR
+---rect:
+widgetDimentions.set = function(widgetId, args)
+    if args.position then
+      widget.setPosition(widgetId, args.position)
+    end
+    if args.size then
+      widget.setSize(widgetId, args.size)
+    end
+end
 
+widgetDimentions.setRect = function(widgetId, rectf)
+  widget.setPosition(widgetId, rect.ll(rectf))
+  widget.setSize(widgetId, rect.size(rectf))
+end
+
+widgetDimentions.setPoly = function(widgetId, polyf)
+  local rectf = poly.boundBox(polyf)
+  widget.setPosition(widgetId, rect.ll(rectf))
+  widget.setSize(widgetId, rect.size(rectf))
+end
+
+widgetDimentions.get = function(widgetId)
+  return {
+    position = widget.getPosition(widgetId),
+    size = widget.getSize(widgetId)
+  }
+end
+
+widgetDimentions.getRect = function(widgetId)
+  local args = widgetDimentions.get(widgetId)
+  dLogJson(args, tostring(widgetId))
+  return rect.withSize(args.position, args.size)
+end
+
+widgetDimentions.getPoly = function(widgetId)
+  local args = widgetDimentions.get(widgetId)
+  local rectf = rect.withSize(args.position, args.size)
+  return {
+    {rectf[1], rectf[2]}, {rectf[1], rectf[4]},{rectf[3], rectf[4]}, {rectf[3], rectf[2]}
+  }
+end
+widgetDimentions.getPane = function(configPath)
+  local vecs = {}
+  local background = config.getParameter(configPath)
+  table.insert(vecs, background.fileHeader)
+  table.insert(vecs, background.fileBody)
+  table.insert(vecs, background.fileFooter)
+  for i,v in ipairs(vecs) do
+    vecs[i] = root.imageSize(v)
+  end
+  local maxX, maxY = 0,0
+  for i,v in ipairs(vecs) do
+    maxX = math.max(maxX, v[1])
+    maxY = maxY+v[2]
+  end
+  return {0,0,maxX,maxY}
+end
 
 function init(cardArgs)
   local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
@@ -248,14 +310,61 @@ function onImportItemSlotClick(id, data)
   end
 end
 
+
+
+local rectToPoly = function(v)
+  return {
+    {v[1], v[2]}, {v[1], v[4]},{v[3], v[4]}, {v[3], v[2]}
+  }
+end
+
+
+function onBackgroundCanvasClick(...)
+dLogJson({...}, "onBackgroundCanvasClick")
+end
+
 function onExportItemSlotClick(id, data)
 
+  local paneRectf = widgetDimentions.getPane("gui.background")
+  local center = rect.center(paneRectf)
+  local layoutRectf = rect.scale(paneRectf, 0.8)
+  local centeredRect = rect.withCenter(center, rect.ur(layoutRectf))
+  widgetDimentions.setRect("cardFactoryLayout", centeredRect)
+  widgetDimentions.setRect("backgroundCanvas", paneRectf)
+
+  local dimentions = widgetDimentions.getRect("cardFactoryLayout")
+  local size = rect.scale(dimentions,{0.3, 1})
+  
   widget.setVisible("cardFactoryLayout", true)
+  widget.setVisible("backgroundCanvas", true)
+
+  local fSizeF = widget.getSize("cardFactoryLayout.fileFooter")
+  widget.setPosition("cardFactoryLayout.fileBody",{0,fSizeF[2],0,fSizeF[4]})
+  widget.setPosition("cardFactoryLayout.fileHeader",{0,fSizeF[2],0,fSizeF[4]})
+  local fSizeB = widget.getSize("cardFactoryLayout.fileBody")
+  widget.setPosition("cardFactoryLayout.fileHeader",{0,fSizeB[2],0,fSizeB[4]})
+
+
   if not self.backgroundCanvas then
-    self.cardFactoryBackground = widget.bindCanvas("cardFactoryLayout.backgroundCanvas")
+    self.backgroundCanvas = widget.bindCanvas("backgroundCanvas")
   end
-  local layoutSize = widget.getSize("cardFactoryLayout")
-  self.cardFactoryBackground:drawRect(layoutSize, {0,0,0})
+  local backgroundLayer = config.getParameter("backgroundCanvas.backgroundLayer")
+ -- self.backgroundCanvas:drawRect({0,0,500,500}, backgroundLayer[1][3][2])
+
+  
+  local rects = {}
+  for _,v in ipairs(backgroundLayer) do
+    if type(v[2] == "string") then
+        rects[v[2]] = widgetDimentions.getRect(v[2])
+        v[3][1] = rect.pad(rects[v[2]], v[3][1])
+        if v[1] == "drawPoly" then
+          v[3][1] = rectToPoly(v[3][1])
+        end
+        self.backgroundCanvas[v[1]](self.backgroundCanvas,table.unpack(v[3]))
+    end
+  end
+  dLogJson(backgroundLayer, "background: ", true)
+
   --[[
   local swapItem = player.swapSlotItem()
   local slotItem = widget.itemSlotItem(id)
@@ -1468,43 +1577,43 @@ function override.set(curO, cur, setParams, ...)
 end
 
 function override.detach()
-local initInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
-local curSpecies = self.currentSpecies
-local curSeed =  self.currentSeed
-local curType = self.currentType
-local curLevel = self.currentLevel
-local errs = {}
-if curSpecies ~= initInfo.npcSpecies then
-  table.insert(errs, "Species")
-end
-if curSeed ~= initInfo.npcSeed then
-  table.insert(errs, "Seed")
-end
-if curType ~= initInfo.npcType then
-  table.insert(errs, "npctype")
-end
-local npcParam = initInfo.npcParam or {}
-dLogJson(self.identity, "identity")
-dLogJson(npcParam.identity, "identity")
-if not compare(self.identity, npcParam.identity) then
-  table.insert(errs, "identity")
-end
-if not compare(self.scriptConfig, npcParam.scriptConfig) then
-  table.insert(errs, "Behavior and/or equipped items")
-end
-if not compare(self.items, npcParam.items) then
-  table.insert(errs, "Equippied Items")
-end
-if #errs > 0 then
-  local str = "Unable to detach:  Inconsistancies found in your npc's parameters:\n"
-  for _,v in ipairs(errs) do
-    str = str.."\n"..v
+  local initInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
+  local curSpecies = self.currentSpecies
+  local curSeed =  self.currentSeed
+  local curType = self.currentType
+  local curLevel = self.currentLevel
+  local errs = {}
+  if curSpecies ~= initInfo.npcSpecies then
+    table.insert(errs, "Species")
   end
-  str = str.."\n\nEither finalize your changes by pressing the activate button, or close and reopen this panel.  After doing so, enter the command again."
-  return false, str 
-end
-world.sendEntityMessage(pane.containerEntityId(), "detachNpc")
-return true
+  if curSeed ~= initInfo.npcSeed then
+    table.insert(errs, "Seed")
+  end
+  if curType ~= initInfo.npcType then
+    table.insert(errs, "npctype")
+  end
+  local npcParam = initInfo.npcParam or {}
+  dLogJson(self.identity, "identity")
+  dLogJson(npcParam.identity, "identity")
+  if not compare(self.identity, npcParam.identity) then
+    table.insert(errs, "identity")
+  end
+  if not compare(self.scriptConfig, npcParam.scriptConfig) then
+    table.insert(errs, "Behavior and/or equipped items")
+  end
+  if not compare(self.items, npcParam.items) then
+    table.insert(errs, "Equippied Items")
+  end
+  if #errs > 0 then
+    local str = "Unable to detach:  Inconsistancies found in your npc's parameters:\n"
+    for _,v in ipairs(errs) do
+      str = str.."\n"..v
+    end
+    str = str.."\n\nEither finalize your changes by pressing the activate button, or close and reopen this panel.  After doing so, enter the command again."
+    return false, str 
+  end
+  world.sendEntityMessage(pane.containerEntityId(), "detachNpc")
+  return true
 end
 
 function override.insert(_,_,name, ...)
@@ -1558,71 +1667,71 @@ return true
 end
 
 function override.clear()
-widget.clearListItems(self.infoList)
-widget.setText(self.overrideTextBox, "")
-widget.setText(self.infoLabel, "")
-return true
+  widget.clearListItems(self.infoList)
+  widget.setText(self.overrideTextBox, "")
+  widget.setText(self.infoLabel, "")
+  return true
 end
 
 function override.clearcache()
-world.setProperty(self.npcTypeStorage, {})
-widget.setText(self.overrideTextBox, "")
-return true
+  world.setProperty(self.npcTypeStorage, {})
+  widget.setText(self.overrideTextBox, "")
+  return true
 end
 
 function override.output(curO, _, configType, label, jsonPath)
 
-local output = nil
-local success = false
-local prefix = ""
-local replaceSelf = compare(label, "self")
-local errorStr = nil
-if configType == "override" then
-  output = curO or {}
-  success = true
-  if jsonPath then
-    jsonPath = label.."."..jsonPath
+  local output = nil
+  local success = false
+  local prefix = ""
+  local replaceSelf = compare(label, "self")
+  local errorStr = nil
+  if configType == "override" then
+    output = curO or {}
+    success = true
+    if jsonPath then
+      jsonPath = label.."."..jsonPath
+    else
+      jsonPath = label
+    end
+  elseif configType == "species" then
+    if replaceSelf then label = self.currentSpecies end
+    local assetPath =  self.getSpeciesPath(label)
+    errorStr = "cannot get asset using path: %s"
+    success, output =  pcall(getAsset, assetPath)
+  elseif configType == "npctype" then
+    if replaceSelf then label = self.currentType end
+    errorStr = "cannot get npcConfig: %s"
+    success, output = pcall(root.npcConfig, label)
   else
-    jsonPath = label
+    return false, "could not understand: "..(configType or "2nd parameter")
   end
-elseif configType == "species" then
-  if replaceSelf then label = self.currentSpecies end
-  local assetPath =  self.getSpeciesPath(label)
-  errorStr = "cannot get asset using path: %s"
-  success, output =  pcall(getAsset, assetPath)
-elseif configType == "npctype" then
-  if replaceSelf then label = self.currentType end
-  errorStr = "cannot get npcConfig: %s"
-  success, output = pcall(root.npcConfig, label)
-else
-  return false, "could not understand: "..(configType or "2nd parameter")
-end
-if jsonPath then
-  output = sb.jsonQuery(output, jsonPath, output[label]) or output
-  success = (output and true)
-end
-if (not success) and errorStr then
   if jsonPath then
-    jsonPath = "."..jsonPath
-  else
-    jsonPath = ""
+    output = sb.jsonQuery(output, jsonPath, output[label]) or output
+    success = (output and true)
   end
-  output = string.format(errorStr, label..jsonPath)
-end
-local oldText = widget.getData(self.infoLabel) or ""
-output = dPrintJson(output)
-output = string.format("%s\n%s  was successful? %s\n->",oldText, prefix, success)..output
-widget.setText(self.infoLabel, output)
-widget.setData(self.infoLabel, output)
-return success
+  if (not success) and errorStr then
+    if jsonPath then
+      jsonPath = "."..jsonPath
+    else
+      jsonPath = ""
+    end
+    output = string.format(errorStr, label..jsonPath)
+  end
+  local oldText = widget.getData(self.infoLabel) or ""
+  output = dPrintJson(output)
+  output = string.format("%s\n%s  was successful? %s\n->",oldText, prefix, success)..output
+  widget.setText(self.infoLabel, output)
+  widget.setData(self.infoLabel, output)
+  return success
 end
 
 function override.outputStr(str)
-widget.clearListItems(self.infoList)
-local oldText = widget.getData(self.infoLabel) or ""
-output = string.format("%s\n \n%s",oldText, str)
-widget.setText(self.infoLabel, output)
-widget.setData(self.infoLabel, output)
+  widget.clearListItems(self.infoList)
+  local oldText = widget.getData(self.infoLabel) or ""
+  output = string.format("%s\n \n%s",oldText, str)
+  widget.setText(self.infoLabel, output)
+  widget.setData(self.infoLabel, output)
 end
 
 function uninit()
