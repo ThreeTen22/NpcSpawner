@@ -8,69 +8,6 @@ spnSldParamDetail = {}
 modNpc = {}
 selectedTab = {}
 override = {}
-widgetDimentions = {}
-
---args:
----position:
----size:
---OR
----rect:
-widgetDimentions.set = function(widgetId, args)
-    if args.position then
-      widget.setPosition(widgetId, args.position)
-    end
-    if args.size then
-      widget.setSize(widgetId, args.size)
-    end
-end
-
-widgetDimentions.setRect = function(widgetId, rectf)
-  widget.setPosition(widgetId, rect.ll(rectf))
-  widget.setSize(widgetId, rect.size(rectf))
-end
-
-widgetDimentions.setPoly = function(widgetId, polyf)
-  local rectf = poly.boundBox(polyf)
-  widget.setPosition(widgetId, rect.ll(rectf))
-  widget.setSize(widgetId, rect.size(rectf))
-end
-
-widgetDimentions.get = function(widgetId)
-  return {
-    position = widget.getPosition(widgetId),
-    size = widget.getSize(widgetId)
-  }
-end
-
-widgetDimentions.getRect = function(widgetId)
-  local args = widgetDimentions.get(widgetId)
-  dLogJson(args, tostring(widgetId))
-  return rect.withSize(args.position, args.size)
-end
-
-widgetDimentions.getPoly = function(widgetId)
-  local args = widgetDimentions.get(widgetId)
-  local rectf = rect.withSize(args.position, args.size)
-  return {
-    {rectf[1], rectf[2]}, {rectf[1], rectf[4]},{rectf[3], rectf[4]}, {rectf[3], rectf[2]}
-  }
-end
-widgetDimentions.getPane = function(configPath)
-  local vecs = {}
-  local background = config.getParameter(configPath)
-  table.insert(vecs, background.fileHeader)
-  table.insert(vecs, background.fileBody)
-  table.insert(vecs, background.fileFooter)
-  for i,v in ipairs(vecs) do
-    vecs[i] = root.imageSize(v)
-  end
-  local maxX, maxY = 0,0
-  for i,v in ipairs(vecs) do
-    maxX = math.max(maxX, v[1])
-    maxY = maxY+v[2]
-  end
-  return {0,0,maxX,maxY}
-end
 
 function init(cardArgs)
   local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
@@ -283,7 +220,7 @@ function onImportItemSlotClick(id, data)
   local swapItem = player.swapSlotItem()
   local slotItem = widget.itemSlotItem(id)
 
-  if not(swapItem and slotItem) then return end
+  if swapItem == nil then return end
 
   if path(swapItem, "parameters", "npcArgs") then
 
@@ -306,99 +243,33 @@ function onImportItemSlotClick(id, data)
     local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
     widget.setSelectedOption("rgGenders", id-1)
 
-    widget.setSelectedOption("rgCategories", 0)
+    widget.setSelectedOption("rgSelectCategory", 0)
     widget.setSelectedOption("rgTabs", 0)
     updateNpc()    
   end
 end
 
 
-
-local rectToPoly = function(v)
-  return {
-    {v[1], v[2]}, {v[1], v[4]},{v[3], v[4]}, {v[3], v[2]}
-  }
-end
-
-
-function onBackgroundCanvasClick(...)
-dLogJson({...}, "onBackgroundCanvasClick")
-end
-
 function onExportItemSlotClick(id, data)
 
-  local paneRectf = widgetDimentions.getPane("gui.background")
-  local center = rect.center(paneRectf)
-  local layoutRectf = rect.scale(paneRectf, 0.8)
-  local centeredRect = rect.withCenter(center, rect.ur(layoutRectf))
-  widgetDimentions.setRect("cardFactoryLayout", centeredRect)
-  widgetDimentions.setRect("backgroundCanvas", paneRectf)
-
-  local dimentions = widgetDimentions.getRect("cardFactoryLayout")
-  local size = rect.scale(dimentions,{0.3, 1})
-  
-  widget.setVisible("cardFactoryLayout", true)
-  widget.setVisible("backgroundCanvas", true)
-
-  
-  
-  local fPosF = widget.getPosition("cardFactoryLayout.cardLayout.fileFooter")
-  local fSizeF = widget.getSize("cardFactoryLayout.cardLayout.fileFooter")
-  widget.setPosition("cardFactoryLayout.cardLayout.fileBody",{fPosF[1],fPosF[2]+fSizeF[2]})
- 
-  local fSizeB = widget.getSize("cardFactoryLayout.cardLayout.fileBody")
-  local fPosB = widget.getPosition("cardFactoryLayout.cardLayout.fileBody")
-  widget.setPosition("cardFactoryLayout.cardLayout.fileHeader",{fPosF[1],fPosB[2]+fSizeB[2]})
-  local fPosH = widget.getPosition("cardFactoryLayout.cardLayout.fileHeader")
-  widget.setPosition("cardFactoryLayout.cardLayout.titleIcon", {fPosH[1]+2, fPosH[2]+2})
-  
-  local item = config.getParameter("templateCard")
-  local portrait = createPortrait("full")
-  local bust = createPortrait("bust")
-
-  item.parameters.inventoryIcon = bust
-  widget.setItemSlotItem("cardFactoryLayout.cardLayout.titleIcon", item)
-
-  local start = {35,36}
-  self.objectImageCanvas:clear()
-  for _,v in pairs(portrait) do
-    self.objectImageCanvas:drawImage(v.image,{v.position[1]+start[1], v.position[2]+start[2]}, 1.6,v.color, true)
-  end
-
-
-  widget.setItemSlotItem("")
-  local backgroundLayer = config.getParameter("backgroundCanvas.backgroundLayer")
- -- self.backgroundCanvas:drawRect({0,0,500,500}, backgroundLayer[1][3][2])
-
-  local rects = {}
-  for _,v in ipairs(backgroundLayer) do
-    if type(v[2] == "string") then
-        rects[v[2]] = widgetDimentions.getRect(v[2])
-        v[3][1] = rect.pad(rects[v[2]], v[3][1])
-        if v[1] == "drawPoly" then
-          v[3][1] = rectToPoly(v[3][1])
-        end
-        self.backgroundCanvas[v[1]](self.backgroundCanvas,table.unpack(v[3]))
-    end
-  end
-  dLogJson(backgroundLayer, "background: ", true)
-
-  --[[
   local swapItem = player.swapSlotItem()
   local slotItem = widget.itemSlotItem(id)
   
   if not slotItem then
+    widget.setSelectedOption("rgSelectCategory", 2)
+    widget.setSelectedOption("rgTabs", 3)
+    widget.setVisible("exportItemLbl", false)
     return selectedTab.Export()
   end
-  if swapItem then 
+  if swapItem then
     return 
   end
 
   player.setSwapSlotItem(slotItem)
   widget.setItemSlotItem(id, nil)
+  widget.setVisible("exportItemLbl", true)
   return 
-
---]]
+---]]
 end
 
 function interpTextColor(tbPath)
@@ -591,7 +462,7 @@ function setListInfo(categoryName, uniqueId, infoOverride)
   if uniqueId then 
     for i,v in ipairs(subInfo) do
       if v.key == "uniqueID" then 
-        info[categoryName][i].value = uniqueId
+        info[categoryName][i].value = "^orange;"..uniqueId
         break
       end
     end
@@ -1297,18 +1168,8 @@ function selectedTab.Export(args)
   npcParam = self.getCurrentOverride()
   }
 
-  --[[
-  local spawner = world.getObjectParameter(pane.containerEntityId(),"spawner")
-  spawner.npcSpeciesOptions[1] = args.npcSpecies
-  spawner.npcTypeOptions[1] = args.npcType
-  spawner.npcParameterOptions[1] = args.npcParam
-  local level = args.npcLevel
-  if level then level = "\"level\":"..tostring(level).."," else level = "" end
-  local exportString = string.format("/spawnitem spawnerwizard 1 '{\"shortdescription\":\"%s Spawner\",\"retainObjectParametersInItem\": true, %s\"spawner\":%s}'", args.npcParam.identity.name, level, sb.printJson(spawner))
-
-  --]]
-  local exportString = [[/spawnnpc %s %s %s %s '%s']]
-  exportString = exportString:format(args.npcSpecies, args.npcType, args.npcLevel, args.npcSeed, sb.printJson(args.npcParam))
+  local exportNpc = [[/spawnnpc %s %s %s %s '%s']]
+  exportNpc = exportNpc:format(args.npcSpecies, args.npcType, args.npcLevel, args.npcSeed, sb.printJson(args.npcParam))
   
 
 
@@ -1317,10 +1178,18 @@ function selectedTab.Export(args)
   local gender = self.seedIdentity.gender
   local key = string.format("%s%s%s", name,species,gender)
   self.uniqueExportId = key:lower()
-  dLog("")
-  dLog("Search ID:  "..key:lower().."\n\n"..exportString.."\n\n")
-  dLog("")
-  dLog("")
+
+  local template = [[
+
+
+    Search ID: %s
+
+     --/NPC SPAWN COMMAND--
+%s
+
+     --NPCSPAWNER+ NPC CARD ITEM SPAWN COMMAND--
+%s
+  ]]
 
   local item = config.getParameter("templateCard")
   local portrait = createPortrait("full")
@@ -1345,9 +1214,12 @@ function selectedTab.Export(args)
     npcLevel = math.floor(tonumber(self.currentLevel)),
     npcParam = copy(self.getCurrentOverride())
   }
+  cardExportString = [[/spawnitem %s %s '%s']]
+  cardExportString = cardExportString:format(item.item, item.count, sb.printJson(item.parameters))
+
+  dLog(template:format(key:lower(), exportNpc, cardExportString))
 
   widget.setItemSlotItem("exportItemSlot", item)
-  dLogJson(widget.itemSlotItem("exportItemSlot"), "ITEM:")
 end
 
 --[[
