@@ -10,6 +10,7 @@ function getAsset(assetPath)
   return root.assetJson(assetPath)
 end
 
+
 function getPathStr(t, str)
     if str == "" then return t end
     return jsonPath(t,str) or t[str]
@@ -229,6 +230,10 @@ function npcUtil.buildItemOverrideTable(t)
   table.insert(t, {[1]=0, [2]={[1]={}}})
   return t
 end
+
+
+
+
 --[[
 function logENV()
   for i,v in pairs(_ENV) do

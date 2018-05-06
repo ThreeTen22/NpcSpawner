@@ -115,6 +115,8 @@ function init(cardArgs)
   self.categoryWidget = "rgSelectCategory"
   self.categoryWidgetData = "Generate"
   self.portraitCanvas = widget.bindCanvas("portraitCanvas")
+  self.backgroundCanvas = widget.bindCanvas("backgroundCanvas")
+  self.objectImageCanvas = widget.bindCanvas("cardFactoryLayout.cardLayout.objectImageCanvas")
   self.tbGreenColor = {0, 255, 0}
   self.tbRedColor = {255,0,0}
   self.colorChangeTime = 1
@@ -338,20 +340,36 @@ function onExportItemSlotClick(id, data)
   widget.setVisible("cardFactoryLayout", true)
   widget.setVisible("backgroundCanvas", true)
 
-  local fSizeF = widget.getSize("cardFactoryLayout.fileFooter")
-  widget.setPosition("cardFactoryLayout.fileBody",{0,fSizeF[2],0,fSizeF[4]})
-  widget.setPosition("cardFactoryLayout.fileHeader",{0,fSizeF[2],0,fSizeF[4]})
-  local fSizeB = widget.getSize("cardFactoryLayout.fileBody")
-  widget.setPosition("cardFactoryLayout.fileHeader",{0,fSizeB[2],0,fSizeB[4]})
+  
+  
+  local fPosF = widget.getPosition("cardFactoryLayout.cardLayout.fileFooter")
+  local fSizeF = widget.getSize("cardFactoryLayout.cardLayout.fileFooter")
+  widget.setPosition("cardFactoryLayout.cardLayout.fileBody",{fPosF[1],fPosF[2]+fSizeF[2]})
+ 
+  local fSizeB = widget.getSize("cardFactoryLayout.cardLayout.fileBody")
+  local fPosB = widget.getPosition("cardFactoryLayout.cardLayout.fileBody")
+  widget.setPosition("cardFactoryLayout.cardLayout.fileHeader",{fPosF[1],fPosB[2]+fSizeB[2]})
+  local fPosH = widget.getPosition("cardFactoryLayout.cardLayout.fileHeader")
+  widget.setPosition("cardFactoryLayout.cardLayout.titleIcon", {fPosH[1]+2, fPosH[2]+2})
+  
+  local item = config.getParameter("templateCard")
+  local portrait = createPortrait("full")
+  local bust = createPortrait("bust")
 
+  item.parameters.inventoryIcon = bust
+  widget.setItemSlotItem("cardFactoryLayout.cardLayout.titleIcon", item)
 
-  if not self.backgroundCanvas then
-    self.backgroundCanvas = widget.bindCanvas("backgroundCanvas")
+  local start = {35,36}
+  self.objectImageCanvas:clear()
+  for _,v in pairs(portrait) do
+    self.objectImageCanvas:drawImage(v.image,{v.position[1]+start[1], v.position[2]+start[2]}, 1.6,v.color, true)
   end
+
+
+  widget.setItemSlotItem("")
   local backgroundLayer = config.getParameter("backgroundCanvas.backgroundLayer")
  -- self.backgroundCanvas:drawRect({0,0,500,500}, backgroundLayer[1][3][2])
 
-  
   local rects = {}
   for _,v in ipairs(backgroundLayer) do
     if type(v[2] == "string") then
