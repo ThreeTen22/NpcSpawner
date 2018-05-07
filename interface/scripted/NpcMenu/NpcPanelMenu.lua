@@ -17,7 +17,6 @@ function init(cardArgs)
     path = path or "/species/"
     return tostring(path..species..".species")
   end
-  --used for slider
 
   self.tabOptions = config.getParameter("tabOptions.Generate")
   self.tabData = nil
