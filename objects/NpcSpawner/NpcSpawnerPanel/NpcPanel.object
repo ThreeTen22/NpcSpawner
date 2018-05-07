@@ -9,17 +9,16 @@
   "price" : 15000,
   "category" : "spawner",
   "tooltipKind" : "object",
-  "genericDescription" : "It's a thing that does stuff.",
+  "defaultDescription" : "I wonder if they make these for monsters?",
   "objectType" : "container",
   "slotCount" : 12,
   "openSounds" : ["/sfx/objects/miningchest_open.ogg"],
   "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
   "frameCooldown" : 5,
-  "autoCloseCooldown" : 3600,
+  "autoCloseCooldown" : 360000,
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
   "scriptDelta" : 30,
   "smashOnBreak" : false,
-  "containerCallback" : "containerCallback",
   "inventoryIcon" : "BackgroundPanel.png",
   "isContainer": true,
   "smashable" : false,
@@ -29,7 +28,7 @@
       "image" : "BackgroundPanel.png",
       "imagePosition" : [-8, 0],
       "frames" : 1,
-      "animationCycle" : 0.5,
+      "animationCycle" : 0,
       "direction" : "left",
       "flipImages" : true,
       "animationPosition" : [-8, 0],
@@ -41,7 +40,7 @@
       "image" : "BackgroundPanel.png",
       "imagePosition" : [-8, 0],
       "frames" : 1,
-      "animationCycle" : 0.5,
+      "animationCycle" : 0,
       "direction" : "right",
       "flipImages" : false,
       "animationPosition" : [-8, 0],
@@ -53,6 +52,10 @@
   ],
   "npcArgs" : {
 
+  },
+  "deedConfig" : {
+    "maxRespawnTime" : [8.0, 10.0],
+    "checkHealthTimer" : [3.0, 5.0]
   },
   "spawner" : {
     "searchRadius" : 10.0,
