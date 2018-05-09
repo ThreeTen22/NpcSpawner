@@ -116,7 +116,6 @@ function setNpcData(args)
     npcType = self.npcType,
     npcLevel = self.npcLevel,
     npcParam = self.npcParam})
-    dLogJson(config.getParameter("npcArgs"), "ARGS:")
   if not storage.spawnedID then 
     storage.spawnedID = sb.makeUuid() 
   end
