@@ -4,6 +4,30 @@ require "/scripts/messageutil.lua"
 require "/scripts/loggingutil.lua"
 
 npcUtil = {} 
+
+itemSlot = {}
+itemSlot.__index = itemSlot
+function itemSlot.init(...)
+  local self = setmetatable({}, itemSlot)
+  self:init(...)
+  return self
+end
+
+function itemSlot:init(widgetName)
+  local widgetConfig = config.getParameter(widgetName,  {})
+  self.widgetName = widgetName
+  self.equipSlot = widgetConfig.equipSlot
+  self.containerSlot = widgetConfig.containerSlot
+  self.itemSlotProgress = 1.0
+  self.containerItem = {}
+  self.cardItem = {}
+  self.uniformItem = {}
+end
+
+function itemSlot:setContainerItem(itemDescriptor)
+  
+end
+
 --local func = testTable.func1
 
 function getAsset(assetPath)

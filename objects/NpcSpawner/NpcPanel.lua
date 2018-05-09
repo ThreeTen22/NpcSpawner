@@ -8,7 +8,7 @@ function init()
 
     local initialArgs = config.getParameter("npcArgs")
     if jsize(initialArgs) == 0 then
-      
+      local nothing = 0
     else
       local args = config.getParameter("npcArgs")
       for k,v in pairs(args) do 
@@ -70,7 +70,7 @@ function die()
   killNpc()
 end
 
-function killNpc()
+function killNpc(id)
   if not storage.spawnedID then return end
   local loadedEnitity = world.loadUniqueEntity(storage.spawnedID)
   if loadedEnitity ~= 0 then
@@ -128,7 +128,6 @@ function detachNpc()
   if id ~= 0 and path(self.npcParam, "scriptConfig", "crew", "recruitable") == false then
     world.setUniqueId(id, nil)
   end
-
   object.smash()
 end
 

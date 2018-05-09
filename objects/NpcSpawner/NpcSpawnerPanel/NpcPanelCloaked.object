@@ -2,7 +2,7 @@
   "objectName" : "npcspawnerpanelcloaked",
   "tags" : ["misc"],
   "rarity" : "Common",
-  "description" : "Cloaked Edition: Sticks anywhere, doesn't take any space.(Must use MM in AOE mode to remove once placed)",
+  "description" : "Cloaked Edition: Sticks anywhere, doesn't take any space, doesn't highlight...don't forget where you placed it!",
   "shortdescription" : "NPC Maker 3000: CE",
   "subtitle" : "When an npc arrives, don't ask how they got here...you don't wanna know.",
   "race" : "generic",
@@ -19,35 +19,32 @@
   "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
   "scriptDelta" : 30,
   "smashOnBreak" : false,
-  "inventoryIcon" : "BackgroundPanel.png?fade=0.5",
+  "inventoryIcon" : "BackgroundPanel.png",
   "isContainer": true,
   "smashable" : false,
   "interactive" : false,
   "orientations" : [
     {
       "image" : "cloakedpanel.png",
-      "imagePosition" : [-8, 0],
+      "imagePosition" : [2, 2],
       "frames" : 1,
       "animationCycle" : 0,
       "direction" : "left",
       "flipImages" : true,
-      "animationPosition" : [-8, 0],
-      "lightPosition" : [0, 3],
-      "spaces" : [],
-      "anchors" : []
+      "lightPosition" : [0, 0],
+      "spaceScan" : 0.99,
+      "anchors" : ["background"]
     },
     {
       "image" : "cloakedpanel.png",
-      "imagePosition" : [-8, 0],
+      "imagePosition" : [2, 2],
       "frames" : 1,
       "animationCycle" : 0,
       "direction" : "right",
-      "flipImages" : false,
-      "animationPosition" : [-8, 0],
-      "lightPosition" : [0, 3],
-
-      "spaceScan" : 0.1,
-      "anchors" : []
+      "flipImages" : true,
+      "lightPosition" : [0, 0],
+      "spaceScan" : 0.99,
+      "anchors" : ["background"]
     }
   ],
   "npcArgs" : {

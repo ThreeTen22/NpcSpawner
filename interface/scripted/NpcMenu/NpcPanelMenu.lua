@@ -51,12 +51,9 @@ function init(cardArgs)
   self.categoryWidget = "rgSelectCategory"
   self.categoryWidgetData = "Generate"
   self.portraitCanvas = widget.bindCanvas("portraitCanvas")
-  self.backgroundCanvas = widget.bindCanvas("backgroundCanvas")
-  self.objectImageCanvas = widget.bindCanvas("cardFactoryLayout.cardLayout.objectImageCanvas")
   self.tbGreenColor = {0, 255, 0}
   self.tbRedColor = {255,0,0}
   self.colorChangeTime = 1
-  self.slotCount = 12
   self.idleStanceIndex = 0
   self.techList = "techScrollArea.techList"
   self.infoList = "techScrollArea.infoList"
@@ -88,8 +85,15 @@ function init(cardArgs)
   else
     self.scriptConfig = {}
   end
+  
   self.items = {}
-
+  --[[
+  if self.gettingInfo.npcParam.items then
+    self.items = copy(self.gettingInfo.npcParam.items)
+  else
+    self.items = {}
+  end
+  --]]
   self.getOverrideItemBag = function()
     if path(self.items, "override", 1, 2, 1) then
       return self.items.override[1][2][1]
@@ -130,13 +134,18 @@ function update(dt)
   
     local equipSlots = config.getParameter("equipSlots")
     local itemBag = world.containerItems(pane.containerEntityId())
-    
-    if not npcUtil.isContainerEmpty(itemBag) then 
+    if npcUtil.isContainerEmpty(itemBag) == false then 
       
       for i = 1, #equipSlots do
         onItemSlotPress(equipSlots[i].."Slot",nil, {nil, itemBag[i]})
       end
     
+    elseif self.gettingInfo.npcParam and path(self.gettingInfo.npcParam, "items","override", 1, 2, 1) then
+      --dLogJson(self.gettingInfo.npcParam.items.override[1][2][1], "items:")
+      for k,v in pairs(self.gettingInfo.npcParam.items.override[1][2][1]) do
+          widget.setItemSlotItem(k.."Slot", v[1])
+          widget.setItemSlotProgress(k.."Slot", 0.0)
+      end
     end
     widget.setSelectedOption("rgSelectCategory", 0)
     widget.setSelectedOption("rgTabs", 0)
@@ -177,7 +186,7 @@ function onItemSlotPress(id, data, args)
     args = args or {}
     local itemSlotItem = args[1] or widget.itemSlotItem(id)
     local itemSwapItem = args[2] or player.swapSlotItem()
-    local calledByProgram = args[1] or args[2]
+    local calledByProgram = type(args[1]) ~= nil or type(args[2]) ~= nil
 
     data = data or config.getParameter("gui."..id..".data")
 
@@ -194,7 +203,7 @@ function onItemSlotPress(id, data, args)
     
     player.setSwapSlotItem(itemSlotItem)
     widget.setItemSlotItem(id, itemSwapItem)
-
+    widget.setItemSlotProgress(id, 0.99)
     --get new slot item
     itemSlotItem = widget.itemSlotItem(id)
 
@@ -842,10 +851,10 @@ function getFakeItems()
 
   local config = root.npcConfig(self.currentType)
   local isCrewmember = path(config.scriptConfig,"crew","recruitable") or false
-  local defaultUniform = path(config.scriptConfig,"crew","defaultUniform")
+  local defaultUniform = path(config.scriptConfig,"crew","defaultUniform") or {}
   local colorIndex = path(config.scriptConfig,"crew","role", "uniformColorIndex")
   local items
-  if isCrewmember and not isEmpty(defaultUniform or {}) then
+  if isCrewmember and not isEmpty(defaultUniform) then
     items = {}
     items.override = npcUtil.buildItemOverrideTable(jarray())
     for k, v in pairs(defaultUniform) do
@@ -1188,7 +1197,7 @@ function selectedTab.Export(args)
 
      --NPCSPAWNER+ NPC CARD ITEM SPAWN COMMAND--
 %s
-  ]]
+]]
 
   local item = config.getParameter("templateCard")
   local portrait = createPortrait("full")
@@ -1506,53 +1515,53 @@ function override.detach()
 end
 
 function override.insert(_,_,name, ...)
-local userConfig = nil
-local key = nil
-local list = {...}
-local successes = {}
-local failures = {}
-local selfTable = nil
-if name == "additionalspecies" then
-  key = "npcSpawnerPlus.additionalSpecies"
-  for i,v in ipairs(list) do
-    local path = self.getSpeciesPath(v)
-    local success = pcall(getAsset, path)
-    if success then
-      table.insert(successes, v)
-    else
-      table.insert(failures, v)
+  local userConfig = nil
+  local key = nil
+  local list = {...}
+  local successes = {}
+  local failures = {}
+  local selfTable = nil
+  if name == "additionalspecies" then
+    key = "npcSpawnerPlus.additionalSpecies"
+    for i,v in ipairs(list) do
+      local path = self.getSpeciesPath(v)
+      local success = pcall(getAsset, path)
+      if success then
+        table.insert(successes, v)
+      else
+        table.insert(failures, v)
+      end
+      if not isEmpty(successes) then
+        self.speciesList = npcUtil.mergeUnique(self.speciesList, successes)
+        table.sort(self.speciesList)
+      end
     end
-    if not isEmpty(successes) then
-      self.speciesList = npcUtil.mergeUnique(self.speciesList, successes)
-      table.sort(self.speciesList)
+  elseif name == "additionalnpctypes" then
+    key = "npcSpawnerPlus.additionalNpcTypes"
+    for i,v in ipairs(list) do
+      local success = pcall(root.npcConfig, v)
+      if success then
+        table.insert(successes, v)
+      else
+        table.insert(failures, v)
+      end
+      if not isEmpty(successes) then
+        self.npcTypeList = npcUtil.mergeUnique(self.npcTypeList, successes)
+        table.sort(self.npcTypeList)
+      end
     end
+  else
+    return false, "listName not given"
   end
-elseif name == "additionalnpctypes" then
-  key = "npcSpawnerPlus.additionalNpcTypes"
-  for i,v in ipairs(list) do
-    local success = pcall(root.npcConfig, v)
-    if success then
-      table.insert(successes, v)
-    else
-      table.insert(failures, v)
-    end
-    if not isEmpty(successes) then
-      self.npcTypeList = npcUtil.mergeUnique(self.npcTypeList, successes)
-      table.sort(self.npcTypeList)
-    end
+  for i,v in ipairs(successes) do
+    override.outputStr("Added "..v)
   end
-else
-  return false, "listName not given"
-end
-for i,v in ipairs(successes) do
-  override.outputStr("Added "..v)
-end
-for i,v in ipairs(failures) do
-  override.outputStr("Failed to add "..(v or "-"))
-end
-override.outputStr("\n Note:  Due to patch 1.3 changes, added species/npctypes will NOT be saved after the panel closes.")
+  for i,v in ipairs(failures) do
+    override.outputStr("Failed to add "..(v or "-"))
+  end
+  override.outputStr("\n Note:  Due to patch 1.3 changes, added species/npctypes will NOT be saved after the panel closes.")
 
-return true
+  return true
 end
 
 function override.clear()
