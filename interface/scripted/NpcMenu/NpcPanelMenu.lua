@@ -31,6 +31,40 @@ Item.__index  = Item
 itemSlotManager = {}
 itemSlotManager.__index = itemSlotManager
 
+function Item.new(descriptor)
+  local self = setmetatable({}, Item)
+  self:init(descriptor)
+  return self
+end
+
+function Item:init(descriptor)
+  self.name = descriptor.name
+  self.count = descriptor.count or 1
+  self.parameters = descriptor.parameters or {}
+  self.config = root.itemConfig(descriptor).config
+end
+
+function Item:type()
+  return root.itemType(self.name)
+end
+
+function Item:descriptor()
+  return {
+      name = self.name,
+      count = self.count,
+      parameters = self.parameters
+    }
+end
+
+function Item:instanceValue(name, default)
+  return sb.jsonQuery(self.parameters, name) or sb.jsonQuery(self.config, name) or default
+end
+
+function Item:setInstanceValue(name, value)
+  self.parameters[name] = value
+end
+
+
 function itemSlotManager:init()
   self.itemBag = config.getParameter("equipItemSlots")
   self.itemSlots = {}
@@ -74,14 +108,35 @@ function itemSlotManager:storeImportItems(overrides)
   end
 end
 
+function itemSlotManager:itemSlotParameter(key, parameter, default)
+  local itemSlotInstance
+  if type(key) == "string" then
+    itemSlotInstance = self.itemSlots[key]
+  else
+    itemSlotInstance = self.itemSlots[self.itemBag[key]]
+  end
+  return itemSlotInstance[parameter] or default
+end
 
-function itemSlotManager:storeDefaultItems(variantItems)
+function itemSlotManager:storeDefaultItems(variant)
   local bagItem
-  dLogJson(variantItems, "variantItems")
+  local config = root.npcConfig(variant.typeName)
+  local isCrewmember = path(config.scriptConfig,"crew","recruitable") or false
+  local defaultUniform = path(config.scriptConfig,"crew","defaultUniform") or {}
+  local colorIndex = path(config.scriptConfig,"crew","role", "uniformColorIndex")
+  
+  if isCrewmember and not isEmpty(defaultUniform) then
+    for k, v in pairs(defaultUniform) do
+      variant.items[k] = {content = dyeUniformItem(v, colorIndex)}
+    end
+  end
+
   for k,v in pairs(self.itemSlots) do
-    bagItem = copy(variantItems[v.equipSlot] or {}).content
+    bagItem = copy(variant.items[v.equipSlot] or {}).content
     if bagItem and pcall(root.itemType, bagItem.name) then
       v:_storeItem(bagItem, v.sourceType.default)
+    else
+      v:removeItemFrom(v.sourceType.default)
     end
   end
 end
@@ -94,9 +149,11 @@ function itemSlotManager:removeItemSlotItem(widgetName, source)
   local item = self.itemSlots[widgetName]:getItemFrom(source, false)
   if item then
     if item:instanceValue("twoHanded", nil) then
+      self.itemSlots[widgetConfig.linkedItemSlot].iconMode = true
       self.itemSlots[widgetConfig.linkedItemSlot]:removeItemFrom(source)
       self.itemSlots[widgetConfig.linkedItemSlot].iconMode = false
     end
+    self.itemSlots[widgetName].iconMode = false
     self.itemSlots[widgetName]:removeItemFrom(source)
   end
 end
@@ -105,11 +162,11 @@ function itemSlotManager:setItemSlotItem(widgetName, source, itemToAdd)
   source = source or teamSlot.sourceType.container
   local widgetConfig = widget.getData(widgetName)
   local linkedWidgetConfig = widget.getData(widgetConfig.linkedItemSlot)
-
+  self.itemSlots[widgetName].iconMode = false
   self.itemSlots[widgetName]:_storeItem(itemToAdd, source)
   if self.itemSlots[widgetName]:queryItem(source,"twoHanded", nil) then
-    self.itemSlots[widgetConfig.linkedItemSlot]:_storeItem(itemToAdd, source)
     self.itemSlots[widgetConfig.linkedItemSlot].iconMode = true
+    self.itemSlots[widgetConfig.linkedItemSlot]:_storeItem(itemToAdd, source)
   end
 end
 
@@ -120,7 +177,8 @@ function itemSlotManager:updateAllItemSlots()
 end
 
 function itemSlotManager:buildOverrideTable()
-  local output = npcUtil.buildItemOverrideTable(jarray())
+  local output = {}
+  output.override = npcUtil.buildItemOverrideTable(jarray())
   local item
   for k,v in pairs(self.itemSlots) do
     item = v:getAppropriateItem()
@@ -130,40 +188,6 @@ function itemSlotManager:buildOverrideTable()
   end
   return output
 end
-
-function Item.new(descriptor)
-  local self = setmetatable({}, Item)
-  self:init(descriptor)
-  return self
-end
-
-function Item:init(descriptor)
-  self.name = descriptor.name
-  self.count = descriptor.count or 1
-  self.parameters = descriptor.parameters or {}
-  self.config = root.itemConfig(descriptor).config
-end
-
-function Item:type()
-  return root.itemType(self.name)
-end
-
-function Item:descriptor()
-  return {
-      name = self.name,
-      count = self.count,
-      parameters = self.parameters
-    }
-end
-
-function Item:instanceValue(name, default)
-  return sb.jsonQuery(self.parameters, name) or sb.jsonQuery(self.config, name) or default
-end
-
-function Item:setInstanceValue(name, value)
-  self.parameters[name] = value
-end
-
 
 function itemSlot:_init(widgetName, widgetConfig)
   self.widgetName = widgetName
@@ -190,7 +214,7 @@ function itemSlot:_toJson()
     items.containerItem = self.containerItem:descriptor()
   end
   if  self.importItem then
-    items.importItem =  self.importItem:descriptor()
+    items.importItem = self.importItem:descriptor()
   end
   if self.defaultItem then
     items.defaultItem = self.defaultItem:descriptor()
@@ -205,13 +229,13 @@ function itemSlot:hasItemFrom(source)
 end
 
 function itemSlot:_storeItem(itemDescriptor, source)
-  dLogJson({itemDescriptor, source}, "_storeItem", true)
+
   local item = copy(itemDescriptor)
   if type(item) == "string" then
     item = {name = item, count = 1}
   end
   self[source] = Item.new(item)
-  if source == self.sourceType.container then
+  if (source == self.sourceType.container) and (not self.iconMode) then
     world.containerSwapItemsNoCombine(pane.containerEntityId(), self[source]:descriptor(), self.containerSlot)
   end
 end
@@ -229,8 +253,21 @@ function itemSlot:getAppropriateItem()
 end
 
 
+function itemSlot:getItemSource(itemDescriptor)
+  if self.iconMode or self.ignoreItemSlot then 
+    return  nil
+  end
+  if self.containerItem and compare(itemDescriptor, self.containerItem:descriptor()) then
+    return itemSlot.sourceType.container
+  elseif  self.importItem and compare(itemDescriptor, self.importItem:descriptor()) then
+    return itemSlot.sourceType.importItem
+  elseif self.defaultItem and compare(itemDescriptor, self.defaultItem:descriptor()) then
+    return itemSlot.sourceType.defaultItem
+  end
+end
+
+
 function itemSlot:getItemFrom(source, asDescriptor)
-  
   if self[source] then
     if asDescriptor then 
       return self[source]:descriptor()
@@ -244,8 +281,7 @@ end
 function itemSlot:removeItemFrom(source)
   if self[source] then
     if source == self.sourceType.container and self.iconMode == false then
-      player.giveItem(self[source]:descriptor())
-      world.containerSwapItemsNoCombine(pane.containerEntityId(), nil, self.containerSlot)
+      world.containerTakeAt(pane.containerEntityId(), self.containerSlot)
     end
     self[source] = nil
   end
@@ -400,10 +436,7 @@ function init(cardArgs)
   end
   --]]
   self.getOverrideItemBag = function()
-    if path(self.items, "override", 1, 2, 1) then
-      return self.items.override[1][2][1]
-    end
-    return nil
+    return itemSlotManager:buildOverrideTable()
   end
 
   --Cannot send entity messages during init, so will do it here
@@ -413,12 +446,24 @@ function init(cardArgs)
 end
 --this changes based on state
 
+function mainUpdate(dt)
+  promises:update()
+  local itemBagItem
+  for i=1, 12 do
+    itemBagItem = world.containerItemAt(pane.containerEntityId(), i-1)
+    if type(itemBagItem) ~= "nil" and (type(itemSlotManager:itemAtItemBagIndex(i)) == "nil" or itemSlotManager:itemSlotParameter(i, "iconMode") == true) then
+      player.giveItem(itemBagItem)
+      world.containerTakeAt(pane.containerEntityId(), i-1)
+    end
+  end
+  if self.tbFeedbackColorRoutine then self.tbFeedbackColorRoutine() end
+end
 
 function update(dt)
   if self.mainUpdate == false then 
     self.itemSlotBag = self.itemSlotBag or {}
     self.sliderValue = self.currentSeed
-    self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.items} end
+    self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.getOverrideItemBag()} end
     self.setSeedValue = function(value) 
       self.currentSeed = tonumber(value) 
     end
@@ -442,14 +487,14 @@ function update(dt)
     local equipSlots = config.getParameter("equipSlots")
 
     
-    itemSlotManager:storeDefaultItems(createVariant().items)
+    itemSlotManager:storeDefaultItems(createVariant())
     if self.gettingInfo.npcParam and path(self.gettingInfo.npcParam, "items","override", 1, 2, 1) then
       itemSlotManager:storeImportItems(self.gettingInfo.npcParam.items.override[1][2][1])
     end
 
     local itemBag = world.containerItems(pane.containerEntityId())
     itemSlotManager:storeContainerItems(itemBag)
-    itemSlotManager:_toString()
+    --itemSlotManager:_toString()
 
     --[[
     if npcUtil.isContainerEmpty(itemBag) == false then 
@@ -473,17 +518,9 @@ function update(dt)
     updatePortrait()
     self.mainUpdate = true
     return 
+  else
+    update = mainUpdate
   end
-  promises:update()
-  local itemBag = world.containerItems(pane.containerEntityId())
-
-  for i=1, 12 do
-    if (itemBag[i] or {}).name ~= (itemSlotManager:itemAtItemBagIndex(i) or {}).name then
-      player.giveItem(itemBag[i])
-      world.containerSwapItemsNoCombine(pane.containerEntityId(), nil, i-1)
-    end
-  end
-  if self.tbFeedbackColorRoutine then self.tbFeedbackColorRoutine() end
 end
 
 -----CALLBACK FUNCTIONS-------
@@ -517,18 +554,40 @@ function onItemSlotPress(id, data, args)
     if itemSwapItem then
       local success, itemType = pcall(root.itemType, itemSwapItem.name)
       if itemType ~= data.equipType then 
-        if calledByProgram then player.giveItem(itemSwapItem) end
         return nil
       end
     end
     
+    local itemSlotItemSource = itemSlotManager.itemSlots[id]:getItemSource(itemSlotItem)
+    dLog(itemSlotItemSource, "itemSlotItemSource: ")
+    --actions where there is an itemSwapItem
+    if itemSwapItem then
+      --if there is already an itemSlotItem and the source is from a container or itemslot is empty
+      if (not itemSlotItem) or itemSlotItemSource == itemSlot.sourceType.container then
+        itemSlotManager:setItemSlotItem(id, itemSlot.sourceType.container, itemSwapItem)
+        player.setSwapSlotItem(itemSlotItem)
+      else 
+        itemSlotManager:setItemSlotItem(id, itemSlot.sourceType.container, itemSwapItem)
+        player.setSwapSlotItem(nil)
+      end
+    --actions where there is NOT an itemSwapItem
+    else
+      --if container item
+      if itemSlotItemSource == itemSlot.sourceType.container then
+        itemSlotManager:removeItemSlotItem(id, itemSlot.sourceType.container)
+        player.setSwapSlotItem(itemSlotItem)
+      end
+    end
+
+    
+    
+    --[[
     itemSlotManager:removeItemSlotItem(id, itemSlot.sourceType.container)
     if itemSwapItem then
       player.setSwapSlotItem(nil)
       itemSlotManager:setItemSlotItem(id, itemSlot.sourceType.container, itemSwapItem)
     end
     
-    --[[
     player.setSwapSlotItem(itemSlotItem)
     widget.setItemSlotItem(id, itemSwapItem)
     widget.setItemSlotProgress(id, 0.99)
@@ -1103,7 +1162,7 @@ function updateNpc(noVisual)
   else
     widget.setText(self.nameBox, self.seedIdentity.name)
   end
-  itemSlotManager:storeDefaultItems(createVariant().items)
+  itemSlotManager:storeDefaultItems(createVariant())
   itemSlotManager:updateAllItemSlots()
   if noVisual then return end
   --dLogJson(curOverride, "whsa", false)
@@ -1129,7 +1188,7 @@ function createPortrait(type)
   local params  = {
     identity = self.identity,
     scriptConfig = self.scriptConfig,
-    items = fakeItems or self.items
+    items = self.getOverrideItemBag()
   }
   local npcPort = root.npcPortrait(type, self.currentSpecies, self.currentType, self.currentLevel, self.currentSeed, params)
   return npcPort
@@ -1178,10 +1237,8 @@ function modNpc.Species(listData, cur, curO)
 end
 
 function modNpc.NpcType(listData, cur, curO)
-  local items
   if listData.iTitle ~= self.currentType then
-    items = createVariant().items
-    itemSlotManager:storeDefaultItems(items)
+    itemSlotManager:storeDefaultItems(createVariant())
   end
   self.currentType = listData.iTitle
 end
