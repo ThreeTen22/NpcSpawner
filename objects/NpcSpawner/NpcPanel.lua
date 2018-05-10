@@ -7,15 +7,13 @@ function init()
     object.setInteractive(false)
 
     local initialArgs = config.getParameter("npcArgs")
-    if jsize(initialArgs) == 0 then
-      local nothing = 0
-    else
+    if jsize(initialArgs) ~= 0 then
       local args = config.getParameter("npcArgs")
       for k,v in pairs(args) do 
         self[k] = copy(v)
       end
     end
-
+  
     self.timers = TimerManager:new()
 
     self.healingTimer = Timer:new("healingTimer", {
@@ -39,8 +37,19 @@ function init()
     message.setHandler("getNpcData",simpleHandler(getNpcData))
     message.setHandler("setNpcData", simpleHandler(setNpcData))
     message.setHandler("detachNpc", simpleHandler(detachNpc))
-
-    
+    local placeholder = root.assetJson("/interface/scripted/npcmenu/modconfig.config:placeholderTicket")
+   
+    object.setConfigParameter("breakDropOptions", {{
+      {
+        [1]=placeholder.name,[2]=1.0,[3]=placeholder.parameters
+      },
+      {
+        [1]=placeholder.name,[2]=1.0,[3]=placeholder.parameters
+      },
+      {
+        [1]=placeholder.name,[2]=2.0,[3]=placeholder.parameters
+      }
+    }})
     object.setInteractive(true)
 end
 

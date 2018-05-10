@@ -5,30 +5,7 @@ require "/scripts/loggingutil.lua"
 
 npcUtil = {} 
 
-itemSlot = {}
-itemSlot.__index = itemSlot
-function itemSlot.init(...)
-  local self = setmetatable({}, itemSlot)
-  self:init(...)
-  return self
-end
 
-function itemSlot:init(widgetName)
-  local widgetConfig = config.getParameter(widgetName,  {})
-  self.widgetName = widgetName
-  self.equipSlot = widgetConfig.equipSlot
-  self.containerSlot = widgetConfig.containerSlot
-  self.itemSlotProgress = 1.0
-  self.containerItem = {}
-  self.cardItem = {}
-  self.uniformItem = {}
-end
-
-function itemSlot:setContainerItem(itemDescriptor)
-  
-end
-
---local func = testTable.func1
 
 function getAsset(assetPath)
   return root.assetJson(assetPath)
@@ -248,6 +225,20 @@ function setPath(t, ...)
     end
   end
 end
+
+function hasPath(data, keyList)
+  if #keyList == 0 then
+    return true
+  else
+    local firstKey = table.remove(keyList, 1)
+    if data[firstKey] ~= nil then
+      return hasPath(data[firstKey], keyList)
+    else
+      return false
+    end
+  end
+end
+
 
 function npcUtil.buildItemOverrideTable(t)
   local override = t or {}
