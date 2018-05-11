@@ -93,6 +93,7 @@ function itemSlotManager:storeContainerItems(itemBag)
   for k,v in pairs(self.itemSlots) do
     bagItem = itemBag[v.containerSlot+1]
     if bagItem then
+      v.ignoreItemSlot = false
       self:setItemSlotItem(k, v.sourceType.container, bagItem)
     end
   end
@@ -104,6 +105,8 @@ function itemSlotManager:storeImportItems(overrides)
     bagItem = (overrides[v.equipSlot] or {})[1]
     if bagItem then
       v:storeItem(bagItem, v.sourceType.import)
+    else
+      v.ignoreItemSlot = true
     end
   end
 end
@@ -124,8 +127,10 @@ function itemSlotManager:storeDefaultItems(variant)
   for k,v in pairs(self.itemSlots) do
     bagItem = copy(variant.items[v.equipSlot] or {}).content
     if bagItem and pcall(root.itemType, bagItem.name) then
+      --self:setItemSlotItem(k, v.sourceType.default, bagItem, variant.typeName, variant.seed)
       v:storeItem(bagItem, v.sourceType.default, variant.typeName, variant.seed)
     else
+      --self:removeItemSlotItem(k, v.sourceType.default)
       v:removeItemFrom(v.sourceType.default)
     end
   end
@@ -142,32 +147,40 @@ function itemSlotManager:itemSlotParameter(key, parameter, default)
   return itemSlotInstance[parameter] or default
 end
 
-function itemSlotManager:removeItemSlotItem(widgetName, source)
-  source = source or teamSlot.sourceType.container
+function itemSlotManager:removeItemSlotItem(widgetName, source, ...)
+  source = source or itemSlot.sourceType.container
   local widgetConfig = widget.getData(widgetName)
   local linkedWidgetConfig = widget.getData(widgetConfig.linkedItemSlot)
 
   local item = self.itemSlots[widgetName]:getItemFrom(source, false)
+  
   if item then
-    if item:instanceValue("twoHanded", nil) then
-      self.itemSlots[widgetConfig.linkedItemSlot].iconMode = true
-      self.itemSlots[widgetConfig.linkedItemSlot]:removeItemFrom(source)
-      self.itemSlots[widgetConfig.linkedItemSlot].iconMode = false
-    end
-    self.itemSlots[widgetName].iconMode = false
-    self.itemSlots[widgetName]:removeItemFrom(source)
+    if source == itemSlot.sourceType.container then
+      if item:instanceValue("twoHanded", nil) then
+        self.itemSlots[widgetConfig.linkedItemSlot].ignoreItemSlot = false
+        self.itemSlots[widgetConfig.linkedItemSlot].iconMode = false
+        self.itemSlots[widgetConfig.linkedItemSlot]:removeItemFrom(source, ...)
+      end
+      self.itemSlots[widgetName].iconMode = false
+      self.itemSlots[widgetName].ignoreItemSlot = false
+      self.itemSlots[widgetName]:removeItemFrom(source, ...)
+    end     
   end
 end
 
-function itemSlotManager:setItemSlotItem(widgetName, source, itemToAdd)
-  source = source or teamSlot.sourceType.container
+function itemSlotManager:setItemSlotItem(widgetName, source, itemToAdd, ...)
+  source = source or itemSlot.sourceType.container
   local widgetConfig = widget.getData(widgetName)
   local linkedWidgetConfig = widget.getData(widgetConfig.linkedItemSlot)
-  self.itemSlots[widgetName].iconMode = false
-  self.itemSlots[widgetName]:storeItem(itemToAdd, source)
-  if self.itemSlots[widgetName]:queryItem(source,"twoHanded", nil) then
-    self.itemSlots[widgetConfig.linkedItemSlot].iconMode = true
-    self.itemSlots[widgetConfig.linkedItemSlot]:storeItem(itemToAdd, source)
+  if source == itemSlot.sourceType.container then
+    self.itemSlots[widgetName].ignoreItemSlot = false
+    self.itemSlots[widgetName].iconMode = false
+    self.itemSlots[widgetName]:storeItem(itemToAdd, source, ...)
+    if self.itemSlots[widgetName]:queryItem(source,"twoHanded", nil) then
+      self.itemSlots[widgetConfig.linkedItemSlot].ignoreItemSlot = false
+      self.itemSlots[widgetConfig.linkedItemSlot].iconMode = true
+      self.itemSlots[widgetConfig.linkedItemSlot]:storeItem(itemToAdd, source, ...)
+    end
   end
 end
 
@@ -284,9 +297,9 @@ function weaponSlot:storeItem(itemDescriptor, source, npcType, seed)
   end
 
   if source == self.sourceType.default then
-    self:prepareSlot(npcType, seed)
-    item = root.createItem(item, nil, (item.parameters.seed or self.seed or seed))
-    
+    self:prepareSlot(npcType)
+    local seedItm = (item.parameters.seed or self.seed or seed)
+    item = root.createItem(item, nil, seedItm)
     return self:_storeItem(item, source)
   end
   return self:_storeItem(item, source)
@@ -313,9 +326,6 @@ end
 
 
 function itemSlot:getItemSource(itemDescriptor)
-  if self.iconMode or self.ignoreItemSlot then 
-    return  nil
-  end
   if self.containerItem and compare(itemDescriptor, self.containerItem:descriptor()) then
     return itemSlot.sourceType.container
   elseif  self.importItem and compare(itemDescriptor, self.importItem:descriptor()) then
@@ -339,7 +349,13 @@ end
 
 function itemSlot:removeItemFrom(source)
   if self[source] then
-    if source == self.sourceType.container and self.iconMode == false then
+    if source == self.sourceType.container then
+      local itms = widget.itemGridItems("itemGrid")
+      if player.swapSlotItem() then
+        player.giveItem(itms[self.containerSlot+1])
+      else
+        player.setSwapSlotItem(itms[self.containerSlot+1])
+      end 
       world.containerTakeAt(pane.containerEntityId(), self.containerSlot)
     end
     self[source] = nil
@@ -357,7 +373,7 @@ function itemSlot:_updateItemSlotItem()
   local item, progress = nil, 1.0
   if self.ignoreItemSlot then
     item = nil
-    progress = 0.0
+    progress = 1.0
   elseif self.containerItem then
     item = self.containerItem:descriptor()
     if self.iconMode then
@@ -561,20 +577,38 @@ function onItemSlotPress(id, data, args)
     args = args or {}
     local itemSlotItem = args[1] or widget.itemSlotItem(id)
     local itemSwapItem = args[2] or player.swapSlotItem()
-    local calledByProgram = type(args[1]) ~= "nil" or type(args[2]) ~= "nil"
+    --local calledByProgram = type(args[1]) ~= "nil" or type(args[2]) ~= "nil"
 
     data = data or config.getParameter("gui."..id..".data")
 
-    --Check if item its valid
-    --if given arguments, then assume its to give an item directly back.
-
     if itemSwapItem then
-      local success, itemType = pcall(root.itemType, itemSwapItem.name)
+      local success, itemType = pcall(root.itemType, (itemSwapItem or {}).name)
       if itemType ~= data.equipType then 
         return nil
       end
     end
+    --Check if item its valid
+    --if given arguments, then assume its to give an item directly back.
+    local source = itemSlotManager.itemSlots[id]:getItemSource(itemSlotItem)
+    dLog(source, "source:")
+    if itemSwapItem or source == itemSlot.sourceType.container then
+
+      itemSlotManager.itemSlots[id].ignoreItemSlot = false
+      itemSlotManager:removeItemSlotItem(id, itemSlot.sourceType.container)
+
+      if itemSwapItem then
+        player.setSwapSlotItem(nil)
+        itemSlotManager:setItemSlotItem(id, itemSlot.sourceType.container, itemSwapItem)
+      end
+
+    else
+      itemSlotManager.itemSlots[id].ignoreItemSlot = (not itemSlotManager.itemSlots[id].ignoreItemSlot)
+    end
     
+    
+    
+    --[[
+
     local itemSlotItemSource = itemSlotManager.itemSlots[id]:getItemSource(itemSlotItem)
    
     --actions where there is an itemSwapItem
@@ -596,9 +630,6 @@ function onItemSlotPress(id, data, args)
       end
     end
 
-    
-    
-    --[[
     itemSlotManager:removeItemSlotItem(id, itemSlot.sourceType.container)
     if itemSwapItem then
       player.setSwapSlotItem(nil)
