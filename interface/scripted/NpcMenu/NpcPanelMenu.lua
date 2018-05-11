@@ -645,9 +645,6 @@ function onImportItemSlotClick(id, data)
     self.scriptConfig = swapItem.parameters.npcArgs.npcParam.scriptConfig
     widget.setItemSlotItem(id, swapItem)
 
-       
-    
-    dLogJson(swapItem.parameters.npcArgs, "inside storeImportItems - Import:  ")
     if swapItem.parameters.npcArgs and path(swapItem.parameters.npcArgs,"npcParam", "items","override", 1, 2, 1) then
       itemSlotManager:storeImportItems(swapItem.parameters.npcArgs.npcParam.items.override[1][2][1])
     end
@@ -663,7 +660,8 @@ function onImportItemSlotClick(id, data)
 
     widget.setSelectedOption("rgSelectCategory", 0)
     widget.setSelectedOption("rgTabs", 0)
-    updateNpc()    
+    acceptBtn()
+    --updateNpc()    
   end
 end
 

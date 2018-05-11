@@ -3,7 +3,7 @@
   "tags" : ["misc"],
   "rarity" : "Common",
   "description" : "Place a beacon and beam in an Npc.",
-  "shortdescription" : "NPC Maker 3000",
+  "shortdescription" : "NPC Maker 3000: Panel",
   "subtitle" : "When an npc arrives, don't ask how they got here...you don't wanna know",
   "race" : "generic",
   "price" : 15000,
