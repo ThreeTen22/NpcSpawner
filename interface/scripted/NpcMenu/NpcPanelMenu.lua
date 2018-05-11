@@ -93,7 +93,6 @@ function itemSlotManager:storeContainerItems(itemBag)
   for k,v in pairs(self.itemSlots) do
     bagItem = itemBag[v.containerSlot+1]
     if bagItem then
-      v.ignoreItemSlot = false
       self:setItemSlotItem(k, v.sourceType.container, bagItem)
     end
   end
@@ -104,8 +103,10 @@ function itemSlotManager:storeImportItems(overrides)
   for k,v in pairs(self.itemSlots) do
     bagItem = (overrides[v.equipSlot] or {})[1]
     if bagItem then
+      v.ignoreItemSlot = false
       v:storeItem(bagItem, v.sourceType.import)
     else
+      v:removeItemFrom(v.sourceType.import)
       v.ignoreItemSlot = true
     end
   end
@@ -371,7 +372,7 @@ end
 
 function itemSlot:_updateItemSlotItem()
   local item, progress = nil, 1.0
-  if self.ignoreItemSlot then
+  if self.ignoreItemSlot == true then
     item = nil
     progress = 1.0
   elseif self.containerItem then
@@ -461,7 +462,7 @@ function init(cardArgs)
 
   self.currentType = self.gettingInfo.npcType or self.npcTypeList[math.random(1, #self.npcTypeList)]
   self.currentSeed = self.gettingInfo.npcSeed or math.random(0, 20000)
-  self.currentLevel = self.gettingInfo.npcLevel or math.random(0, world.threatLevel())
+  self.currentLevel = self.gettingInfo.npcLevel or math.max(1, math.random(0, world.threatLevel()))
   self.currentSpecies = self.gettingInfo.npcSpecies or self.speciesList[math.random(1, #self.speciesList)]
 
 
@@ -573,6 +574,19 @@ function spnIdleStance.down()
   return updatePortrait()
 end
 
+function onRightClickItemSlotPress(id, data)
+  local itemSlotItem = widget.itemSlotItem(id)
+  local source = itemSlotManager.itemSlots[id]:getItemSource(itemSlotItem)
+  
+  if source == itemSlot.sourceType.container then
+    itemSlotManager:removeItemSlotItem(id, itemSlot.sourceType.container)
+  else
+    itemSlotManager.itemSlots[id]:removeItemFrom(itemSlot.sourceType.import)
+  end
+  itemSlotManager.itemSlots[id].ignoreItemSlot = false
+  return updateNpc()
+end
+
 function onItemSlotPress(id, data, args)
     args = args or {}
     local itemSlotItem = args[1] or widget.itemSlotItem(id)
@@ -590,7 +604,6 @@ function onItemSlotPress(id, data, args)
     --Check if item its valid
     --if given arguments, then assume its to give an item directly back.
     local source = itemSlotManager.itemSlots[id]:getItemSource(itemSlotItem)
-    dLog(source, "source:")
     if itemSwapItem or source == itemSlot.sourceType.container then
 
       itemSlotManager.itemSlots[id].ignoreItemSlot = false
@@ -679,12 +692,24 @@ function onImportItemSlotClick(id, data)
     updateNpc(true)
     modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.getCurrentOverride())
 
+    itemSlotManager:storeDefaultItems(createVariant())
 
     self.items = swapItem.parameters.npcArgs.npcParam.items
     self.identity = swapItem.parameters.npcArgs.npcParam.identity
     self.scriptConfig = swapItem.parameters.npcArgs.npcParam.scriptConfig
     widget.setItemSlotItem(id, swapItem)
 
+       
+    
+    dLogJson(swapItem.parameters.npcArgs, "inside storeImportItems - Import:  ")
+    if swapItem.parameters.npcArgs and path(swapItem.parameters.npcArgs,"npcParam", "items","override", 1, 2, 1) then
+      itemSlotManager:storeImportItems(swapItem.parameters.npcArgs.npcParam.items.override[1][2][1])
+    end
+
+    local itemBag = world.containerItems(pane.containerEntityId())
+    itemSlotManager:storeContainerItems(itemBag)
+
+    itemSlotManager:updateAllItemSlots()
     
   
     local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
@@ -1616,12 +1641,14 @@ function selectedTab.Export(args)
   args.selectedCategory = "ExportOptn"
   self.identity = npcUtil.parseArgs(self.identity, copy(self.seedIdentity))
   setNpcName()
+  
+  
   local args = {
   npcSpecies = self.currentSpecies,
   npcSeed = self.currentSeed,
   npcType = self.currentType,
   npcLevel = self.currentLevel,
-  npcParam = self.getCurrentOverride()
+  npcParam = copy(self.getCurrentOverride())
   }
 
   local exportNpc = [[/spawnnpc %s %s %s %s '%s']]
@@ -1939,15 +1966,14 @@ function override.detach()
     table.insert(errs, "npctype")
   end
   local npcParam = initInfo.npcParam or {}
-  dLogJson(self.identity, "identity")
-  dLogJson(npcParam.identity, "identity")
+
   if not compare(self.identity, npcParam.identity) then
     table.insert(errs, "identity")
   end
   if not compare(self.scriptConfig, npcParam.scriptConfig) then
     table.insert(errs, "Behavior and/or equipped items")
   end
-  if not compare(self.items, npcParam.items) then
+  if not compare(itemSlotManager:buildOverrideTable(), npcParam.items) then
     table.insert(errs, "Equippied Items")
   end
   if #errs > 0 then

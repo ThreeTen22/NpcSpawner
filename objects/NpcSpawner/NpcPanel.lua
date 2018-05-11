@@ -37,19 +37,7 @@ function init()
     message.setHandler("getNpcData",simpleHandler(getNpcData))
     message.setHandler("setNpcData", simpleHandler(setNpcData))
     message.setHandler("detachNpc", simpleHandler(detachNpc))
-    local placeholder = root.assetJson("/interface/scripted/npcmenu/modconfig.config:placeholderTicket")
-   
-    object.setConfigParameter("breakDropOptions", {{
-      {
-        [1]=placeholder.name,[2]=1.0,[3]=placeholder.parameters
-      },
-      {
-        [1]=placeholder.name,[2]=1.0,[3]=placeholder.parameters
-      },
-      {
-        [1]=placeholder.name,[2]=2.0,[3]=placeholder.parameters
-      }
-    }})
+
     object.setInteractive(true)
 end
 
@@ -133,11 +121,13 @@ function setNpcData(args)
 end
 
 function detachNpc()
-  local id = world.loadUniqueEntity(self.spawnedID)
-  if id ~= 0 and path(self.npcParam, "scriptConfig", "crew", "recruitable") == false then
-    world.setUniqueId(id, nil)
+  local id = world.loadUniqueEntity(storage.spawnedID)
+  local npcConfig = root.npcConfig(self.npcType)
+  if id ~= 0 and (path(npcConfig, "scriptConfig", "crew", "recruitable") ~= true) then
+    world.setUniqueId(id, "")
+    dLog("removedUniqueId")
   end
-  object.smash()
+  object.smash(false)
 end
 
 function randomItUp(speciesList,typeList,override)
