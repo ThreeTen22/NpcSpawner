@@ -601,8 +601,7 @@ function onItemSlotPress(id, data, args)
         return nil
       end
     end
-    --Check if item its valid
-    --if given arguments, then assume its to give an item directly back.
+
     local source = itemSlotManager.itemSlots[id]:getItemSource(itemSlotItem)
     if itemSwapItem or source == itemSlot.sourceType.container then
 
@@ -617,60 +616,7 @@ function onItemSlotPress(id, data, args)
     else
       itemSlotManager.itemSlots[id].ignoreItemSlot = (not itemSlotManager.itemSlots[id].ignoreItemSlot)
     end
-    
-    
-    
-    --[[
 
-    local itemSlotItemSource = itemSlotManager.itemSlots[id]:getItemSource(itemSlotItem)
-   
-    --actions where there is an itemSwapItem
-    if itemSwapItem then
-      --if there is already an itemSlotItem and the source is from a container or itemslot is empty
-      if (not itemSlotItem) or itemSlotItemSource == itemSlot.sourceType.container then
-        itemSlotManager:setItemSlotItem(id, itemSlot.sourceType.container, itemSwapItem)
-        player.setSwapSlotItem(itemSlotItem)
-      else 
-        itemSlotManager:setItemSlotItem(id, itemSlot.sourceType.container, itemSwapItem)
-        player.setSwapSlotItem(nil)
-      end
-    --actions where there is NOT an itemSwapItem
-    else
-      --if container item
-      if itemSlotItemSource == itemSlot.sourceType.container then
-        itemSlotManager:removeItemSlotItem(id, itemSlot.sourceType.container)
-        player.setSwapSlotItem(itemSlotItem)
-      end
-    end
-
-    itemSlotManager:removeItemSlotItem(id, itemSlot.sourceType.container)
-    if itemSwapItem then
-      player.setSwapSlotItem(nil)
-      itemSlotManager:setItemSlotItem(id, itemSlot.sourceType.container, itemSwapItem)
-    end
-    
-    player.setSwapSlotItem(itemSlotItem)
-    widget.setItemSlotItem(id, itemSwapItem)
-    widget.setItemSlotProgress(id, 0.99)
-    --get new slot item
-    itemSlotItem = widget.itemSlotItem(id)
-
-    --save it in the back end
-    world.containerSwapItemsNoCombine(pane.containerEntityId(), itemSlotItem, data.containerSlot)
-    --throw away the return value of containerSwapItems as we already gave it back via set SwapSlotItem.
-    if not self.items.override then 
-      self.items.override = npcUtil.buildItemOverrideTable(jarray())
-    end
-    --add / remove / update self.items
-    itemSlotItem = itemSlotItem and ({itemSlotItem})
-    self.items.override[1][2][1][data.equipSlot] = itemSlotItem
-    if not self.itemSlotBag then self.itemSlotBag = {} end
-    self.itemSlotBag[data.containerSlot+1] = itemSlotItem
-    if npcUtil.isContainerEmpty(self.items.override[1][2][1]) then 
-      self.items.override = nil
-    end
-
-    --]]
     return updateNpc()
 end
 
@@ -1129,8 +1075,7 @@ function onSelectItem(name, listData)
   listData.iTitle = itemData.iTitle
   listData.clearConfig = itemData.clearConfig
   if not listData and listData.listType then return end
-  --dLogJson(itemData, "onSelectItem: itemData")
-  --self.curSelectedTitle = itemData.iTitle
+
   modNpc[listData.listType](listData, self.seedIdentity, self.getCurrentOverride())
 
   return updateNpc()
