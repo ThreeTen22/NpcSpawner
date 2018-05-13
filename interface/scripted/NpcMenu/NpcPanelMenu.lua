@@ -266,9 +266,6 @@ function armorSlot:init(widgetName)
   self.linkedItemSlot = widgetConfig.linkedItemSlot
 end
 
-
-
-
 function itemSlot:_toJson()
   local values = {
     widgetName = self.widgetName,
