@@ -499,13 +499,7 @@ function init()
   end
   
   self.items = {}
-  --[[
-  if self.gettingInfo.npcParam.items then
-    self.items = copy(self.gettingInfo.npcParam.items)
-  else
-    self.items = {}
-  end
-  --]]
+
   self.getOverrideItemBag = function()
     return itemSlotManager:buildOverrideTable()
   end
@@ -571,19 +565,18 @@ function mainUpdate(dt)
 end
 
 function update(dt)
-    promises:update()
-
-    updatePortrait()
-    if promises:empty() == false then return end
-    promises:add(world.sendEntityMessage(player.id(), "npcSpawner.playerAddOn"),
-    function() 
-      npcSpawnerAddons.crewmember = true;
-      self.mainUpdate = true
-      update = mainUpdate end,
-    function()  
-      npcSpawnerAddons.crewmember = false; 
-      self.mainUpdate = true
-      update = mainUpdate end)
+  promises:update()
+  if promises:empty() == false then return end
+  updatePortrait()
+  promises:add(world.sendEntityMessage(player.id(), "npcSpawner.playerAddOn"),
+  function() 
+    npcSpawnerAddons.crewmember = true;
+    self.mainUpdate = true
+    update = mainUpdate end,
+  function()  
+    npcSpawnerAddons.crewmember = false; 
+    self.mainUpdate = true
+    update = mainUpdate end)
 end
 
 -----CALLBACK FUNCTIONS-------
