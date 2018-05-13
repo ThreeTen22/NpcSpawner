@@ -1303,6 +1303,11 @@ end
 function modNpc.NpcType(listData, cur, curO)
   if listData.iTitle ~= self.currentType then
     itemSlotManager:storeDefaultItems(createVariant())
+    util.each(itemSlotManager.itemSlots, function(k, itmSlot)
+      if not itmSlot:hasItemFrom(itmSlot.sourceType.container) then
+        itmSlot.ignoreItemSlot = false
+      end
+    end)
   end
   self.currentType = listData.iTitle
 end
