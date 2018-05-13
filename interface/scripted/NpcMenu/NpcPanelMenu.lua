@@ -8,7 +8,9 @@ spnSldParamDetail = {}
 modNpc = {}
 selectedTab = {}
 override = {}
-
+npcSpawnerAddons = {
+  crewmember = nil
+}
 itemSlot = {
   sourceType = {
     container = "containerItem",
@@ -137,7 +139,6 @@ function itemSlotManager:storeDefaultItems(variant)
   end
 end
 
-
 function itemSlotManager:itemSlotParameter(key, parameter, default)
   local itemSlotInstance
   if type(key) == "string" then
@@ -169,20 +170,42 @@ function itemSlotManager:removeItemSlotItem(widgetName, source, ...)
   end
 end
 
-function itemSlotManager:setItemSlotItem(widgetName, source, itemToAdd, ...)
-  source = source or itemSlot.sourceType.container
+function itemSlotManager:setSlotWeapon(widgetName, source, itemToAdd, ...)
+  local widgetConfig = widget.getData(widgetName)
+  local item = Item.new(itemToAdd)
+
+  if item:instanceValue("twoHanded") == true then
+    self.itemSlots[widgetConfig.primarySlot].ignoreItemSlot = false
+    self.itemSlots[widgetConfig.primarySlot].iconMode = false
+    self.itemSlots[widgetConfig.primarySlot]:removeItemFrom(source, ...)
+    self.itemSlots[widgetConfig.primarySlot]:storeItem(itemToAdd, source, ...)
+    self.itemSlots[widgetConfig.altSlot].ignoreItemSlot = false
+    self.itemSlots[widgetConfig.altSlot].iconMode = true
+    self.itemSlots[widgetConfig.altSlot]:storeItem(itemToAdd, source, ...)
+  else
+    self.itemSlots[widgetName].ignoreItemSlot = false
+    self.itemSlots[widgetName].iconMode = false
+    self.itemSlots[widgetName]:storeItem(itemToAdd, source, ...)
+  end
+end
+
+function itemSlotManager:setSlotArmor(widgetName, source, itemToAdd, ...)
   local widgetConfig = widget.getData(widgetName)
   local linkedWidgetConfig = widget.getData(widgetConfig.linkedItemSlot)
   if source == itemSlot.sourceType.container then
     self.itemSlots[widgetName].ignoreItemSlot = false
     self.itemSlots[widgetName].iconMode = false
     self.itemSlots[widgetName]:storeItem(itemToAdd, source, ...)
-    if self.itemSlots[widgetName]:queryItem(source,"twoHanded", nil) then
-      self.itemSlots[widgetConfig.linkedItemSlot].ignoreItemSlot = false
-      self.itemSlots[widgetConfig.linkedItemSlot].iconMode = true
-      self.itemSlots[widgetConfig.linkedItemSlot]:storeItem(itemToAdd, source, ...)
-    end
   end
+end
+
+function itemSlotManager:setItemSlotItem(widgetName, source, itemToAdd, ...)
+  source = source or itemSlot.sourceType.container
+  local widgetConfig = widget.getData(widgetName)
+  if widgetConfig.equipType == "activeitem" then
+    return self:setSlotWeapon(widgetName, source, itemToAdd, ...)
+  end
+  return self:setSlotArmor(widgetName, source, itemToAdd, ...)
 end
 
 function itemSlotManager:updateAllItemSlots()
@@ -374,7 +397,7 @@ function itemSlot:_updateItemSlotItem()
   local item, progress = nil, 1.0
   if self.ignoreItemSlot == true then
     item = nil
-    progress = 1.0
+    progress = 0.0
   elseif self.containerItem then
     item = self.containerItem:descriptor()
     if self.iconMode then
@@ -399,7 +422,7 @@ function itemSlot:_updateItemSlotItem()
 end
 --local func = testTable.func1
 
-function init(cardArgs)
+function init()
   local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
   self.gettingInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
   self.npcTypeList = baseConfig.npcTypeList
@@ -492,69 +515,78 @@ function init(cardArgs)
 
   --Cannot send entity messages during init, so will do it here
   self.sliderValue =  tonumber(self.currentSeed)
+  self.itemSlotBag = self.itemSlotBag or {}
+  self.sliderValue = self.currentSeed
+  self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.getOverrideItemBag()} end
+  self.setSeedValue = function(value) 
+    self.currentSeed = tonumber(value) 
+  end
+  self.setOverride = function(value, data) 
+    applyDirective(self.seedIdentity, self.getCurrentOverride(), value, data)
+  end
+  widget.setSliderRange("sldMainSlider", 0, 20000)
+  widget.setSliderValue("sldMainSlider",self.currentSeed)
+  widget.setText("lblSliderValue", "Seed Value:  "..tostring(self.currentSeed))
+  
+  widget.setSliderEnabled("sldMainSlider", true)
 
+  updateNpc(true)
+  modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.getCurrentOverride())
+
+
+
+  local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
+  widget.setSelectedOption("rgGenders", id-1)
+
+  local equipSlots = config.getParameter("equipSlots")
+
+  
+  itemSlotManager:storeDefaultItems(createVariant())
+  if self.gettingInfo.npcParam and path(self.gettingInfo.npcParam, "items","override", 1, 2, 1) then
+    itemSlotManager:storeImportItems(self.gettingInfo.npcParam.items.override[1][2][1])
+  end
+
+  local itemBag = world.containerItems(pane.containerEntityId())
+  itemSlotManager:storeContainerItems(itemBag)
+
+  itemSlotManager:updateAllItemSlots()
+  widget.setSelectedOption("rgSelectCategory", 0)
+  widget.setSelectedOption("rgTabs", 0)
   script.setUpdateDelta(20)
 end
 --this changes based on state
 
 function mainUpdate(dt)
   promises:update()
+  if self.tbFeedbackColorRoutine then
+    self.tbFeedbackColorRoutine() 
+  end
   local itemBagItem
   for i=1, 12 do
     itemBagItem = world.containerItemAt(pane.containerEntityId(), i-1)
     if type(itemBagItem) ~= "nil" and (type(itemSlotManager:itemAtItemBagIndex(i)) == "nil" or itemSlotManager:itemSlotParameter(i, "iconMode") == true) then
-      player.giveItem(itemBagItem)
-      world.containerTakeAt(pane.containerEntityId(), i-1)
+      if not player.swapSlotItem() then
+        player.setSwapSlotItem(itemBagItem)
+        world.containerTakeAt(pane.containerEntityId(), i-1)
+      end
     end
   end
-  if self.tbFeedbackColorRoutine then self.tbFeedbackColorRoutine() end
 end
 
 function update(dt)
-  if self.mainUpdate == false then 
-    self.itemSlotBag = self.itemSlotBag or {}
-    self.sliderValue = self.currentSeed
-    self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.getOverrideItemBag()} end
-    self.setSeedValue = function(value) 
-      self.currentSeed = tonumber(value) 
-    end
-    self.setOverride = function(value, data) 
-      applyDirective(self.seedIdentity, self.getCurrentOverride(), value, data)
-    end
-    widget.setSliderRange("sldMainSlider", 0, 20000)
-    widget.setSliderValue("sldMainSlider",self.currentSeed)
-    widget.setText("lblSliderValue", "Seed Value:  "..tostring(self.currentSeed))
-    
-    widget.setSliderEnabled("sldMainSlider", true)
- 
-    updateNpc(true)
-    modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.getCurrentOverride())
+    promises:update()
 
-
-
-    local id = npcUtil.getGenderIndx(self.identity.gender or self.seedIdentity.gender, self.speciesJson.genders)
-    widget.setSelectedOption("rgGenders", id-1)
-  
-    local equipSlots = config.getParameter("equipSlots")
-
-    
-    itemSlotManager:storeDefaultItems(createVariant())
-    if self.gettingInfo.npcParam and path(self.gettingInfo.npcParam, "items","override", 1, 2, 1) then
-      itemSlotManager:storeImportItems(self.gettingInfo.npcParam.items.override[1][2][1])
-    end
-
-    local itemBag = world.containerItems(pane.containerEntityId())
-    itemSlotManager:storeContainerItems(itemBag)
-
-    itemSlotManager:updateAllItemSlots()
-    widget.setSelectedOption("rgSelectCategory", 0)
-    widget.setSelectedOption("rgTabs", 0)
     updatePortrait()
-    self.mainUpdate = true
-    return 
-  else
-    update = mainUpdate
-  end
+    if promises:empty() == false then return end
+    promises:add(world.sendEntityMessage(player.id(), "npcSpawner.playerAddOn"),
+    function() 
+      npcSpawnerAddons.crewmember = true;
+      self.mainUpdate = true
+      update = mainUpdate end,
+    function()  
+      npcSpawnerAddons.crewmember = false; 
+      self.mainUpdate = true
+      update = mainUpdate end)
 end
 
 -----CALLBACK FUNCTIONS-------
@@ -587,30 +619,51 @@ function onRightClickItemSlotPress(id, data)
   return updateNpc()
 end
 
+function onWeaponSlotPress(id, data)
+  local itemSlotItem = widget.itemSlotItem(id)
+  local swapSlotItem = player.swapSlotItem()
+
+  if not swapSlotItem then
+    return onItemSlotPress(id, data)
+  end
+
+  local success, item = pcall(Item.new, swapSlotItem)
+  
+  if item and item:type() ~= data.equipType then 
+    return nil
+  end
+  if item:instanceValue("category") == "shield" then
+    return onItemSlotPress(data.altSlot, nil, {checked = true})
+  else
+    return onItemSlotPress(data.primarySlot, nil, {checked = true})
+  end
+end
+
 function onItemSlotPress(id, data, args)
     args = args or {}
-    local itemSlotItem = args[1] or widget.itemSlotItem(id)
-    local itemSwapItem = args[2] or player.swapSlotItem()
+    data = data or widget.getData(id)
+    local itemSlotItem = widget.itemSlotItem(id)
+    local swapSlotItem = player.swapSlotItem()
     --local calledByProgram = type(args[1]) ~= "nil" or type(args[2]) ~= "nil"
 
     data = data or config.getParameter("gui."..id..".data")
 
-    if itemSwapItem then
-      local success, itemType = pcall(root.itemType, (itemSwapItem or {}).name)
+    if swapSlotItem and not args.checked then
+      local success, itemType = pcall(root.itemType, (swapSlotItem or {}).name)
       if itemType ~= data.equipType then 
         return nil
       end
     end
 
     local source = itemSlotManager.itemSlots[id]:getItemSource(itemSlotItem)
-    if itemSwapItem or source == itemSlot.sourceType.container then
+    if swapSlotItem or source == itemSlot.sourceType.container then
 
       itemSlotManager.itemSlots[id].ignoreItemSlot = false
       itemSlotManager:removeItemSlotItem(id, itemSlot.sourceType.container)
 
-      if itemSwapItem then
+      if swapSlotItem then
         player.setSwapSlotItem(nil)
-        itemSlotManager:setItemSlotItem(id, itemSlot.sourceType.container, itemSwapItem)
+        itemSlotManager:setItemSlotItem(id, itemSlot.sourceType.container, swapSlotItem)
       end
 
     else
@@ -619,7 +672,6 @@ function onItemSlotPress(id, data, args)
 
     return updateNpc()
 end
-
 
 
 function onImportItemSlotClick(id, data)
@@ -674,13 +726,11 @@ function onExportItemSlotClick(id, data)
   if not slotItem then
     widget.setSelectedOption("rgSelectCategory", 2)
     widget.setSelectedOption("rgTabs", 3)
-    widget.setVisible("exportItemLbl", false)
-    return selectedTab.Export()
+    return widget.setVisible("exportItemLbl", false)
   end
   if swapItem then
     return 
   end
-
   player.setSwapSlotItem(slotItem)
   widget.setItemSlotItem(id, nil)
   widget.setVisible("exportItemLbl", true)
@@ -864,7 +914,6 @@ function acceptBtn()
     npcParam = copy(self.getCurrentOverride())
   }
 
- 
   world.sendEntityMessage(pane.containerEntityId(), "setNpcData", args)
   pane.dismiss()
 end
@@ -1065,7 +1114,6 @@ end
 
 
 function onSelectItem(name, listData)
-  dLog("onSelectItem")
   local listItem = widget.getListSelected(self.techList)
   if not listItem then return end
   local itemData = widget.getData(string.format("%s.%s", self.techList, listItem))

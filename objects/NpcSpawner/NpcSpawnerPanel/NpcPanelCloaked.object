@@ -55,13 +55,5 @@
     "checkHealthTimer" : [3.0, 5.0]
   },
   "spawner" : {
-    "searchRadius" : 10.0,
-    "npcSpeciesOptions" : [ "ReplaceMe" ],
-    "npcTypeOptions" : [ "ReplaceMe" ],
-    "npcParameterOptions" : [
-      {
-        "level" : 1
-      }
-    ]
   }
 }
