@@ -79,10 +79,7 @@ end
 function respawnTenant()
   --randomItUp(self.randomize))
   local pos = entity.position()
-
-  if string.find(object.name(), "floor",-6,true) then
-    pos[2] = pos[2] + 8
-  end
+  pos[2] = pos[2] + 4
   local npcId = world.spawnNpc(pos, self.npcSpecies,self.npcType, self.npcLevel, self.npcSeed, self.npcParam)
   world.setUniqueId(npcId, storage.spawnedID)
   world.callScriptedEntity(npcId, "status.addEphemeralEffect","beamin")
