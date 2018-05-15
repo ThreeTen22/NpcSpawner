@@ -12,6 +12,8 @@ function init()
       for k,v in pairs(args) do 
         self[k] = copy(v)
       end
+    else
+      randomItUp()
     end
   
     self.timers = TimerManager:new()
@@ -128,7 +130,12 @@ function detachNpc()
 end
 
 function randomItUp(speciesList,typeList,override)
-  if (not self.npcLevel) or override then self.npcLevel = math.random(1, 10) end
+  if not storage.spawnedID then 
+    storage.spawnedID = sb.makeUuid()
+  end
+  speciesList = speciesList or root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
+  typeList = typeList or {"villager"}
+  if (not self.npcLevel) or override then self.npcLevel = 1 end
   if (not self.npcSpecies) or override then 
     self.npcSpecies = tostring(speciesList[math.random(1, #speciesList)])
   end
@@ -138,6 +145,7 @@ function randomItUp(speciesList,typeList,override)
   if (not self.npcSeed) or override then
     self.npcSeed = math.random(1, 20000)
   end
+  respawnTenant()
 end
 
 function logVariant()
