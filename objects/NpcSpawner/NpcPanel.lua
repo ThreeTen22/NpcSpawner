@@ -12,8 +12,6 @@ function init()
       for k,v in pairs(args) do 
         self[k] = copy(v)
       end
-    else
-      randomItUp()
     end
   
     self.timers = TimerManager:new()
@@ -39,7 +37,9 @@ function init()
     message.setHandler("getNpcData",simpleHandler(getNpcData))
     message.setHandler("setNpcData", simpleHandler(setNpcData))
     message.setHandler("detachNpc", simpleHandler(detachNpc))
-
+    if jsize(initialArgs) ~= 0 then
+      randomItUp()
+    end
     object.setInteractive(true)
 end
 
@@ -120,19 +120,12 @@ function setNpcData(args)
 end
 
 function detachNpc()
-  local id = world.loadUniqueEntity(storage.spawnedID)
-  local npcConfig = root.npcConfig(self.npcType)
-  if id ~= 0 and (path(npcConfig, "scriptConfig", "crew", "recruitable") ~= true) then
-    world.setUniqueId(id, "")
-    dLog("removedUniqueId")
-  end
+  --local id = world.loadUniqueEntity(storage.spawnedID)
+  storage.spawnedID = nil
   object.smash(false)
 end
 
 function randomItUp(speciesList,typeList,override)
-  if not storage.spawnedID then 
-    storage.spawnedID = sb.makeUuid()
-  end
   speciesList = speciesList or root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
   typeList = typeList or {"villager"}
   if (not self.npcLevel) or override then self.npcLevel = 1 end
@@ -145,7 +138,12 @@ function randomItUp(speciesList,typeList,override)
   if (not self.npcSeed) or override then
     self.npcSeed = math.random(1, 20000)
   end
-  respawnTenant()
+  if not storage.spawnedID then 
+    storage.spawnedID = sb.makeUuid()
+  end
+
+  killNpc()
+  self.healingTimer:start(1)
 end
 
 function logVariant()
