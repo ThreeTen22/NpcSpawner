@@ -37,20 +37,25 @@ function init()
     message.setHandler("getNpcData",simpleHandler(getNpcData))
     message.setHandler("setNpcData", simpleHandler(setNpcData))
     message.setHandler("detachNpc", simpleHandler(detachNpc))
-    if jsize(initialArgs) ~= 0 then
+    if jsize(initialArgs) == 0 then
       randomItUp()
     end
     object.setInteractive(true)
 end
 
 function update(dt)
-  self.timers:update(dt)
   if not storage.uniqueId then
     storage.uniqueId = sb.makeUuid()
     world.setUniqueId(entity.id(), storage.uniqueId)
+  else
+    update = mainUpdate
   end
-
 end 
+
+function mainUpdate(dt)
+  self.timers:update(dt)
+end
+
 function healthCheck()
   if storage.spawnedID and (not world.findUniqueEntity(storage.spawnedID):result()) then
     self.healingTimer:start()
@@ -80,6 +85,10 @@ end
 
 function respawnTenant()
   --randomItUp(self.randomize))
+  if world.loadUniqueEntity(storage.spawnedID) ~= 0 then
+    self.healingTimer:start(1)
+    return
+  end
   local pos = entity.position()
   pos[2] = pos[2] + 4
   local npcId = world.spawnNpc(pos, self.npcSpecies,self.npcType, self.npcLevel, self.npcSeed, self.npcParam)
@@ -100,11 +109,13 @@ function getNpcData()
 end
 
 function setNpcData(args)
-  self.npcSpecies = args.npcSpecies
-  self.npcSeed = args.npcSeed
-  self.npcType = args.npcType
-  self.npcLevel = args.npcLevel
-  self.npcParam = args.npcParam
+  if args then
+    self.npcSpecies = args.npcSpecies
+    self.npcSeed = args.npcSeed
+    self.npcType = args.npcType
+    self.npcLevel = args.npcLevel
+    self.npcParam = args.npcParam
+  end
 
   object.setConfigParameter("npcArgs", {
     npcSpecies = self.npcSpecies,
@@ -138,10 +149,7 @@ function randomItUp(speciesList,typeList,override)
   if (not self.npcSeed) or override then
     self.npcSeed = math.random(1, 20000)
   end
-  if not storage.spawnedID then 
-    storage.spawnedID = sb.makeUuid()
-  end
-
+  setNpcData()
   killNpc()
   self.healingTimer:start(1)
 end
