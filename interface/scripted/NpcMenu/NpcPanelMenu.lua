@@ -118,6 +118,7 @@ function itemSlotManager:storeDefaultItems(variant)
   local bagItem
   local config = root.npcConfig(variant.typeName)
   local isCrewmember = path(config.scriptConfig,"crew","recruitable") or false
+  
   local defaultUniform = path(config.scriptConfig,"crew","defaultUniform") or {}
   local colorIndex = path(config.scriptConfig,"crew","role", "uniformColorIndex")
   
@@ -130,7 +131,7 @@ function itemSlotManager:storeDefaultItems(variant)
   for k,v in pairs(self.itemSlots) do
     bagItem = copy(variant.items[v.equipSlot] or {}).content
     if bagItem and pcall(root.itemType, bagItem.name) then
-      --self:setItemSlotItem(k, v.sourceType.default, bagItem, variant.typeName, variant.seed)
+
       v:storeItem(bagItem, v.sourceType.default, variant.typeName, variant.seed)
     else
       --self:removeItemSlotItem(k, v.sourceType.default)
@@ -212,6 +213,13 @@ function itemSlotManager:updateAllItemSlots()
   for k,v in pairs(self.itemSlots) do
     v:_updateItemSlotItem()
   end
+end
+
+function itemSlotManager:usePrimarySlots()
+  if self.itemSlots["primarySlot"]:getAppropriateItem() or self.itemSlots["sheathedprimarySlot"]:getAppropriateItem() then
+    return true
+  end
+  return false
 end
 
 function itemSlotManager:buildOverrideTable()
@@ -316,10 +324,17 @@ function weaponSlot:storeItem(itemDescriptor, source, npcType, seed)
   if type(item) == "string" then
     item = {name = item, count = 1, parameters = {}}
   end
-
+  if not item then 
+    return 
+  end
+  if string.find(item.name, "capturepod",1,true) then 
+    item.name = "npcpetcapturepod" 
+    item.count = 1
+  end
   if source == self.sourceType.default then
     self:prepareSlot(npcType)
     local seedItm = (item.parameters.seed or self.seed or seed)
+    
     item = root.createItem(item, nil, seedItm)
     return self:_storeItem(item, source)
   end
@@ -835,55 +850,44 @@ function setNpcName(instant)
 end
 
 function finalizeNpcParameters()
-  local hasEquip = false
-  local hasWeapon = false
-  local itemBag = world.containerItems(pane.containerEntityId())
+
+  local override = itemSlotManager:buildOverrideTable().override
+  local npcConfig = root.npcConfig(self.currentType)
   local equipSlots = config.getParameter("equipSlots")
+  local itemBag = {}
+  local itemSlots = {}
+  for i=1, #equipSlots do
+    itemBag[i] = copy((override[1][2][1][equipSlots[i]] or {})[1])
+    itemSlots[equipSlots[i]] = copy(itemBag[i])
+  end
 
   if (not path(self.scriptConfig,"initialStorage","itemSlots")) then 
     setPath(self.scriptConfig,"initialStorage","itemSlots",{})
   end
 
-  local itemSlots = {}
-  local slotName = ""
-  for i = 1, 4 do 
-    if itemBag[i] then
-      hasWeapon = true
-      slotName = equipSlots[i]
-      itemSlots[slotName] = copy(itemBag[i])
-      if itemSlots[slotName] and string.find(itemSlots[slotName].name, "capturepod",1,true) then 
-        itemSlots[slotName].name = "npcpetcapturepod" 
-        itemSlots[slotName].count = 1
-      end
-    end
+  if path(npcConfig.scriptConfig, "crew") then
+    npcConfig.scriptConfig.crew.defaultUniform = {}
+    npcConfig.scriptConfig.crew.uniformSlots = {}
+    setPath(self.scriptConfig, "crew", copy(npcConfig.scriptConfig.crew))
   end
+
+  local slotName = ""
 
   self.scriptConfig.personality = self.scriptConfig.personality or {}
 
   if jsize(self.scriptConfig.personality) == 0 then
     self.scriptConfig.personality = npcUtil.getPersonality(self.currentType, self.currentSeed)
   end
-
-  for i = 5, #itemBag do
-    if itemBag[i] then
-      hasEquip = true
-      local slotName = equipSlots[i]
-      itemSlots[slotName] = copy(itemBag[i])
-    end
-  end
+  dLogJson(itemSlots, "ItemSlots")
   self.scriptConfig.initialStorage.itemSlots = itemSlots
 
   --The only scriptConfig parameter to get saved is personality.  You can sneak in behaviorConfig parameters in that table.
   --If no personality was manually chosen then I will mimic what bmain.lua does when generating a personality
   --Update - I no longer technically need this because its bollocks and doesnt work due to chucklefish's personality changes being applied AFTER its behavior was implemented.
   --However I am adding it in anyways because if chucklefish decides to fix it, it will be ready to go!
-  if hasWeapon then
+  if itemSlotManager:usePrimarySlots() then
     setPath(self.scriptConfig, "personality", "behaviorConfig","emptyHands",false)
     setPath(self.scriptConfig, "behaviorConfig","emptyHands",false)
-  end
-
-  if (not hasEquip) and (not hasWeapon) and self.scriptConfig.initialStorage then
-    self.scriptConfig.initialStorage = nil
   end
 
   setNpcName(true)
@@ -891,6 +895,7 @@ function finalizeNpcParameters()
   if path(self.scriptConfig, "personality", "storedOverrides") then
     self.scriptConfig.personality.storedOverrides = {}
   end
+
   self.scriptConfig.personality.storedOverrides = copy(self.getCurrentOverride())
 end
 
