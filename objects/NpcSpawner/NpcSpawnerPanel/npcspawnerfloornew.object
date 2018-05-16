@@ -19,6 +19,7 @@
   "scripts" : ["/objects/NpcSpawner/NpcPanelNew.lua"],
   "scriptDelta" : 30,
   "smashOnBreak" : false,
+  "inventoryIcon": "hologramprojector.png",
   "containerCallback" : "containerCallback",
   "isContainer": true,
   "smashable" : false,
