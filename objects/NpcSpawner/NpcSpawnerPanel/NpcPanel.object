@@ -2,7 +2,7 @@
   "objectName" : "npcspawnerpanel",
   "tags" : ["misc"],
   "rarity" : "Common",
-  "description" : "Place a beacon and beam in an Npc.",
+  "description" : "(depreciated)\nPlace a beacon and beam in an Npc.",
   "shortdescription" : "NPC Maker 3000",
   "subtitle" : "When they arrive, don't ask how they got there, you don't wanna know.",
   "race" : "generic",

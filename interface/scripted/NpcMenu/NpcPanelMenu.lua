@@ -28,7 +28,17 @@ function init()
   self.tabData = nil
 
 
-  local protectorate = jsonPath(root.npcConfig("villager"), "scriptConfig.questGenerator.graduation.nextNpcType")
+  local protectorate = jsonPath(root.npcConfig("villager"), "scriptConfig.questGenerator.graduation.nextNpcType") or 
+  {"crewmember",
+  "crewmemberchemistblue",
+  "crewmemberchemistgreen",
+  "crewmemberchemistyellow",
+  "crewmemberchemistorange",
+  "crewmemberengineer",
+  "crewmembermechanic",
+  "crewmembermedic",
+  "crewmemberjanitor",
+  "crewmembertailor"}
   
   self.speciesList = root.assetJson("/interface/windowconfig/charcreation.config:speciesOrdering")
   self.speciesList = npcUtil.mergeUnique(self.speciesList, baseConfig.additionalSpecies)

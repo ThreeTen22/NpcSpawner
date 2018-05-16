@@ -184,7 +184,7 @@ function npcUtil.replaceValueInList(list, value, repl)
 end
 
 function npcUtil.modVersion() 
-  return root.assetJson("/interface/scripted/NpcMenu/modConfigNew.config:modVersion")
+  return root.assetJson("/interface/scripted/NpcMenu/modConfigv2.config:modVersion")
 end
 
 function npcUtil.replaceDirectives(directive, directiveJson)

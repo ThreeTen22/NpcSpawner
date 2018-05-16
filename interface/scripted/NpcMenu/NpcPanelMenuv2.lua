@@ -469,7 +469,7 @@ end
 --local func = testTable.func1
 
 function init()
-  local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfigNew.config:init")
+  local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfigv2.config:init")
   self.gettingInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
   self.npcTypeList = baseConfig.npcTypeList
   self.getSpeciesPath = function(species, path)          
