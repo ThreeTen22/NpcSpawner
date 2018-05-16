@@ -13,7 +13,7 @@
   "objectType" : "container",
   "slotCount" : 12,
   "openSounds" : ["/sfx/objects/miningchest_open.ogg"],
-  "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
+  "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenuNew.config",
   "frameCooldown" : 5,
   "autoCloseCooldown" : 360000,
   "scripts" : ["/objects/NpcSpawner/NpcPanelNew.lua"],
