@@ -1,5 +1,6 @@
 require "/scripts/npcSpawner/npcspawnutil.lua"
 require "/scripts/npcSpawner/loggingutil.lua"
+require "/scripts/npcSpawner/compatibilityMessages.lua"
 require "/scripts/rect.lua"
 require "/scripts/vec2.lua"
 spnIdleStance = {}
@@ -534,7 +535,7 @@ function init()
   self.currentLevel = self.gettingInfo.npcLevel or math.max(1, math.random(0, world.threatLevel()))
   self.currentSpecies = self.gettingInfo.npcSpecies or self.speciesList[math.random(1, #self.speciesList)]
 
-
+  radioMessageIncompatibilities(self.currentSpecies, self.currentType)
   self.gettingInfo.npcParam = self.gettingInfo.npcParam or {}
   if self.gettingInfo.npcParam.identity then 
     self.identity = copy(self.gettingInfo.npcParam.identity)

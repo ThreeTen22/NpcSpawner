@@ -1,5 +1,5 @@
 --require "/scripts/npcspawnutil.lua"
-
+require "/scripts/npcSpawner/compatibilityMessages.lua"
 spnIdleStance = {}
 spnSldParamBase = {}
 spnSldParamDetail = {}
@@ -88,6 +88,7 @@ function init()
   self.items = param.items or {}
   self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.items} end
   self.seedIdentity = {}
+  radioMessageIncompatibilities(self.currentSpecies, self.currentType)
   updateNpc(true)
   modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.getCurrentOverride())
   
