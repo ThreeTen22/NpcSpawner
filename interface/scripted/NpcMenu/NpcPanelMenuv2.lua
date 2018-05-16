@@ -959,7 +959,7 @@ function setListInfo(categoryName, uniqueId, infoOverride)
   widget.clearListItems(self.infoList)
   if not categoryName then return end
   local tabInfo = config.getParameter("tabOptions."..categoryName)
-  local info = infoOverride or root.assetJson("/interface/scripted/NpcMenu/modConfigNew.config:infoDescription")
+  local info = infoOverride or root.assetJson("/interface/scripted/NpcMenu/modConfigv2.config:infoDescription")
   local subInfo = info[categoryName]
   if uniqueId then 
     for i,v in ipairs(subInfo) do
