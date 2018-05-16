@@ -1,0 +1,67 @@
+{
+  "objectName" : "npcspawnerpanel",
+  "tags" : ["misc"],
+  "rarity" : "Common",
+  "description" : "Place a beacon and beam in an Npc.",
+  "shortdescription" : "NPC Maker 3000",
+  "subtitle" : "When they arrive, don't ask how they got there, you don't wanna know.",
+  "race" : "generic",
+  "price" : 15000,
+  "category" : "spawner",
+  "tooltipKind" : "object",
+  "genericDescription" : "It's a thing that does stuff.",
+  "objectType" : "container",
+  "slotCount" : 12,
+  "openSounds" : ["/sfx/objects/miningchest_open.ogg"],
+  "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
+  "frameCooldown" : 5,
+  "autoCloseCooldown" : 3600,
+  "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
+  "scriptDelta" : 30,
+  "smashOnBreak" : false,
+  "containerCallback" : "containerCallback",
+  "inventoryIcon" : "BackgroundPanel.png",
+  "isContainer": true,
+  "smashable" : false,
+  "interactive" : false,
+  "orientations" : [
+    {
+      "image" : "BackgroundPanel.png",
+      "imagePosition" : [-8, 0],
+      "frames" : 1,
+      "animationCycle" : 0.5,
+      "direction" : "left",
+      "flipImages" : true,
+      "animationPosition" : [-8, 0],
+      "lightPosition" : [0, 3],
+      "spaceScan" : 0.1,
+      "anchors" : [ "background" ]
+    },
+    {
+      "image" : "BackgroundPanel.png",
+      "imagePosition" : [-8, 0],
+      "frames" : 1,
+      "animationCycle" : 0.5,
+      "direction" : "right",
+      "flipImages" : false,
+      "animationPosition" : [-8, 0],
+      "lightPosition" : [0, 3],
+
+      "spaceScan" : 0.1,
+      "anchors" : [ "background" ]
+    }
+  ],
+  "npcArgs" : {
+
+  },
+  "spawner" : {
+    "searchRadius" : 10.0,
+    "npcSpeciesOptions" : [ "ReplaceMe" ],
+    "npcTypeOptions" : [ "ReplaceMe" ],
+    "npcParameterOptions" : [
+      {
+        "level" : 1
+      }
+    ]
+  }
+}
