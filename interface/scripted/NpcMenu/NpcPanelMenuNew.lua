@@ -1,5 +1,5 @@
-require "/scripts/npcspawnutil.lua"
-require "/scripts/loggingutil.lua"
+require "/scripts/npcSpawner/npcspawnutil.lua"
+require "/scripts/npcSpawner/loggingutil.lua"
 require "/scripts/rect.lua"
 require "/scripts/vec2.lua"
 spnIdleStance = {}
@@ -469,7 +469,7 @@ end
 --local func = testTable.func1
 
 function init()
-  local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfig.config:init")
+  local baseConfig = root.assetJson("/interface/scripted/NpcMenu/modConfigNew.config:init")
   self.gettingInfo = world.getObjectParameter(pane.containerEntityId(), "npcArgs")
   self.npcTypeList = baseConfig.npcTypeList
   self.getSpeciesPath = function(species, path)          
@@ -959,7 +959,7 @@ function setListInfo(categoryName, uniqueId, infoOverride)
   widget.clearListItems(self.infoList)
   if not categoryName then return end
   local tabInfo = config.getParameter("tabOptions."..categoryName)
-  local info = infoOverride or root.assetJson("/interface/scripted/NpcMenu/modConfig.config:infoDescription")
+  local info = infoOverride or root.assetJson("/interface/scripted/NpcMenu/modConfigNew.config:infoDescription")
   local subInfo = info[categoryName]
   if uniqueId then 
     for i,v in ipairs(subInfo) do
