@@ -1,70 +1,63 @@
 {
-  "objectName" : "npcspawnerfloor",
+  "objectName" : "npcspawnerpanelnew",
   "tags" : ["misc"],
   "rarity" : "Common",
-  "description" : "Place a beacon and beam in an Npc.  Platform edition.",
-  "shortdescription" : "NPC Maker 3000: Platform",
+  "description" : "New and Improved! Place a beacon and beam in an Npc.",
+  "shortdescription" : "NPC Maker 3100: Panel",
   "subtitle" : "When an npc arrives, don't ask how they got here...you don't wanna know",
   "race" : "generic",
   "price" : 15000,
   "category" : "spawner",
   "tooltipKind" : "object",
-  "genericDescription" : "I wonder if they make these for monsters?",
+  "defaultDescription" : "I wonder if they make these for monsters?",
   "objectType" : "container",
   "slotCount" : 12,
   "openSounds" : ["/sfx/objects/miningchest_open.ogg"],
   "uiConfig" : "/interface/scripted/NpcMenu/NpcPanelMenu.config",
   "frameCooldown" : 5,
   "autoCloseCooldown" : 360000,
-  "scripts" : ["/objects/NpcSpawner/NpcPanel.lua"],
+  "scripts" : ["/objects/NpcSpawner/NpcPanelNew.lua"],
   "scriptDelta" : 30,
   "smashOnBreak" : false,
-  "containerCallback" : "containerCallback",
-  "inventoryIcon" : "/objects/human/bunkerpanel2/bunkerpanel2icon.png",
+  "inventoryIcon" : "BackgroundPanel.png",
   "isContainer": true,
   "smashable" : false,
   "interactive" : false,
   "orientations" : [
     {
-      "image" : "hologramprojector.png",
+      "image" : "BackgroundPanel.png",
       "imagePosition" : [-8, 0],
       "frames" : 1,
       "animationCycle" : 0,
       "direction" : "left",
+      "flipImages" : true,
       "animationPosition" : [-8, 0],
-      "lightPosition" : [0, 4],
-
+      "lightPosition" : [0, 3],
       "spaceScan" : 0.1,
-      "anchors" : [ "bottom" ]
+      "anchors" : [ "background" ]
     },
     {
-      "image" : "hologramprojector.png",
+      "image" : "BackgroundPanel.png",
       "imagePosition" : [-8, 0],
       "frames" : 1,
       "animationCycle" : 0,
       "direction" : "right",
+      "flipImages" : false,
       "animationPosition" : [-8, 0],
-      "lightPosition" : [0, 4],
+      "lightPosition" : [0, 3],
 
       "spaceScan" : 0.1,
-      "anchors" : [ "bottom" ]
+      "anchors" : [ "background" ]
     }
   ],
   "npcArgs" : {
 
   },
   "deedConfig" : {
-    "maxRespawnTime" : 30,
-    "spawnTimer" : 5
+    "maxRespawnTime" : [8.0, 10.0],
+    "checkHealthTimer" : [3.0, 5.0]
   },
   "spawner" : {
-    "searchRadius" : 10.0,
-    "npcSpeciesOptions" : [ "ReplaceMe" ],
-    "npcTypeOptions" : [ "ReplaceMe" ],
-    "npcParameterOptions" : [
-      {
-        "level" : 1
-      }
-    ]
+
   }
 }

@@ -1,7 +1,7 @@
 require "/scripts/util.lua"
 require "/scripts/interp.lua"
 require "/scripts/messageutil.lua"
-require "/scripts/loggingutil.lua"
+require "/scripts/npcSpawner/loggingutil.lua"
 
 npcUtil = {} 
 

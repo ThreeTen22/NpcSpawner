@@ -1,6 +1,6 @@
-require "/scripts/npcspawnutil.lua"
+require "/scripts/npcSpawner/npcspawnutil.lua"
 require "/scripts/util.lua"
-require "/scripts/loggingutil.lua"
+require "/scripts/npcSpawner/loggingutil.lua"
 require "/objects/spawner/colonydeed/timer.lua"
 
 function init()

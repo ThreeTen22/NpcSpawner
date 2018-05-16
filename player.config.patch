@@ -1,6 +1,6 @@
 [
 { "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "spawnerstation" }},
-{ "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "npcspawnerfloor" }},
-{ "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "npcspawnerpanel" }},
-{ "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "npcspawnerpanelcloaked" }}
+{ "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "npcspawnerpanelnew" }},
+{ "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "npcspawnercloakednew" }},
+{ "op": "add", "path" : "/defaultBlueprints/tier1/-", "value" : { "item" : "npcspawnerfloornew" }}
 ]

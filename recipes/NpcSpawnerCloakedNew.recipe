@@ -4,6 +4,6 @@
     { "item" : "siliconboard", "count": 10},
     { "item" : "battery", "count" : 5}
   ],
-  "output" : { "item" : "npcspawnerfloor", "count" : 1},
+  "output" : { "item" : "npcspawnercloakednew", "count" : 1},
   "groups" : [ "spawnerstation", "all" ]
 }
