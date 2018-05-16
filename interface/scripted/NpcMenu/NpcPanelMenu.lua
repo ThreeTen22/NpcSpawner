@@ -88,8 +88,6 @@ function init()
   self.items = param.items or {}
   self.getCurrentOverride = function() return {identity = self.identity, scriptConfig = self.scriptConfig, items = self.items} end
   self.seedIdentity = {}
-
-
   updateNpc(true)
   modNpc.Species({iTitle = self.currentSpecies}, self.seedIdentity, self.getCurrentOverride())
   
