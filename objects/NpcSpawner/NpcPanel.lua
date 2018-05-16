@@ -21,6 +21,7 @@ function init()
       delay = "deedConfig.maxRespawnTime",
       completeCallback = respawnTenant
     })
+
     self.timers:manage(self.healingTimer)
 
 
@@ -84,7 +85,8 @@ function killNpc(id)
 end
 
 function respawnTenant()
-  --randomItUp(self.randomize))
+  --randomItUp(self.randomize
+  storage.spawnedID = sb.makeUuid() 
   if world.loadUniqueEntity(storage.spawnedID) ~= 0 then
     self.healingTimer:start(1)
     return
@@ -92,10 +94,9 @@ function respawnTenant()
   local pos = entity.position()
   pos[2] = pos[2] + 4
   local npcId = world.spawnNpc(pos, self.npcSpecies,self.npcType, self.npcLevel, self.npcSeed, self.npcParam)
-  world.setUniqueId(npcId, storage.spawnedID)
   world.callScriptedEntity(npcId, "status.addEphemeralEffect","beamin")
+  world.setUniqueId(npcId, storage.spawnedID)
   --assign our new NPC a special unique id
-  
 end
 
 function getNpcData()
@@ -126,6 +127,10 @@ function setNpcData(args)
   if not storage.spawnedID then 
     storage.spawnedID = sb.makeUuid() 
   end
+  respawnNpc()
+end
+
+function respawnNpc()
   killNpc()
   self.healingTimer:start(1)
 end

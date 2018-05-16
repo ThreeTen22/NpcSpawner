@@ -171,9 +171,38 @@ function itemSlotManager:removeItemSlotItem(widgetName, source, ...)
   end
 end
 
+function itemSlotManager:setCapturePod(widgetName, source, itemToAdd, ...)
+
+  local primary = self.itemSlots["primarySlot"]:getAppropriateItem()
+  local isSettingItemSlotASheathedSlot = string.find(widgetName, "sheathed", 1,true)
+  local capturePodInPrimarySlot = primary and string.find(primary.name, "capturepod",1,true)
+  --if trying to insert pod into a sheathedItemSlot
+    --if the primary slot already has a capturepod
+  if isSettingItemSlotASheathedSlot then
+    if capturePodInPrimarySlot then
+      self.itemSlots["sheathedprimarySlot"]:removeItemFrom(itemSlot.sourceType.container)
+      self.itemSlots["sheathedprimarySlot"]:storeItem(itemToAdd, source, ...)
+    else
+      self.itemSlots["primarySlot"]:removeItemFrom(itemSlot.sourceType.container)
+      self.itemSlots["primarySlot"]:storeItem(itemToAdd, source, ...)
+    end
+  else
+    if capturePodInPrimarySlot then
+      self.itemSlots["primarySlot"]:storeItem(itemToAdd, source, ...)
+    else
+      self.itemSlots["primarySlot"]:removeItemFrom(itemSlot.sourceType.container)
+      self.itemSlots["primarySlot"]:storeItem(itemToAdd, source, ...)
+    end
+  end
+end
+
 function itemSlotManager:setSlotWeapon(widgetName, source, itemToAdd, ...)
   local widgetConfig = widget.getData(widgetName)
   local item = Item.new(itemToAdd)
+
+  if string.find(item.name, "capturepod",1,true) and source == itemSlot.sourceType.container then
+    return self:setCapturePod(widgetName, source, itemToAdd, ...)
+  end
 
   if item:instanceValue("twoHanded") == true then
     self.itemSlots[widgetConfig.primarySlot].ignoreItemSlot = false
@@ -327,9 +356,12 @@ function weaponSlot:storeItem(itemDescriptor, source, npcType, seed)
   if not item then 
     return 
   end
-  if string.find(item.name, "capturepod",1,true) then 
-    item.name = "npcpetcapturepod" 
-    item.count = 1
+  if source == self.sourceType.container then
+    if string.find(item.name, "capturepod",1,true) then 
+      item.name = "npcpetcapturepod"
+      item.count = 1
+      item.parameters = {consumeOnPickup = true}
+    end
   end
   if source == self.sourceType.default then
     self:prepareSlot(npcType)
@@ -387,11 +419,13 @@ function itemSlot:removeItemFrom(source)
   if self[source] then
     if source == self.sourceType.container then
       local itms = widget.itemGridItems("itemGrid")
-      if player.swapSlotItem() then
-        player.giveItem(itms[self.containerSlot+1])
-      else
-        player.setSwapSlotItem(itms[self.containerSlot+1])
-      end 
+      if (itms[self.containerSlot+1] or {}).name ~= "npcpetcapturepod" then 
+        if player.swapSlotItem() then
+          player.giveItem(itms[self.containerSlot+1])
+        else
+          player.setSwapSlotItem(itms[self.containerSlot+1])
+        end 
+      end
       world.containerTakeAt(pane.containerEntityId(), self.containerSlot)
     end
     self[source] = nil
@@ -546,7 +580,6 @@ function init()
 
   local equipSlots = config.getParameter("equipSlots")
 
-  
   itemSlotManager:storeDefaultItems(createVariant())
   if self.gettingInfo.npcParam and path(self.gettingInfo.npcParam, "items","override", 1, 2, 1) then
     itemSlotManager:storeImportItems(self.gettingInfo.npcParam.items.override[1][2][1])
@@ -633,10 +666,19 @@ function onWeaponSlotPress(id, data)
   end
 
   local success, item = pcall(Item.new, swapSlotItem)
-  
-  if item and item:type() ~= data.equipType then 
+  if not item then
+    return nil
+  elseif item:type() ~= data.equipType and not 
+  (item:instanceValue("category") == "throwableItem" and string.find(item.name, "capturepod",1,true)) then
     return nil
   end
+
+  
+  if string.find(item.name, "capturepod",1,true)  then
+    player.giveItem(item)
+    return onItemSlotPress(data.primarySlot, nil, {checked = true})
+  end
+
   if item:instanceValue("category") == "shield" then
     return onItemSlotPress(data.altSlot, nil, {checked = true})
   else
@@ -1243,7 +1285,6 @@ function createVariant()
   return variant
 end
 function createPortrait(type)
-  local fakeItems = getFakeItems()
   local params  = {
     identity = self.identity,
     scriptConfig = self.scriptConfig,
@@ -1305,27 +1346,6 @@ function modNpc.NpcType(listData, cur, curO)
     end)
   end
   self.currentType = listData.iTitle
-end
-
-function getFakeItems()
-  local bag = self.getOverrideItemBag()
-  if bag then 
-    return nil
-  end
-
-  local config = root.npcConfig(self.currentType)
-  local isCrewmember = path(config.scriptConfig,"crew","recruitable") or false
-  local defaultUniform = path(config.scriptConfig,"crew","defaultUniform") or {}
-  local colorIndex = path(config.scriptConfig,"crew","role", "uniformColorIndex")
-  local items
-  if isCrewmember and not isEmpty(defaultUniform) then
-    items = {}
-    items.override = npcUtil.buildItemOverrideTable(jarray())
-    for k, v in pairs(defaultUniform) do
-      items.override[1][2][1][k] = {dyeUniformItem(v, colorIndex)}
-    end
-  end
-  return items
 end
 
 function dyeUniformItem(item, colorIndex)
