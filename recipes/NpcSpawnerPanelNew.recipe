@@ -4,6 +4,6 @@
     { "item" : "siliconboard", "count": 10},
     { "item" : "battery", "count" : 5}
   ],
-  "output" : { "item" : "npcspawnerpanel", "count" : 1},
+  "output" : { "item" : "npcspawnerpanelnew", "count" : 1},
   "groups" : [ "spawnerstation", "all" ]
 }
