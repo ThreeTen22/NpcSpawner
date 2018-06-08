@@ -45,6 +45,7 @@ end
 function npcUtil.jsonToDirective(directiveJson)
   local prefix = ""
   for k,v in pairs(directiveJson) do
+    prefix = prefix..string.format(";%06x=%06x","0x"..k,"0x"..v)
   end
   return prefix
 end
@@ -53,12 +54,9 @@ function npcUtil.compareDirectiveToColor(directive, json)
   if type(json) ~= "table" or (tostring(directive) == "") then return false end
   local _,set = next(json)
   if type(set) ~= "table" then return false end
-  local k,v  = next(set)
-  k = string.lower(k)
-  v = string.lower(v)
-  return string.match(directive,tostring(k).."=")
+  local k,_  = next(set)
+  return string.match(directive,string.format("%06x=", "0x"..k))
 end
-
 
 function npcUtil.formatParam(strType,...)
     local params = {...}
