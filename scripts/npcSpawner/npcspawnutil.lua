@@ -45,7 +45,6 @@ end
 function npcUtil.jsonToDirective(directiveJson)
   local prefix = ""
   for k,v in pairs(directiveJson) do
-    prefix = string.format("%s;%s=%s",prefix,k,v)
   end
   return prefix
 end

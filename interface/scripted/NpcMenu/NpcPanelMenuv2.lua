@@ -1297,7 +1297,7 @@ end
 
 function updateSpecies(species)
   self.currentSpecies = species
-  dLogJson({(self.speciesJson or {}).kind, self.currentSpecies})
+  --dLogJson({(self.speciesJson or {}).kind, self.currentSpecies})
   if not((self.speciesJson or {}).kind == self.currentSpecies) then
     if self.mainUpdate then
       local gender = self.identity.gender 
